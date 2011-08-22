@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<?xml-stylesheet href="chrome://historyminer/skin/overlay.css" type="text/css"?>
+<!DOCTYPE overlay SYSTEM "chrome://historyminer/locale/overlay.dtd">
+<overlay id="historyminer-overlay"
+    xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+  <script src="overlay.js"/>
+
+  <menupopup id="menu_ToolsPopup">
+    <menuitem id="historyminer-launch" label="&historyminer;"
+        oncommand="historyMiner.onMenuItemCommand(event);"/>
+  </menupopup>
+</overlay> 
