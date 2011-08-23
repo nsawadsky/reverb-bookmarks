@@ -24,6 +24,7 @@ import org.apache.lucene.util.Version;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -55,17 +56,17 @@ public final class WebPageAnalyzer extends StopwordAnalyzerBase {
 
     /** An unmodifiable set containing some common English words that are usually not
         useful for searching. */
-    private static final Set<String> stopWordsSet;
+    private static final Set<char[]> stopWordsSet;
 
     static {
-        stopWordsSet = new HashSet<String>();
+        stopWordsSet = new HashSet<char []>();
         for (Object word: StopAnalyzer.ENGLISH_STOP_WORDS_SET) {
-            String wordString = (String)word;
-            stopWordsSet.add(wordString);
+            char[] wordArray = (char[])word;
+            stopWordsSet.add(wordArray);
             
-            StringBuffer capWord = new StringBuffer(Character.toUpperCase(wordString.charAt(0)));
-            capWord.append(wordString.substring(1));
-            stopWordsSet.add(capWord.toString());
+            char[] capWord = Arrays.copyOf(wordArray, wordArray.length);
+            capWord[0] = Character.toUpperCase(capWord[0]);
+            stopWordsSet.add(capWord);
         }
     }
     
