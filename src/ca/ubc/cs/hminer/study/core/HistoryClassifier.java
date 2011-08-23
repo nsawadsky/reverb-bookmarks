@@ -277,6 +277,12 @@ public class HistoryClassifier {
         for (Element element: plaintext) {
             element.remove();
         }
+        Elements allElements = doc.getAllElements();
+        for (Element element: allElements) {
+            if (element.hasText()) {
+                element.appendText(" ");
+            }
+        }
 
         String text = doc.text();
         
