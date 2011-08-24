@@ -1,4 +1,4 @@
-package ca.ubc.cs.hminer.indexer;
+package ca.ubc.cs.hminer.indexer.messages;
 
 public class PageInfo {
     public String url;
