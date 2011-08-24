@@ -3,6 +3,10 @@ package ca.ubc.cs.hminer.eclipseplugin;
 import java.util.HashMap;
 import java.util.Map;
 
+import ca.ubc.cs.hminer.indexer.messages.IndexerBatchQuery;
+import ca.ubc.cs.hminer.indexer.messages.IndexerMessage;
+import ca.ubc.cs.hminer.indexer.messages.ResultList;
+
 import npw.NamedPipeWrapper;
 
 public class IndexerConnection implements Runnable {

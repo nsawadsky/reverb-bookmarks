@@ -4,5 +4,6 @@
 	<classpathentry kind="con" path="org.eclipse.pde.core.requiredPlugins"/>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/NamedPipeWrapperJava"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/HistoryMinerIndexer"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
