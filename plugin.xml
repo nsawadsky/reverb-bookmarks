@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+
+   <extension
+         point="org.eclipse.ui.views">
+      <category
+            name="History Miner Category"
+            id="ca.ubc.cs.hminer.eclipseplugin">
+      </category>
+      <view
+            name="History Miner Links"
+            icon="icons/sample.gif"
+            category="ca.ubc.cs.hminer.eclipseplugin"
+            class="ca.ubc.cs.hminer.eclipseplugin.views.ResultsView"
+            id="ca.ubc.cs.hminer.eclipseplugin.views.ResultsView">
+      </view>
+   </extension>
+   <extension
+         point="org.eclipse.ui.perspectiveExtensions">
+      <perspectiveExtension
+            targetID="org.eclipse.jdt.ui.JavaPerspective">
+         <view
+               ratio="0.5"
+               relative="org.eclipse.ui.views.TaskList"
+               relationship="right"
+               id="ca.ubc.cs.hminer.eclipseplugin.views.ResultsView">
+         </view>
+      </perspectiveExtension>
+   </extension>
+
+</plugin>
