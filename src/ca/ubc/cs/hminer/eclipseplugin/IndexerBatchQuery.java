@@ -2,7 +2,7 @@ package ca.ubc.cs.hminer.eclipseplugin;
 
 import java.util.List;
 
-public class IndexerBatchQuery {
+public class IndexerBatchQuery implements IndexerMessage {
     private List<String> queryStrings;
     
     public IndexerBatchQuery(List<String> queryStrings) {
