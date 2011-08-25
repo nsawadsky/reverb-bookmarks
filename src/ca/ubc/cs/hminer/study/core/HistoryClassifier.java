@@ -38,7 +38,7 @@ public class HistoryClassifier {
     // TODO: Better handling for other locales
     public final static String GOOGLE_PREFIX = "http://www.google.";
     public final static String GOOGLE_SEARCH_TITLE = "Google Search";
-    public final static String GOOGLE_SEARCH_PATTERN = "http://www\\.google\\.\\S*/search";
+    public final static String GOOGLE_SEARCH_PATTERN = "http://www\\.google\\.\\S+/search";
     
     /**
      * Starts with lower-case and contains at least one upper-case 

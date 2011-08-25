@@ -36,7 +36,7 @@ public class HistoryClassifierTest {
         doc = Jsoup.parse("<html><body>myInstance.myMethod(5); myInstance.myMethod(5);</body></html>");
         assertEquals(LocationType.CODE_RELATED, classifier.classifyDocument(doc, false));
         
-        Pattern pat = Pattern.compile("http://www\\.google\\.\\S*/search");
+        Pattern pat = Pattern.compile("http://www\\.google\\.\\S+/search");
         
         assertTrue(pat.matcher("http://www.google.co.uk/search?test").find());
         
