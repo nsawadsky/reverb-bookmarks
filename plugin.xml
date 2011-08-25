@@ -12,8 +12,8 @@
             name="Related Pages"
             icon="icons/sample.gif"
             category="ca.ubc.cs.hminer.eclipseplugin"
-            class="ca.ubc.cs.hminer.eclipseplugin.views.ResultsView"
-            id="ca.ubc.cs.hminer.eclipseplugin.views.ResultsView">
+            class="ca.ubc.cs.hminer.eclipseplugin.views.RelatedPagesView"
+            id="ca.ubc.cs.hminer.eclipseplugin.views.RelatedPagesView">
       </view>
    </extension>
    <extension
