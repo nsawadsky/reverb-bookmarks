@@ -2,7 +2,6 @@ package ca.ubc.cs.hminer.indexer.messages;
 
 import java.util.List;
 
-public class ResultList {
-    String query;
-    List<Link> links;
+public class BatchQueryResult {
+    List<QueryResult> queryResults;
 }
