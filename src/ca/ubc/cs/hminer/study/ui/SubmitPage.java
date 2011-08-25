@@ -19,8 +19,6 @@ import org.eclipse.swt.layout.GridData;
 import ca.ubc.cs.hminer.study.core.Util.RunnableWithResult;
 
 public class SubmitPage extends HistoryMinerWizardPage implements SelectionListener {
-    private Button btnAnonymizePartial;
-    private Button btnAnonymizeAll;
     private Button btnViewReport;
     
     /**
@@ -43,20 +41,10 @@ public class SubmitPage extends HistoryMinerWizardPage implements SelectionListe
         container.setLayout(new GridLayout(1, false));
         
         Label lblNewLabel = new Label(container, SWT.WRAP);
-        GridData gd_lblNewLabel = new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1);
+        GridData gd_lblNewLabel = new GridData(SWT.LEFT, SWT.FILL, true, false, 1, 1);
         gd_lblNewLabel.widthHint = 565;
         lblNewLabel.setLayoutData(gd_lblNewLabel);
-        lblNewLabel.setText("Non-development-related pages will be fully anonymized in the report that is submitted.  You can choose whether to include URL's for development-related pages.  Choosing to include URL's for these pages will help researchers gain a better understanding of developer web-browsing patterns.");
-        
-        btnAnonymizePartial = new Button(container, SWT.RADIO);
-        btnAnonymizePartial.setText("Include URL's for just the pages flagged on the previous screen as development-related.");
-        btnAnonymizePartial.setSelection(getHistoryMinerData().anonymizePartial);
-        btnAnonymizePartial.addSelectionListener(this);
-        
-        btnAnonymizeAll = new Button(container, SWT.RADIO);
-        btnAnonymizeAll.setText("Do not include any URL's.");
-        btnAnonymizeAll.setSelection(!getHistoryMinerData().anonymizePartial);
-        btnAnonymizeAll.addSelectionListener(this);
+        lblNewLabel.setText("Click Submit to submit the report.  If you would like to view the report and save a copy before submitting, click View Report.");
         
         new Label(container, SWT.NONE);
         
@@ -78,9 +66,7 @@ public class SubmitPage extends HistoryMinerWizardPage implements SelectionListe
     
     @Override
     public void widgetSelected(SelectionEvent event) {
-        if (event.widget == btnAnonymizePartial || event.widget == btnAnonymizeAll) {
-            getHistoryMinerData().anonymizePartial = btnAnonymizePartial.getSelection();
-        } else if (event.widget == btnViewReport) {
+        if (event.widget == btnViewReport) {
             
             RunnableWithResult<String> reportGenerator = new RunnableWithResult<String>(){
                 public String call() throws Exception {

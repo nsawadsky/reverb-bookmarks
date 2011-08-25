@@ -1,18 +1,12 @@
 package ca.ubc.cs.hminer.study.core;
 
-import org.codehaus.jackson.map.annotate.JsonView;
-
 public class LocationAndClassification {
     public long locationId;
     public LocationType manualClassification;
     
-    @JsonView(AnonymizePartial.class)
-    public String url;
+    public transient String url;
 
-    @JsonView(AnonymizePartial.class)
-    public String title;
-    
-    public static class AnonymizePartial{};
+    public transient String title;
     
     public LocationAndClassification() {}
     

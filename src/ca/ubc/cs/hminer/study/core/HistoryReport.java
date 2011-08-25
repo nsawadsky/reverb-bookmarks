@@ -9,7 +9,7 @@ public class HistoryReport {
     
     public HistoryReport(String participantOccupation, String participantPrimaryProgrammingLanguage, String participantPrimaryWebBrowser,
             Date collectionDate, Date historyStartDate, Date historyEndDate, 
-            UUID participantId, boolean anonymizePartial, SummaryData summaryData, LocationListStats codeRelatedStats,
+            UUID participantId, SummaryData summaryData, LocationListStats codeRelatedStats,
             List<LocationAndClassification> locationsManuallyClassified, List<Location> locationsClassified, 
             List<HistoryVisit> visitList) {
         this.participantOccupation = participantOccupation;
@@ -24,7 +24,6 @@ public class HistoryReport {
         this.locationsClassified = locationsClassified;
         this.visitList = visitList;
         this.participantId = participantId;
-        this.anonymizePartial = anonymizePartial;
     }
 
     public String participantOccupation;
@@ -35,8 +34,6 @@ public class HistoryReport {
     
     public Date historyStartDate;
     public Date historyEndDate;
-
-    public boolean anonymizePartial;
 
     public SummaryData summaryData;
     public LocationListStats codeRelatedStats;

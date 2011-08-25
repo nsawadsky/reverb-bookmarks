@@ -3,6 +3,7 @@ package ca.ubc.cs.hminer.study.core;
 import static org.junit.Assert.*;
 
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -34,6 +35,13 @@ public class HistoryClassifierTest {
         // Two method invocations
         doc = Jsoup.parse("<html><body>myInstance.myMethod(5); myInstance.myMethod(5);</body></html>");
         assertEquals(LocationType.CODE_RELATED, classifier.classifyDocument(doc, false));
+        
+        Pattern pat = Pattern.compile("http://www\\.google\\.\\w*/search");
+        
+        assertTrue(pat.matcher("http://www.google.com/search?test").find());
+        
+        assertFalse(pat.matcher("http://www.google.com/calendar").find());
+
     }
 
 }

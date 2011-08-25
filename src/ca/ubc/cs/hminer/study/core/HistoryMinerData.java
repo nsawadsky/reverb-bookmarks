@@ -13,6 +13,5 @@ public class HistoryMinerData {
     public ClassifierData classifierData;
     public List<LocationAndClassification> locationsManuallyClassified;
     public double classifierAccuracy = 0.0;
-    public boolean anonymizePartial = true;
     public UUID participantId;
 }

@@ -36,8 +36,9 @@ public class HistoryClassifier {
     private final static int PAGE_TIMEOUT_MSECS = 5000;
     
     // TODO: Better handling for other locales
-    public final static String GOOGLE_COM_PREFIX = "http://www.google.com/search?";
-    public final static String GOOGLE_CA_PREFIX = "http://www.google.ca/search?";
+    public final static String GOOGLE_PREFIX = "http://www.google.";
+    public final static String GOOGLE_SEARCH_TITLE = "Google Search";
+    public final static String GOOGLE_SEARCH_PATTERN = "http://www\\.google\\.\\w*/search";
     
     /**
      * Starts with lower-case and contains at least one upper-case 
@@ -76,6 +77,7 @@ public class HistoryClassifier {
     private Pattern methodPattern;
     private Pattern methodInvocationPattern;
     private Pattern noArgsMethodPattern;
+    private Pattern googleSearchPattern;
     private ThreadPoolExecutor executor;
     private int initialVisitCount = 0;
     private int redirectVisitCount = 0;
@@ -104,6 +106,8 @@ public class HistoryClassifier {
         this.methodPattern = Pattern.compile(METHOD_PATTERN, Pattern.DOTALL);
         this.noArgsMethodPattern = Pattern.compile(NO_ARGS_METHOD_PATTERN, Pattern.DOTALL);
         this.methodInvocationPattern = Pattern.compile(METHOD_INVOCATION_PATTERN, Pattern.DOTALL);
+        
+        this.googleSearchPattern = Pattern.compile(GOOGLE_SEARCH_PATTERN);
     }
     
     public static void main(String[] args) {
@@ -162,8 +166,10 @@ public class HistoryClassifier {
         // Filter visits to Google search, since we will get tagged as a
         // bot if we start trying to classify those visits.
         List<HistoryVisit> googleVisitsFiltered = new ArrayList<HistoryVisit>();
+        
         for (HistoryVisit visit: redirectsFiltered) {
-            if (visit.url.startsWith(GOOGLE_COM_PREFIX) || visit.url.startsWith(GOOGLE_CA_PREFIX)) {
+            if ((visit.url.startsWith(GOOGLE_PREFIX) && visit.title != null && visit.title.contains(GOOGLE_SEARCH_TITLE)) ||
+                    googleSearchPattern.matcher(visit.url).find()) {
                 visit.isGoogleSearch = true;
             } else { 
                 googleVisitsFiltered.add(visit);

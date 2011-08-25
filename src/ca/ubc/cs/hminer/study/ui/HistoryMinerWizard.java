@@ -19,7 +19,6 @@ import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.ObjectWriter;
 import org.codehaus.jackson.util.DefaultPrettyPrinter;
 import org.codehaus.jackson.map.SerializationConfig;
 import org.eclipse.jface.dialogs.IPageChangedListener;
@@ -35,7 +34,6 @@ import ca.ubc.cs.hminer.study.core.ClassifierData;
 import ca.ubc.cs.hminer.study.core.HistoryMinerData;
 import ca.ubc.cs.hminer.study.core.HistoryMinerException;
 import ca.ubc.cs.hminer.study.core.HistoryReport;
-import ca.ubc.cs.hminer.study.core.LocationAndClassification;
 import ca.ubc.cs.hminer.study.core.LocationListStats;
 import ca.ubc.cs.hminer.study.core.StatsCalculator;
 import ca.ubc.cs.hminer.study.core.SummaryData;
@@ -236,7 +234,7 @@ public class HistoryMinerWizard extends Wizard implements IPageChangingListener,
         
         HistoryReport historyReport = new HistoryReport(historyMinerData.participantOccupation, 
                 historyMinerData.participantPrimaryProgrammingLanguage, historyMinerData.participantPrimaryWebBrowser, new Date(), historyMinerData.historyStartDate, historyMinerData.historyEndDate,
-                historyMinerData.participantId, historyMinerData.anonymizePartial, new SummaryData(classifierData, historyMinerData.classifierAccuracy), codeRelatedStats, 
+                historyMinerData.participantId, new SummaryData(classifierData, historyMinerData.classifierAccuracy), codeRelatedStats, 
                 historyMinerData.locationsManuallyClassified, classifierData.locationsClassified, classifierData.visitList);
         
         StringWriter writer = new StringWriter();
@@ -245,12 +243,7 @@ public class HistoryMinerWizard extends Wizard implements IPageChangingListener,
         JsonGenerator jsonGenerator = mapper.getJsonFactory().createJsonGenerator(writer);
         jsonGenerator.setPrettyPrinter(new DefaultPrettyPrinter());
 
-        Class<?> viewClass = Object.class;
-        if (historyMinerData.anonymizePartial) {
-            viewClass = LocationAndClassification.AnonymizePartial.class;
-        }
-        ObjectWriter objWriter = mapper.viewWriter(viewClass);
-        objWriter.writeValue(jsonGenerator, historyReport);
+        mapper.writeValue(jsonGenerator, historyReport);
         
         return writer.toString();
         
