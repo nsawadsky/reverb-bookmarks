@@ -1,14 +1,7 @@
 package ca.ubc.cs.hminer.eclipseplugin;
 
-import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
-
-import org.codehaus.jackson.JsonGenerator;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.ObjectWriter;
-import org.codehaus.jackson.map.SerializationConfig;
-import org.codehaus.jackson.util.DefaultPrettyPrinter;
 
 import ca.ubc.cs.hminer.indexer.messages.IndexerBatchQuery;
 import ca.ubc.cs.hminer.indexer.messages.IndexerMessage;
