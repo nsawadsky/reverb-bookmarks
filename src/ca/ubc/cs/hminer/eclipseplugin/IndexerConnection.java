@@ -32,15 +32,15 @@ public class IndexerConnection implements Runnable {
         boolean isMultiShot; 
     }
     
-    public IndexerConnection() throws HistoryMinerPluginException {
+    public IndexerConnection() throws PluginException {
         String pipeName = NamedPipeWrapper.makePipeName("historyminer-query", true);
         if (pipeName == null) {
-            throw new HistoryMinerPluginException("Failed to make pipe name: " + 
+            throw new PluginException("Failed to make pipe name: " + 
                     NamedPipeWrapper.getErrorMessage());
         }
         pipeHandle = NamedPipeWrapper.openPipe(pipeName);
         if (pipeHandle == 0) {
-            throw new HistoryMinerPluginException("Failed to open pipe: " + NamedPipeWrapper.getErrorMessage());
+            throw new PluginException("Failed to open pipe: " + NamedPipeWrapper.getErrorMessage());
         }
     }
     

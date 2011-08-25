@@ -14,7 +14,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.core.runtime.ILog;
 
-import ca.ubc.cs.hminer.eclipseplugin.HistoryMinerPluginException;
+import ca.ubc.cs.hminer.eclipseplugin.PluginException;
 import ca.ubc.cs.hminer.eclipseplugin.PluginActivator;
 import ca.ubc.cs.hminer.eclipseplugin.PluginLogger;
 
