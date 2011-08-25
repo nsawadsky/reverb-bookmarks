@@ -21,7 +21,6 @@ import org.jsoup.select.Elements;
 
 import ca.ubc.cs.hminer.indexer.messages.PageInfo;
 
-
 public class WebPageIndexer implements Runnable {
     private static Logger log = Logger.getLogger(WebPageIndexer.class);
     
