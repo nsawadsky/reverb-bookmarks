@@ -5,11 +5,11 @@
    <extension
          point="org.eclipse.ui.views">
       <category
-            name="History Miner Category"
+            name="History Miner"
             id="ca.ubc.cs.hminer.eclipseplugin">
       </category>
       <view
-            name="History Miner Links"
+            name="Related Pages"
             icon="icons/sample.gif"
             category="ca.ubc.cs.hminer.eclipseplugin"
             class="ca.ubc.cs.hminer.eclipseplugin.views.ResultsView"

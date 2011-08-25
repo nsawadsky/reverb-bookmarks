@@ -37,7 +37,7 @@ import ca.ubc.cs.hminer.eclipseplugin.PluginLogger;
  * <p>
  */
 
-public class ResultsView extends ViewPart {
+public class RelatedPagesView extends ViewPart {
 
     /**
      * The ID of the view as specified by the extension.
@@ -210,7 +210,7 @@ public class ResultsView extends ViewPart {
     /**
      * The constructor.
      */
-    public ResultsView() {
+    public RelatedPagesView() {
     }
 
     @Override
@@ -244,7 +244,7 @@ public class ResultsView extends ViewPart {
         menuMgr.setRemoveAllWhenShown(true);
         menuMgr.addMenuListener(new IMenuListener() {
             public void menuAboutToShow(IMenuManager manager) {
-                ResultsView.this.fillContextMenu(manager);
+                RelatedPagesView.this.fillContextMenu(manager);
             }
         });
         Menu menu = menuMgr.createContextMenu(viewer.getControl());
