@@ -9,6 +9,7 @@ import org.apache.log4j.spi.RootLogger;
 
 import ca.ubc.cs.hminer.indexer.messages.PageInfo;
 
+
 public class IndexerService {
     private static Logger log = Logger.getLogger(IndexerService.class);
     

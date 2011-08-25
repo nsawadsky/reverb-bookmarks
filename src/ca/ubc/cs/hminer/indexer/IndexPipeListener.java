@@ -8,6 +8,7 @@ import org.apache.log4j.Logger;
 
 import ca.ubc.cs.hminer.indexer.messages.PageInfo;
 
+
 public class IndexPipeListener implements Runnable {
     private static final int LISTENING_THREADS = 5;
     private static Logger log = Logger.getLogger(IndexPipeListener.class);
