@@ -1,11 +1,19 @@
 package ca.ubc.cs.hminer.eclipseplugin;
 
+import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.codehaus.jackson.JsonGenerator;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.ObjectWriter;
+import org.codehaus.jackson.map.SerializationConfig;
+import org.codehaus.jackson.util.DefaultPrettyPrinter;
+
 import ca.ubc.cs.hminer.indexer.messages.IndexerBatchQuery;
 import ca.ubc.cs.hminer.indexer.messages.IndexerMessage;
-import ca.ubc.cs.hminer.indexer.messages.ResultList;
+import ca.ubc.cs.hminer.indexer.messages.BatchQueryResult;
+import ca.ubc.cs.hminer.study.core.LocationAndClassification;
 
 import npw.NamedPipeWrapper;
 
@@ -41,7 +49,7 @@ public class IndexerConnection implements Runnable {
         new Thread(this).start();
     }
     
-    public void sendQuery(IndexerBatchQuery query, IndexerConnectionCallback<ResultList> callback) {
+    public void sendQuery(IndexerBatchQuery query, IndexerConnectionCallback<BatchQueryResult> callback) {
         sendMessage(query, callback, false);
     }
     
@@ -56,6 +64,21 @@ public class IndexerConnection implements Runnable {
             callbackId = getNextCallbackId();
             callbacks.put(callbackId, new CallbackInfo(callback, multiShot));
         }
+        StringWriter writer = new StringWriter();
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(SerializationConfig.Feature.WRITE_DATES_AS_TIMESTAMPS, false);
+        JsonGenerator jsonGenerator = mapper.getJsonFactory().createJsonGenerator(writer);
+        jsonGenerator.setPrettyPrinter(new DefaultPrettyPrinter());
+
+        Class<?> viewClass = Object.class;
+        if (historyMinerData.anonymizePartial) {
+            viewClass = LocationAndClassification.AnonymizePartial.class;
+        }
+        ObjectWriter objWriter = mapper.viewWriter(viewClass);
+        objWriter.writeValue(jsonGenerator, historyReport);
+        
+        return writer.toString();
+
         
     }
     
