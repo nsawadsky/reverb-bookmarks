@@ -1,16 +1,109 @@
 package ca.ubc.cs.hminer.indexer;
 
+import org.codehaus.jackson.map.ObjectMapper;
+import npw.NamedPipeWrapper;
+
+import org.apache.log4j.Logger;
+
+import ca.ubc.cs.hminer.indexer.messages.BatchQueryResult;
+import ca.ubc.cs.hminer.indexer.messages.IndexerBatchQuery;
+import ca.ubc.cs.hminer.indexer.messages.IndexerMessageEnvelope;
+import ca.ubc.cs.hminer.indexer.messages.QueryResult;
+
+
 public class QueryPipeListener {
+    private static Logger log = Logger.getLogger(QueryPipeListener.class);
+
+    private static final int LISTENING_THREADS = 5;
+    
     private IndexerConfig config;
+    private String queryPipeName;
     private WebPageSearcher searcher;
     
-    public QueryPipeListener(IndexerConfig config, WebPageSearcher searcher) {
+    public QueryPipeListener(IndexerConfig config, WebPageSearcher searcher) throws IndexerException  {
         this.config = config;
-        this.searcher = searcher;
+        this.queryPipeName = NamedPipeWrapper.makePipeName("historyminer-query", true);
+        if (queryPipeName == null) {
+            throw new IndexerException("Failed to make query pipe name: " + NamedPipeWrapper.getErrorMessage());
+        }
     }
     
     public void start() {
-    
+        for (int i = 0; i < LISTENING_THREADS; i++) {
+            new Thread(new ListenerInstance()).start();
+        }
     }
-
+   
+    private class ListenerInstance implements Runnable {
+        private long pipeHandle = 0;
+        
+        public void run() {
+            pipeHandle = NamedPipeWrapper.createPipe(queryPipeName, true);
+            if (pipeHandle == 0) {
+                log.error("Failed to create pipe '" + queryPipeName + "': " + NamedPipeWrapper.getErrorMessage());
+                return;
+            }
+            
+            Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
+            
+            while (true) {
+                if (!NamedPipeWrapper.connectPipe(pipeHandle)) {
+                    log.error("Failed to connect query pipe: " + NamedPipeWrapper.getErrorMessage());
+                    return;
+                }
+                
+                byte[] data = null;
+                ObjectMapper mapper = new ObjectMapper();
+                mapper.enableDefaultTyping();
+                while ((data = NamedPipeWrapper.readPipe(pipeHandle)) != null) {
+                    try {
+                        IndexerMessageEnvelope envelope = mapper.readValue(data, IndexerMessageEnvelope.class);
+                        if (envelope.message == null) {
+                            throw new IndexerException("envelope.message is null");
+                        }
+                        if (envelope.message instanceof IndexerBatchQuery) {
+                            handleBatchQuery(envelope.requestId, (IndexerBatchQuery)envelope.message);
+                        } else {
+                            throw new IndexerException("Unexpected message content: " + envelope.message.getClass());
+                        }
+                        
+                    } catch (Exception e) {
+                        log.error("Exception handling message from query pipe", e);
+                    }
+                }
+                
+                log.info("Error reading query pipe: " + NamedPipeWrapper.getErrorMessage());
+                
+                if (!NamedPipeWrapper.disconnectPipe(pipeHandle)) {
+                    log.error("Failed to disconnect query pipe: " + NamedPipeWrapper.getErrorMessage());
+                    return;
+                }
+            }
+        }
+        
+        private void handleBatchQuery(long requestId, IndexerBatchQuery query) throws IndexerException {
+            BatchQueryResult result = new BatchQueryResult();
+            for (String queryString: query.getQueryStrings()) {
+                try {
+                    result.queryResults.add(new QueryResult(queryString, searcher.performSearch(queryString)));
+                } catch (IndexerException e) {
+                    log.error("Error while processing batch query", e);
+                }
+            }
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.enableDefaultTyping();
+            
+            IndexerMessageEnvelope envelope = new IndexerMessageEnvelope(requestId, result);
+            byte [] jsonData = null;
+            try {
+                jsonData = mapper.writeValueAsBytes(envelope);
+            } catch (Exception e) {
+                throw new IndexerException("Error serializing message to JSON: " + e, e);
+            }
+            if (!NamedPipeWrapper.writePipe(pipeHandle, jsonData)) {
+                throw new IndexerException("Error writing data to pipe: " + NamedPipeWrapper.getErrorMessage());
+            }
+    
+        }
+    }
 }

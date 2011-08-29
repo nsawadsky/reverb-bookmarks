@@ -24,21 +24,19 @@ import ca.ubc.cs.hminer.indexer.messages.PageInfo;
 public class WebPageIndexer implements Runnable {
     private static Logger log = Logger.getLogger(WebPageIndexer.class);
     
-    private final String URL_FIELD_NAME = "url";
-    private final String TITLE_FIELD_NAME = "title";
-    private final String CONTENT_FIELD_NAME = "content";
+    public final static String URL_FIELD_NAME = "url";
+    public final static String TITLE_FIELD_NAME = "title";
+    public final static String CONTENT_FIELD_NAME = "content";
     
     private IndexerConfig config;
     private IndexWriter indexWriter;
     private BlockingQueue<PageInfo> pagesQueue;
     private Directory index;
     
-    public WebPageIndexer(IndexerConfig config, BlockingQueue<PageInfo> pagesQueue) {
+    public WebPageIndexer(IndexerConfig config, BlockingQueue<PageInfo> pagesQueue) throws IndexerException {
         this.config = config;
         this.pagesQueue = pagesQueue;
-    }
-    
-    public void start() throws IndexerException {
+
         try {
             index = FSDirectory.open(new File(config.getIndexPath()));
             IndexWriterConfig indexWriterConfig = new IndexWriterConfig(Version.LUCENE_33, new WebPageAnalyzer());
@@ -47,11 +45,17 @@ public class WebPageIndexer implements Runnable {
             indexWriterConfig.setOpenMode(OpenMode.CREATE_OR_APPEND);
             
             indexWriter = new IndexWriter(index, indexWriterConfig);
-            
-            new Thread(this).start();
         } catch (Exception e) {
             throw new IndexerException("Exception initializing web page indexer: " + e, e);
         }
+    }
+    
+    public void start() {
+        new Thread(this).start();
+    }
+    
+    public IndexWriter getIndexWriter() {
+        return this.indexWriter;
     }
     
     public void run() {

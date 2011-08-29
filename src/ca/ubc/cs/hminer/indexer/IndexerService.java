@@ -35,7 +35,7 @@ public class IndexerService {
             
             indexPipeListener = new IndexPipeListener(config, pagesQueue);
             
-            WebPageSearcher searcher = new WebPageSearcher(config);
+            WebPageSearcher searcher = new WebPageSearcher(config, indexer);
             queryPipeListener = new QueryPipeListener(config, searcher);
             
             indexer.start();
