@@ -20,12 +20,14 @@ public class IndexerConnection implements Runnable {
     private Long requestId = 1L;
     
     private class CallbackInfo {
-        CallbackInfo(IndexerConnectionCallback<?> callback, boolean multiShot ) {
+        CallbackInfo(IndexerConnectionCallback<?> callback, Class<?> callbackMessageClass, boolean multiShot ) {
             this.callback = callback;
             this.isMultiShot = multiShot;
+            this.callbackMessageClass = callbackMessageClass;
         }
         IndexerConnectionCallback<?> callback;
         boolean isMultiShot; 
+        Class<?> callbackMessageClass;
     }
     
     public IndexerConnection() throws PluginException {
@@ -45,7 +47,7 @@ public class IndexerConnection implements Runnable {
     }
     
     public void sendQuery(IndexerBatchQuery query, IndexerConnectionCallback<BatchQueryResult> callback) throws PluginException {
-        sendMessage(query, callback, false);
+        sendMessage(query, callback, BatchQueryResult.class, false);
     }
     
     @Override
@@ -53,14 +55,15 @@ public class IndexerConnection implements Runnable {
         
     }
     
-    private void sendMessage(IndexerMessage msg, IndexerConnectionCallback<?> callback, boolean multiShot) throws PluginException {
+    private void sendMessage(IndexerMessage msg, IndexerConnectionCallback<?> callback, Class<?> callbackMessageClass, boolean multiShot) throws PluginException {
         Long requestId = 0L;
         synchronized (callbacks) {
             requestId = getNextRequestId();
-            callbacks.put(requestId, new CallbackInfo(callback, multiShot));
+            callbacks.put(requestId, new CallbackInfo(callback, callbackMessageClass, multiShot));
         }
         IndexerMessageEnvelope envelope = new IndexerMessageEnvelope(requestId, msg);
         ObjectMapper mapper = new ObjectMapper();
+        mapper.enableDefaultTyping();
         byte [] jsonData = null;
         try {
             jsonData = mapper.writeValueAsBytes(envelope);

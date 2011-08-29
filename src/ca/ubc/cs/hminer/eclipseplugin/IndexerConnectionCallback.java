@@ -1,5 +1,5 @@
 package ca.ubc.cs.hminer.eclipseplugin;
 
-public interface IndexerConnectionCallback<MessageType> {
-    public void handleMessage(MessageType msg); 
+public interface IndexerConnectionCallback<MessageClass> {
+    public abstract void handleMessage(MessageClass msg); 
 }
