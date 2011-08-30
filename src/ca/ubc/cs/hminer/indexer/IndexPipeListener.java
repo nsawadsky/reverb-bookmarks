@@ -29,11 +29,21 @@ public class IndexPipeListener {
     
     public void start() {
         for (int i = 0; i < LISTENING_THREADS; i++) {
-            new Thread(new ListenerInstance()).start();
+            new Thread(new ListenerInstance(config, indexPipeName, pagesQueue)).start();
         }
     }
    
     private class ListenerInstance implements Runnable {
+        private IndexerConfig config;
+        private String indexPipeName;
+        private BlockingQueue<PageInfo> pagesQueue;
+        
+        public ListenerInstance(IndexerConfig config, String indexPipeName, BlockingQueue<PageInfo> pagesQueue) {
+            this.config = config;
+            this.indexPipeName = indexPipeName;
+            this.pagesQueue = pagesQueue;
+        }
+        
         public void run() {
             long pipeHandle = NamedPipeWrapper.createPipe(indexPipeName, true);
             if (pipeHandle == 0) {

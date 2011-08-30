@@ -4,6 +4,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 import npw.NamedPipeWrapper;
 
 import org.apache.log4j.Logger;
+import org.apache.lucene.index.IndexReader;
 
 import ca.ubc.cs.hminer.indexer.messages.BatchQueryResult;
 import ca.ubc.cs.hminer.indexer.messages.IndexerBatchQuery;
@@ -18,24 +19,42 @@ public class QueryPipeListener {
     
     private IndexerConfig config;
     private String queryPipeName;
-    private WebPageSearcher searcher;
+    private WebPageIndexer indexer;
     
-    public QueryPipeListener(IndexerConfig config, WebPageSearcher searcher) throws IndexerException  {
+    public QueryPipeListener(IndexerConfig config, WebPageIndexer indexer) throws IndexerException  {
         this.config = config;
+        this.indexer = indexer;
         this.queryPipeName = NamedPipeWrapper.makePipeName("historyminer-query", true);
         if (queryPipeName == null) {
             throw new IndexerException("Failed to make query pipe name: " + NamedPipeWrapper.getErrorMessage());
         }
     }
     
-    public void start() {
+    public void start() throws IndexerException {
+        IndexReader reader;
+        try {
+            // IndexReader is thread-safe, share it for efficiency.
+            reader = IndexReader.open(indexer.getIndexWriter(), true);
+        } catch (Exception e) {
+            throw new IndexerException("Error creating IndexReader: " + e, e);
+        }
+        
         for (int i = 0; i < LISTENING_THREADS; i++) {
-            new Thread(new ListenerInstance()).start();
+            new Thread(new ListenerInstance(config, queryPipeName, reader)).start();
         }
     }
    
     private class ListenerInstance implements Runnable {
         private long pipeHandle = 0;
+        private WebPageSearcher searcher;
+        private IndexerConfig config;
+        private String queryPipeName;
+        
+        public ListenerInstance(IndexerConfig config, String queryPipeName, IndexReader reader) {
+            this.config = config;
+            this.queryPipeName = queryPipeName;
+            searcher = new WebPageSearcher(config, reader);
+        }
         
         public void run() {
             pipeHandle = NamedPipeWrapper.createPipe(queryPipeName, true);

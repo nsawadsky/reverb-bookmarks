@@ -21,23 +21,19 @@ public class WebPageSearcher {
     
     private IndexerConfig config;
     private IndexReader reader;
+    private QueryParser parser;
     
-    public WebPageSearcher(IndexerConfig config, WebPageIndexer indexer) throws IndexerException {
+    public WebPageSearcher(IndexerConfig config, IndexReader reader) {
         this.config = config;
         
-        try {
-            reader = IndexReader.open(indexer.getIndexWriter(), true);
-        } catch (Exception e) {
-            throw new IndexerException("Error creating WebPageSearcher: " + e, e);
-        }
-        
-    }
-    
-    public List<Location> performSearch(String queryString) throws IndexerException {
-        QueryParser parser = new MultiFieldQueryParser(Version.LUCENE_33, 
+        parser = new MultiFieldQueryParser(Version.LUCENE_33, 
                 new String[] {WebPageIndexer.TITLE_FIELD_NAME, WebPageIndexer.CONTENT_FIELD_NAME}, 
                 new WebPageAnalyzer());
 
+        this.reader = reader;
+    }
+    
+    public List<Location> performSearch(String queryString) throws IndexerException {
         try {
             Query query = parser.parse(queryString);
             
