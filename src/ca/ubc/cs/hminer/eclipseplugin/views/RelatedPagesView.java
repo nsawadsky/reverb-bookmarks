@@ -299,9 +299,6 @@ public class RelatedPagesView extends ViewPart {
         action1 = new Action() {
             public void run() {
                 IEditorPart editorPart = getSite().getPage().getActiveEditor();
-                if (editorPart instanceof ITextEditor) {
-                    
-                }
                 if (editorPart != null) {
                     IEditorInput editorInput = editorPart.getEditorInput();
                     if (editorInput == null) {
