@@ -50,33 +50,36 @@ public class IndexPipeListener {
                 log.error("Failed to create pipe '" + indexPipeName + "': " + NamedPipeWrapper.getErrorMessage());
                 return;
             }
-            
-            Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
-            
-            while (true) {
-                if (!NamedPipeWrapper.connectPipe(pipeHandle)) {
-                    log.error("Failed to connect index pipe: " + NamedPipeWrapper.getErrorMessage());
-                    return;
-                }
+            try {
+                Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
                 
-                byte[] data = null;
                 ObjectMapper mapper = new ObjectMapper();
-                while ((data = NamedPipeWrapper.readPipe(pipeHandle)) != null) {
-                    try {
-                        PageInfo info = mapper.readValue(data, PageInfo.class);
-                        log.info("Got page: " + info.url);
-                        pagesQueue.put(info);
-                    } catch (Exception e) {
-                        log.error("Exception parsing message from index pipe", e);
+                while (true) {
+                    if (!NamedPipeWrapper.connectPipe(pipeHandle)) {
+                        log.error("Failed to connect index pipe: " + NamedPipeWrapper.getErrorMessage());
+                        return;
+                    }
+                    
+                    byte[] data = null;
+                    while ((data = NamedPipeWrapper.readPipe(pipeHandle)) != null) {
+                        try {
+                            PageInfo info = mapper.readValue(data, PageInfo.class);
+                            log.info("Got page: " + info.url);
+                            pagesQueue.put(info);
+                        } catch (Exception e) {
+                            log.error("Exception parsing message from index pipe", e);
+                        }
+                    }
+                    
+                    log.info("Error reading index pipe: " + NamedPipeWrapper.getErrorMessage());
+                    
+                    if (!NamedPipeWrapper.disconnectPipe(pipeHandle)) {
+                        log.error("Failed to disconnect index pipe: " + NamedPipeWrapper.getErrorMessage());
+                        return;
                     }
                 }
-                
-                log.info("Error reading index pipe: " + NamedPipeWrapper.getErrorMessage());
-                
-                if (!NamedPipeWrapper.disconnectPipe(pipeHandle)) {
-                    log.error("Failed to disconnect index pipe: " + NamedPipeWrapper.getErrorMessage());
-                    return;
-                }
+            } finally {
+                NamedPipeWrapper.closePipe(pipeHandle);
             }
         }
     }

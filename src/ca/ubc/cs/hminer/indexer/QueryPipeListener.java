@@ -62,41 +62,44 @@ public class QueryPipeListener {
                 log.error("Failed to create pipe '" + queryPipeName + "': " + NamedPipeWrapper.getErrorMessage());
                 return;
             }
-            
-            Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
-            
-            while (true) {
-                if (!NamedPipeWrapper.connectPipe(pipeHandle)) {
-                    log.error("Failed to connect query pipe: " + NamedPipeWrapper.getErrorMessage());
-                    return;
-                }
+            try {
+                Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
                 
-                byte[] data = null;
                 ObjectMapper mapper = new ObjectMapper();
                 mapper.enableDefaultTyping();
-                while ((data = NamedPipeWrapper.readPipe(pipeHandle)) != null) {
-                    try {
-                        IndexerMessageEnvelope envelope = mapper.readValue(data, IndexerMessageEnvelope.class);
-                        if (envelope.message == null) {
-                            throw new IndexerException("envelope.message is null");
-                        }
-                        if (envelope.message instanceof IndexerBatchQuery) {
-                            handleBatchQuery(envelope.requestId, (IndexerBatchQuery)envelope.message);
-                        } else {
-                            throw new IndexerException("Unexpected message content: " + envelope.message.getClass());
-                        }
-                        
-                    } catch (Exception e) {
-                        log.error("Exception handling message from query pipe", e);
+                while (true) {
+                    if (!NamedPipeWrapper.connectPipe(pipeHandle)) {
+                        log.error("Failed to connect query pipe: " + NamedPipeWrapper.getErrorMessage());
+                        return;
                     }
-                }
-                
-                log.info("Error reading query pipe: " + NamedPipeWrapper.getErrorMessage());
-                
-                if (!NamedPipeWrapper.disconnectPipe(pipeHandle)) {
-                    log.error("Failed to disconnect query pipe: " + NamedPipeWrapper.getErrorMessage());
-                    return;
-                }
+                    
+                    byte[] data = null;
+                    while ((data = NamedPipeWrapper.readPipe(pipeHandle)) != null) {
+                        try {
+                            IndexerMessageEnvelope envelope = mapper.readValue(data, IndexerMessageEnvelope.class);
+                            if (envelope.message == null) {
+                                throw new IndexerException("envelope.message is null");
+                            }
+                            if (envelope.message instanceof IndexerBatchQuery) {
+                                handleBatchQuery(envelope.requestId, (IndexerBatchQuery)envelope.message);
+                            } else {
+                                throw new IndexerException("Unexpected message content: " + envelope.message.getClass());
+                            }
+                            
+                        } catch (Exception e) {
+                            log.error("Exception handling message from query pipe", e);
+                        }
+                    }
+                    
+                    log.info("Error reading query pipe: " + NamedPipeWrapper.getErrorMessage());
+                    
+                    if (!NamedPipeWrapper.disconnectPipe(pipeHandle)) {
+                        log.error("Failed to disconnect query pipe: " + NamedPipeWrapper.getErrorMessage());
+                        return;
+                    }
+                } 
+            } finally {
+                NamedPipeWrapper.closePipe(pipeHandle);
             }
         }
         
