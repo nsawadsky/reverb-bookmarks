@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.part.*;
+import org.eclipse.ui.texteditor.ITextEditor;
 import org.eclipse.jface.viewers.*;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.jface.action.*;
@@ -12,9 +13,14 @@ import org.eclipse.ui.*;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.SWT;
 import org.eclipse.core.runtime.IAdaptable;
-import org.eclipse.core.runtime.ILog;
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.dom.AST;
+import org.eclipse.jdt.core.dom.ASTParser;
+import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.ui.JavaUI;
 
-import ca.ubc.cs.hminer.eclipseplugin.PluginException;
 import ca.ubc.cs.hminer.eclipseplugin.PluginActivator;
 import ca.ubc.cs.hminer.eclipseplugin.PluginLogger;
 
@@ -85,10 +91,10 @@ public class RelatedPagesView extends ViewPart {
     }
 
     class TreeParent extends TreeObject {
-        private ArrayList children;
+        private ArrayList<TreeObject> children;
         public TreeParent(String name) {
             super(name);
-            children = new ArrayList();
+            children = new ArrayList<TreeObject>();
         }
         public void addChild(TreeObject child) {
             children.add(child);
@@ -139,11 +145,12 @@ public class RelatedPagesView extends ViewPart {
             return false;
         }
         /*
-         * We will set up a dummy model to initialize tree heararchy.
+         * We will set up a dummy model to initialize tree hierarchy.
          * In a real code, you will connect to a real model and
          * expose its hierarchy.
          */
         private void initialize() {
+            /*
             TreeObject to1 = new TreeObject("Leaf 1");
             TreeObject to2 = new TreeObject("Leaf 2");
             TreeObject to3 = new TreeObject("Leaf 3");
@@ -159,9 +166,10 @@ public class RelatedPagesView extends ViewPart {
             TreeParent root = new TreeParent("Root");
             root.addChild(p1);
             root.addChild(p2);
+            */
 
             invisibleRoot = new TreeParent("");
-            invisibleRoot.addChild(root);
+            //invisibleRoot.addChild(root);
         }
     }
     class ViewLabelProvider extends LabelProvider {
@@ -239,6 +247,13 @@ public class RelatedPagesView extends ViewPart {
         contributeToActionBars();
     }
 
+    /**
+     * Passing the focus request to the viewer's control.
+     */
+    public void setFocus() {
+        viewer.getControl().setFocus();
+    }
+    
     private void hookContextMenu() {
         MenuManager menuMgr = new MenuManager("#PopupMenu");
         menuMgr.setRemoveAllWhenShown(true);
@@ -283,11 +298,68 @@ public class RelatedPagesView extends ViewPart {
     private void makeActions() {
         action1 = new Action() {
             public void run() {
-                showMessage("Action 1 executed");
+                IEditorPart editorPart = getSite().getPage().getActiveEditor();
+                if (editorPart instanceof ITextEditor) {
+                    
+                }
+                if (editorPart != null) {
+                    IEditorInput editorInput = editorPart.getEditorInput();
+                    if (editorInput == null) {
+                        getLogger().logError("Editor input is null", null);
+                    } else {
+                        IJavaElement javaElement = JavaUI.getEditorInputJavaElement(editorInput);
+                        if (javaElement == null) {
+                            getLogger().logError("Failed to get Java element from editor input");
+                        } else if (!(javaElement instanceof ICompilationUnit)) {
+                            getLogger().logError("Editor input Java element is not instance of ICompilationUnit");
+                        } else {
+                            ASTParser parser = ASTParser.newParser(AST.JLS3);
+                            parser.setSource((ICompilationUnit)javaElement);
+                            parser.setResolveBindings(true);
+                            CompilationUnit compileUnit = (CompilationUnit)parser.createAST(new IProgressMonitor() {
+
+                                @Override
+                                public void beginTask(String arg0, int arg1) {
+                                }
+
+                                @Override
+                                public void done() {
+                                }
+
+                                @Override
+                                public void internalWorked(double arg0) {
+                                }
+
+                                @Override
+                                public boolean isCanceled() {
+                                    return false;
+                                }
+
+                                @Override
+                                public void setCanceled(boolean arg0) {
+                                }
+
+                                @Override
+                                public void setTaskName(String arg0) {
+                                }
+
+                                @Override
+                                public void subTask(String arg0) {
+                                }
+
+                                @Override
+                                public void worked(int arg0) {
+                                }
+                                
+                            });
+                                    
+                        }
+                    }
+                }
             }
         };
-        action1.setText("Action 1");
-        action1.setToolTipText("Action 1 tooltip");
+        action1.setText("Update");
+        action1.setToolTipText("Update View");
         action1.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages().
                 getImageDescriptor(ISharedImages.IMG_OBJS_INFO_TSK));
 
@@ -319,17 +391,10 @@ public class RelatedPagesView extends ViewPart {
     private void showMessage(String message) {
         MessageDialog.openInformation(
                 viewer.getControl().getShell(),
-                "History Miner Links",
+                "Related Pages",
                 message);
     }
 
-    /**
-     * Passing the focus request to the viewer's control.
-     */
-    public void setFocus() {
-        viewer.getControl().setFocus();
-    }
-    
     private PluginLogger getLogger() {
         return PluginActivator.getDefault().getLogger();
     }

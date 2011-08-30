@@ -22,6 +22,10 @@ public class PluginLogger {
         log(IStatus.ERROR, msg, t);
     }
     
+    public void logInfo(String msg, Throwable t) {
+        log(IStatus.INFO, msg, t);
+    }
+    
     public void log(int severity, String msg, Throwable t) {
         StringBuilder logMsg = new StringBuilder(msg);
         if (t != null) {

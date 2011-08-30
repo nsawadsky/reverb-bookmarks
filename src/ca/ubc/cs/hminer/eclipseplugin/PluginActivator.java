@@ -65,4 +65,5 @@ public class PluginActivator extends AbstractUIPlugin {
 	public PluginLogger getLogger() {
 	    return this.logger;
 	}
+	
 }

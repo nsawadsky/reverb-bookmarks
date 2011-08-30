@@ -19,15 +19,27 @@ public class IndexerConnection implements Runnable {
     private Map<Long, CallbackInfo> callbacks = new HashMap<Long, CallbackInfo>();
     private Long requestId = 1L;
     
-    private class CallbackInfo {
-        CallbackInfo(IndexerConnectionCallback<?> callback, Class<?> callbackMessageClass, boolean multiShot ) {
+    private class CallbackInvoker<MessageClass extends IndexerMessage> {
+        private IndexerConnectionCallback<MessageClass> callback;
+        private Class<MessageClass> messageClass;
+        
+        public CallbackInvoker(IndexerConnectionCallback<MessageClass> callback, Class<MessageClass> messageClass) {
             this.callback = callback;
-            this.isMultiShot = multiShot;
-            this.callbackMessageClass = callbackMessageClass;
+            this.messageClass = messageClass;
         }
-        IndexerConnectionCallback<?> callback;
-        boolean isMultiShot; 
-        Class<?> callbackMessageClass;
+        
+        public void invoke(IndexerMessage msg) {
+            callback.handleMessage(messageClass.cast(msg));
+        }
+    }
+    
+    private class CallbackInfo {
+        public CallbackInfo(CallbackInvoker<?> callbackInvoker, boolean multiShot ) {
+            this.callbackInvoker = callbackInvoker;
+            this.isMultiShot = multiShot;
+        }
+        public CallbackInvoker<?> callbackInvoker;
+        public boolean isMultiShot; 
     }
     
     public IndexerConnection() throws PluginException {
@@ -46,20 +58,51 @@ public class IndexerConnection implements Runnable {
         new Thread(this).start();
     }
     
+    public void stop() {
+        if (pipeHandle != 0) {
+            NamedPipeWrapper.closePipe(pipeHandle);
+        }
+    }
+    
     public void sendQuery(IndexerBatchQuery query, IndexerConnectionCallback<BatchQueryResult> callback) throws PluginException {
-        sendMessage(query, callback, BatchQueryResult.class, false);
+        sendMessage(query, new CallbackInvoker<BatchQueryResult>(callback, BatchQueryResult.class), false);
     }
     
     @Override
     public void run() {
+        Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
         
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.enableDefaultTyping();
+        byte[] data = null;
+        while ((data = NamedPipeWrapper.readPipe(pipeHandle)) != null) {
+            try {
+                IndexerMessageEnvelope envelope = mapper.readValue(data, IndexerMessageEnvelope.class);
+                CallbackInfo info = null;
+                synchronized (callbacks) {
+                    info = callbacks.get(envelope.requestId);
+                    if (info != null && !info.isMultiShot) {
+                        callbacks.remove(envelope.requestId);
+                    }
+                }
+                if (info == null) {
+                    getLogger().logError("No callback for request ID " + envelope.requestId);
+                } else {
+                    info.callbackInvoker.invoke(envelope.message);
+                }
+            } catch (Exception e) {
+                getLogger().logError("Exception parsing message from indexer query pipe", e);
+            }
+        }
+        
+        getLogger().logInfo("Error reading indexer query pipe: " + NamedPipeWrapper.getErrorMessage(), null);
     }
     
-    private void sendMessage(IndexerMessage msg, IndexerConnectionCallback<?> callback, Class<?> callbackMessageClass, boolean multiShot) throws PluginException {
+    private void sendMessage(IndexerMessage msg, CallbackInvoker<?> callbackInvoker, boolean multiShot) throws PluginException {
         Long requestId = 0L;
         synchronized (callbacks) {
             requestId = getNextRequestId();
-            callbacks.put(requestId, new CallbackInfo(callback, callbackMessageClass, multiShot));
+            callbacks.put(requestId, new CallbackInfo(callbackInvoker, multiShot));
         }
         IndexerMessageEnvelope envelope = new IndexerMessageEnvelope(requestId, msg);
         ObjectMapper mapper = new ObjectMapper();
@@ -71,7 +114,7 @@ public class IndexerConnection implements Runnable {
             throw new PluginException("Error serializing message to JSON: " + e, e);
         }
         if (!NamedPipeWrapper.writePipe(pipeHandle, jsonData)) {
-            // TODO: Reopen pipe?
+            // TODO: Close and reopen pipe?
             throw new PluginException("Error writing data to pipe: " + NamedPipeWrapper.getErrorMessage());
         }
         
@@ -83,4 +126,7 @@ public class IndexerConnection implements Runnable {
         }
     }
     
+    private PluginLogger getLogger() {
+        return PluginActivator.getDefault().getLogger();
+    }
 }
