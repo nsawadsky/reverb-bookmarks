@@ -4,16 +4,19 @@ import java.util.ArrayList;
 
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.part.*;
-import org.eclipse.ui.texteditor.ITextEditor;
 import org.eclipse.jface.viewers.*;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.jface.action.*;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.ui.*;
+import org.eclipse.ui.texteditor.AbstractTextEditor;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.SWT;
 import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.dom.AST;
@@ -23,6 +26,9 @@ import org.eclipse.jdt.ui.JavaUI;
 
 import ca.ubc.cs.hminer.eclipseplugin.PluginActivator;
 import ca.ubc.cs.hminer.eclipseplugin.PluginLogger;
+import ca.ubc.cs.hminer.indexer.messages.BatchQueryResult;
+import ca.ubc.cs.hminer.indexer.messages.Location;
+import ca.ubc.cs.hminer.indexer.messages.QueryResult;
 
 
 /**
@@ -49,141 +55,94 @@ public class RelatedPagesView extends ViewPart {
      * The ID of the view as specified by the extension.
      */
     public static final String ID = "ca.ubc.cs.hminer.eclipseplugin.views.ResultsView";
+    
+    private final static String UPDATE_VIEW_ERROR_MSG = "Error updating view.";
 
     private TreeViewer viewer;
     private DrillDownAdapter drillDownAdapter;
     private Action action1;
     private Action action2;
     private Action doubleClickAction;
-
-    /*
-     * The content provider class is responsible for
-     * providing objects to the view. It can wrap
-     * existing objects in adapters or simply return
-     * objects as-is. These objects may be sensitive
-     * to the current input of the view, or ignore
-     * it and always show the same content 
-     * (like Task List, for example).
-     */
-
-    class TreeObject implements IAdaptable {
-        private String name;
-        private TreeParent parent;
-
-        public TreeObject(String name) {
-            this.name = name;
-        }
-        public String getName() {
-            return name;
-        }
-        public void setParent(TreeParent parent) {
-            this.parent = parent;
-        }
-        public TreeParent getParent() {
-            return parent;
-        }
-        public String toString() {
-            return getName();
-        }
-        public Object getAdapter(Class key) {
-            return null;
-        }
-    }
-
-    class TreeParent extends TreeObject {
-        private ArrayList<TreeObject> children;
-        public TreeParent(String name) {
-            super(name);
-            children = new ArrayList<TreeObject>();
-        }
-        public void addChild(TreeObject child) {
-            children.add(child);
-            child.setParent(this);
-        }
-        public void removeChild(TreeObject child) {
-            children.remove(child);
-            child.setParent(null);
-        }
-        public TreeObject [] getChildren() {
-            return (TreeObject [])children.toArray(new TreeObject[children.size()]);
-        }
-        public boolean hasChildren() {
-            return children.size()>0;
-        }
-    }
+    private ViewContentProvider contentProvider;
 
     class ViewContentProvider implements IStructuredContentProvider, 
             ITreeContentProvider {
-        private TreeParent invisibleRoot;
-
+        private BatchQueryResult batchQueryResult;
+        private String message = "Select 'Update View' to get results.";
+        
+        public void setQueryResult(BatchQueryResult result) {
+            this.message = null;
+            this.batchQueryResult = result;
+        }
+        
+        public void setMessage(String message) {
+            this.batchQueryResult = null;
+            this.message = message;
+        }
+        
         public void inputChanged(Viewer v, Object oldInput, Object newInput) {
         }
+        
         public void dispose() {
         }
+        
         public Object[] getElements(Object parent) {
             if (parent.equals(getViewSite())) {
-                if (invisibleRoot==null) initialize();
-                return getChildren(invisibleRoot);
+                if (message != null) {
+                    return new Object[] { message };
+                } 
+                return batchQueryResult.queryResults.toArray();
             }
             return getChildren(parent);
         }
+        
         public Object getParent(Object child) {
-            if (child instanceof TreeObject) {
-                return ((TreeObject)child).getParent();
+            if (child instanceof QueryResult) {
+                return null;
+            }
+            if (batchQueryResult != null && child instanceof Location) {
+                for (QueryResult result: batchQueryResult.queryResults) {
+                    if (result.locations.contains(child)) {
+                        return result;
+                    }
+                }
+                return null;
             }
             return null;
         }
+        
         public Object [] getChildren(Object parent) {
-            if (parent instanceof TreeParent) {
-                return ((TreeParent)parent).getChildren();
+            if (parent instanceof QueryResult) {
+                return ((QueryResult)parent).locations.toArray();
             }
             return new Object[0];
         }
+        
         public boolean hasChildren(Object parent) {
-            if (parent instanceof TreeParent)
-                return ((TreeParent)parent).hasChildren();
-            return false;
-        }
-        /*
-         * We will set up a dummy model to initialize tree hierarchy.
-         * In a real code, you will connect to a real model and
-         * expose its hierarchy.
-         */
-        private void initialize() {
-            /*
-            TreeObject to1 = new TreeObject("Leaf 1");
-            TreeObject to2 = new TreeObject("Leaf 2");
-            TreeObject to3 = new TreeObject("Leaf 3");
-            TreeParent p1 = new TreeParent("Parent 1");
-            p1.addChild(to1);
-            p1.addChild(to2);
-            p1.addChild(to3);
-
-            TreeObject to4 = new TreeObject("Leaf 4");
-            TreeParent p2 = new TreeParent("Parent 2");
-            p2.addChild(to4);
-
-            TreeParent root = new TreeParent("Root");
-            root.addChild(p1);
-            root.addChild(p2);
-            */
-
-            invisibleRoot = new TreeParent("");
-            //invisibleRoot.addChild(root);
+            return (parent instanceof QueryResult && !((QueryResult)parent).locations.isEmpty());
         }
     }
+    
     class ViewLabelProvider extends LabelProvider {
 
         public String getText(Object obj) {
+            if (obj instanceof QueryResult) {
+                return ((QueryResult)obj).query;
+            } else if (obj instanceof Location) {
+                return ((Location)obj).title;
+            } 
             return obj.toString();
         }
+        
         public Image getImage(Object obj) {
             String imageKey = ISharedImages.IMG_OBJ_ELEMENT;
-            if (obj instanceof TreeParent)
+            if (obj instanceof QueryResult) {
                 imageKey = ISharedImages.IMG_OBJ_FOLDER;
+            }
             return PlatformUI.getWorkbench().getSharedImages().getImage(imageKey);
         }
     }
+    
     class NameSorter extends ViewerSorter {
     }
 
@@ -219,15 +178,18 @@ public class RelatedPagesView extends ViewPart {
      * The constructor.
      */
     public RelatedPagesView() {
+        contentProvider = new ViewContentProvider();
     }
 
     @Override
     public void init(IViewSite site) throws PartInitException {
         super.init(site);
         
+        /*
         NavigationListener navListener = new NavigationListener();
         site.getWorkbenchWindow().getSelectionService().addSelectionListener(navListener);
         site.getPage().addPartListener(navListener);
+        */
     }
     
     /**
@@ -237,7 +199,7 @@ public class RelatedPagesView extends ViewPart {
     public void createPartControl(Composite parent) {
         viewer = new TreeViewer(parent, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL);
         drillDownAdapter = new DrillDownAdapter(viewer);
-        viewer.setContentProvider(new ViewContentProvider());
+        viewer.setContentProvider(contentProvider);
         viewer.setLabelProvider(new ViewLabelProvider());
         viewer.setSorter(new NameSorter());
         viewer.setInput(getViewSite());
@@ -295,61 +257,57 @@ public class RelatedPagesView extends ViewPart {
         drillDownAdapter.addNavigationActions(manager);
     }
 
+    private IStatus buildAndExecuteQuery(ICompilationUnit compilationUnit, IProgressMonitor monitor) {
+        ASTParser parser = ASTParser.newParser(AST.JLS3);
+        parser.setSource(compilationUnit);
+        CompilationUnit compileUnit = (CompilationUnit)parser.createAST(null);
+        
+        
+        return new Status(IStatus.OK, PluginActivator.PLUGIN_ID, "Updated Related Pages view successfully");
+    }
+    
     private void makeActions() {
         action1 = new Action() {
             public void run() {
                 IEditorPart editorPart = getSite().getPage().getActiveEditor();
                 if (editorPart != null) {
-                    IEditorInput editorInput = editorPart.getEditorInput();
-                    if (editorInput == null) {
-                        getLogger().logError("Editor input is null", null);
+                    if (!(editorPart instanceof AbstractTextEditor)) {
+                        getLogger().logError("Editor part is not instance of AbstractTextEditor");
+                        contentProvider.setMessage(UPDATE_VIEW_ERROR_MSG);
+                        viewer.refresh();
                     } else {
-                        IJavaElement javaElement = JavaUI.getEditorInputJavaElement(editorInput);
-                        if (javaElement == null) {
-                            getLogger().logError("Failed to get Java element from editor input");
-                        } else if (!(javaElement instanceof ICompilationUnit)) {
-                            getLogger().logError("Editor input Java element is not instance of ICompilationUnit");
+                        final AbstractTextEditor abstractEditor = (AbstractTextEditor)editorPart;
+                        IEditorInput editorInput = abstractEditor.getEditorInput();
+                        if (editorInput == null) {
+                            getLogger().logError("Editor input is null", null);
+                            contentProvider.setMessage(UPDATE_VIEW_ERROR_MSG);
+                            viewer.refresh();
                         } else {
-                            ASTParser parser = ASTParser.newParser(AST.JLS3);
-                            parser.setSource((ICompilationUnit)javaElement);
-                            parser.setResolveBindings(true);
-                            CompilationUnit compileUnit = (CompilationUnit)parser.createAST(new IProgressMonitor() {
-
-                                @Override
-                                public void beginTask(String arg0, int arg1) {
-                                }
-
-                                @Override
-                                public void done() {
-                                }
-
-                                @Override
-                                public void internalWorked(double arg0) {
-                                }
-
-                                @Override
-                                public boolean isCanceled() {
-                                    return false;
-                                }
-
-                                @Override
-                                public void setCanceled(boolean arg0) {
-                                }
-
-                                @Override
-                                public void setTaskName(String arg0) {
-                                }
-
-                                @Override
-                                public void subTask(String arg0) {
-                                }
-
-                                @Override
-                                public void worked(int arg0) {
-                                }
-                                
-                            });
+                            final IJavaElement javaElement = JavaUI.getEditorInputJavaElement(editorInput);
+                            if (javaElement == null) {
+                                getLogger().logError("Failed to get Java element from editor input");
+                                contentProvider.setMessage(UPDATE_VIEW_ERROR_MSG);
+                                viewer.refresh();
+                            } else if (!(javaElement instanceof ICompilationUnit)) {
+                                getLogger().logError("Editor input Java element is not instance of ICompilationUnit");
+                                contentProvider.setMessage(UPDATE_VIEW_ERROR_MSG);
+                                viewer.refresh();
+                            } else {
+                                contentProvider.setMessage("Updating view ...");
+                                viewer.refresh();
+                                Job updateViewJob = new Job("Update Related Pages") {
+    
+                                    @Override
+                                    protected IStatus run(IProgressMonitor monitor) {
+                                        /*
+                                        return buildAndExecuteQuery((ICompilationUnit)javaElement, 
+                                                abstractEditor.getSoumonitor);
+                                        */
+                                        return null;
+                                    }
                                     
+                                };
+                            }
                         }
                     }
                 }

@@ -64,7 +64,25 @@ public class IndexerConnection implements Runnable {
         }
     }
     
-    public void sendQuery(IndexerBatchQuery query, IndexerConnectionCallback<BatchQueryResult> callback) throws PluginException {
+    public BatchQueryResult runQuery(IndexerBatchQuery query, long timeoutMsecs) throws PluginException, InterruptedException {
+        final Object waitObject = new Object();
+        final BatchQueryResult[] resultArray = new BatchQueryResult[] {null};
+        runQueryAsync(query, new IndexerConnectionCallback<BatchQueryResult>() {
+            @Override
+            public void handleMessage(BatchQueryResult msg) {
+                synchronized (waitObject) {
+                    resultArray[0] = msg;
+                    waitObject.notify();
+                }
+            }
+        });
+        synchronized (waitObject) {
+            waitObject.wait(timeoutMsecs);
+            return resultArray[0];
+        }
+    }
+    
+    public void runQueryAsync(IndexerBatchQuery query, IndexerConnectionCallback<BatchQueryResult> callback) throws PluginException {
         sendMessage(query, new CallbackInvoker<BatchQueryResult>(callback, BatchQueryResult.class), false);
     }
     
