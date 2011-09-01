@@ -1,6 +1,7 @@
 package ca.ubc.cs.hminer.eclipseplugin.views;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.part.*;
@@ -12,7 +13,6 @@ import org.eclipse.ui.*;
 import org.eclipse.ui.texteditor.AbstractTextEditor;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.SWT;
-import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
@@ -23,9 +23,12 @@ import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.ui.JavaUI;
+import org.eclipse.jface.text.ITextOperationTarget;
+import org.eclipse.jface.text.ITextViewer;
 
 import ca.ubc.cs.hminer.eclipseplugin.PluginActivator;
 import ca.ubc.cs.hminer.eclipseplugin.PluginLogger;
+import ca.ubc.cs.hminer.eclipseplugin.PluginException;
 import ca.ubc.cs.hminer.indexer.messages.BatchQueryResult;
 import ca.ubc.cs.hminer.indexer.messages.Location;
 import ca.ubc.cs.hminer.indexer.messages.QueryResult;
@@ -102,6 +105,7 @@ public class RelatedPagesView extends ViewPart {
             }
             if (batchQueryResult != null && child instanceof Location) {
                 for (QueryResult result: batchQueryResult.queryResults) {
+                    // TODO: check containment using reference equality
                     if (result.locations.contains(child)) {
                         return result;
                     }
@@ -257,11 +261,13 @@ public class RelatedPagesView extends ViewPart {
         drillDownAdapter.addNavigationActions(manager);
     }
 
-    private IStatus buildAndExecuteQuery(ICompilationUnit compilationUnit, IProgressMonitor monitor) {
+    private IStatus buildAndExecuteQuery(ICompilationUnit compilationUnit, 
+            int topLineIndex, int bottomLineIndex, IProgressMonitor monitor) {
         ASTParser parser = ASTParser.newParser(AST.JLS3);
         parser.setSource(compilationUnit);
         CompilationUnit compileUnit = (CompilationUnit)parser.createAST(null);
-        
+        List<String> queryStrings = new ArrayList<String>();
+        compileUnit.
         
         return new Status(IStatus.OK, PluginActivator.PLUGIN_ID, "Updated Related Pages view successfully");
     }
@@ -269,47 +275,49 @@ public class RelatedPagesView extends ViewPart {
     private void makeActions() {
         action1 = new Action() {
             public void run() {
-                IEditorPart editorPart = getSite().getPage().getActiveEditor();
-                if (editorPart != null) {
-                    if (!(editorPart instanceof AbstractTextEditor)) {
-                        getLogger().logError("Editor part is not instance of AbstractTextEditor");
-                        contentProvider.setMessage(UPDATE_VIEW_ERROR_MSG);
-                        viewer.refresh();
-                    } else {
-                        final AbstractTextEditor abstractEditor = (AbstractTextEditor)editorPart;
-                        IEditorInput editorInput = abstractEditor.getEditorInput();
-                        if (editorInput == null) {
-                            getLogger().logError("Editor input is null", null);
-                            contentProvider.setMessage(UPDATE_VIEW_ERROR_MSG);
-                            viewer.refresh();
-                        } else {
-                            final IJavaElement javaElement = JavaUI.getEditorInputJavaElement(editorInput);
-                            if (javaElement == null) {
-                                getLogger().logError("Failed to get Java element from editor input");
-                                contentProvider.setMessage(UPDATE_VIEW_ERROR_MSG);
-                                viewer.refresh();
-                            } else if (!(javaElement instanceof ICompilationUnit)) {
-                                getLogger().logError("Editor input Java element is not instance of ICompilationUnit");
-                                contentProvider.setMessage(UPDATE_VIEW_ERROR_MSG);
-                                viewer.refresh();
-                            } else {
-                                contentProvider.setMessage("Updating view ...");
-                                viewer.refresh();
-                                Job updateViewJob = new Job("Update Related Pages") {
-    
-                                    @Override
-                                    protected IStatus run(IProgressMonitor monitor) {
-                                        /*
-                                        return buildAndExecuteQuery((ICompilationUnit)javaElement, 
-                                                abstractEditor.getSoumonitor);
-                                        */
-                                        return null;
-                                    }
-                                    
-                                };
-                            }
+                try {
+                    IEditorPart editorPart = getSite().getPage().getActiveEditor();
+                    if (editorPart != null) {
+                        ITextOperationTarget target = (ITextOperationTarget)editorPart.getAdapter(ITextOperationTarget.class);
+                        if (target == null) {
+                            throw new PluginException("Failed to get ITextOperationTarget adapter");
+                        } 
+                        if (!(target instanceof ITextViewer)) {
+                            throw new PluginException("ITextOperationTarget adapter is not instance of ITextViewer");
                         }
+                        final ITextViewer textViewer = (ITextViewer)target;
+                        if (!(editorPart instanceof AbstractTextEditor)) {
+                            throw new PluginException("Editor part is not instance of AbstractTextEditor");
+                        } 
+                        IEditorInput editorInput = editorPart.getEditorInput();
+                        if (editorInput == null) {
+                            throw new PluginException("Editor input is null");
+                        } 
+                        final IJavaElement javaElement = JavaUI.getEditorInputJavaElement(editorInput);
+                        if (javaElement == null) {
+                            throw new PluginException("Failed to get Java element from editor input");
+                        } 
+                        if (!(javaElement instanceof ICompilationUnit)) {
+                            throw new PluginException("Editor input Java element is not instance of ICompilationUnit");
+                        } 
+                        contentProvider.setMessage("Updating view ...");
+                        viewer.refresh();
+                        Job updateViewJob = new Job("Update Related Pages") {
+
+                            @Override
+                            protected IStatus run(IProgressMonitor monitor) {
+                                return buildAndExecuteQuery((ICompilationUnit)javaElement, 
+                                        textViewer.getTopIndex(), textViewer.getBottomIndex(),
+                                        monitor);
+                            }
+                            
+                        };
+                        updateViewJob.schedule();
                     }
+                } catch (PluginException e) {
+                    getLogger().logError(e.getMessage(), e);
+                    contentProvider.setMessage(UPDATE_VIEW_ERROR_MSG);
+                    viewer.refresh();
                 }
             }
         };
