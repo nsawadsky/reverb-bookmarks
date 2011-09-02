@@ -209,10 +209,12 @@ public class StartEndDatePage extends HistoryMinerWizardPage implements Selectio
     
     private void updateStartDateLabel(Date startDate) {
         startDateLabel.setText("Start Date: " + DATE_FORMAT.format(startDate));
+        startDateLabel.pack();
     }
     
     private void updateEndDateLabel(Date endDate) {
         endDateLabel.setText("End Date: " + DATE_FORMAT.format(endDate));
+        endDateLabel.pack();
     }
     
     private void updateDateControl(DateTime control, Calendar date) {
