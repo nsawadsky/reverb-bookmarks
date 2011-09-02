@@ -1,7 +1,5 @@
 package ca.ubc.cs.hminer.eclipseplugin.views;
 
-import java.util.ArrayList;
-import java.util.List;
 
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.part.*;
@@ -23,13 +21,16 @@ import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.ui.JavaUI;
+import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.ITextOperationTarget;
 import org.eclipse.jface.text.ITextViewer;
 
+import ca.ubc.cs.hminer.eclipseplugin.IndexerConnection;
 import ca.ubc.cs.hminer.eclipseplugin.PluginActivator;
 import ca.ubc.cs.hminer.eclipseplugin.PluginLogger;
 import ca.ubc.cs.hminer.eclipseplugin.PluginException;
 import ca.ubc.cs.hminer.indexer.messages.BatchQueryResult;
+import ca.ubc.cs.hminer.indexer.messages.IndexerBatchQuery;
 import ca.ubc.cs.hminer.indexer.messages.Location;
 import ca.ubc.cs.hminer.indexer.messages.QueryResult;
 
@@ -67,6 +68,7 @@ public class RelatedPagesView extends ViewPart {
     private Action action2;
     private Action doubleClickAction;
     private ViewContentProvider contentProvider;
+    private IndexerConnection indexerConnection;
 
     class ViewContentProvider implements IStructuredContentProvider, 
             ITreeContentProvider {
@@ -105,9 +107,10 @@ public class RelatedPagesView extends ViewPart {
             }
             if (batchQueryResult != null && child instanceof Location) {
                 for (QueryResult result: batchQueryResult.queryResults) {
-                    // TODO: check containment using reference equality
-                    if (result.locations.contains(child)) {
-                        return result;
+                    for (Location location: result.locations) {
+                        if (location == child) {
+                            return result;
+                        }
                     }
                 }
                 return null;
@@ -182,18 +185,18 @@ public class RelatedPagesView extends ViewPart {
      * The constructor.
      */
     public RelatedPagesView() {
-        contentProvider = new ViewContentProvider();
     }
 
     @Override
     public void init(IViewSite site) throws PartInitException {
         super.init(site);
-        
-        /*
-        NavigationListener navListener = new NavigationListener();
-        site.getWorkbenchWindow().getSelectionService().addSelectionListener(navListener);
-        site.getPage().addPartListener(navListener);
-        */
+
+        try {
+            indexerConnection = new IndexerConnection();
+            indexerConnection.start();
+        } catch (PluginException e) {
+            throw new PartInitException("Error initializing Related Pages view: " + e, e);
+        }
     }
     
     /**
@@ -201,6 +204,7 @@ public class RelatedPagesView extends ViewPart {
      * to create the viewer and initialize it.
      */
     public void createPartControl(Composite parent) {
+        contentProvider = new ViewContentProvider();
         viewer = new TreeViewer(parent, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL);
         drillDownAdapter = new DrillDownAdapter(viewer);
         viewer.setContentProvider(contentProvider);
@@ -211,6 +215,14 @@ public class RelatedPagesView extends ViewPart {
         hookContextMenu();
         hookDoubleClickAction();
         contributeToActionBars();
+    }
+    
+    @Override 
+    public void dispose() {
+        if (indexerConnection != null) {
+            indexerConnection.stop();
+            indexerConnection = null;
+        }
     }
 
     /**
@@ -262,12 +274,24 @@ public class RelatedPagesView extends ViewPart {
     }
 
     private IStatus buildAndExecuteQuery(ICompilationUnit compilationUnit, 
-            int topLineIndex, int bottomLineIndex, IProgressMonitor monitor) {
+            int topPosition, int bottomPosition, IProgressMonitor monitor) throws PluginException, InterruptedException {
         ASTParser parser = ASTParser.newParser(AST.JLS3);
         parser.setSource(compilationUnit);
         CompilationUnit compileUnit = (CompilationUnit)parser.createAST(null);
-        List<String> queryStrings = new ArrayList<String>();
-        compileUnit.
+        QueryBuilderASTVisitor visitor = new QueryBuilderASTVisitor(topPosition, bottomPosition);
+        visitor.visit(compileUnit);
+        
+        final BatchQueryResult result = indexerConnection.runQuery(new IndexerBatchQuery(visitor.getQueryStrings()), 8000);
+        
+        getSite().getShell().getDisplay().asyncExec(new Runnable() {
+
+            @Override
+            public void run() {
+                contentProvider.setQueryResult(result);
+                
+                viewer.refresh();
+            }
+        });
         
         return new Status(IStatus.OK, PluginActivator.PLUGIN_ID, "Updated Related Pages view successfully");
     }
@@ -306,9 +330,19 @@ public class RelatedPagesView extends ViewPart {
 
                             @Override
                             protected IStatus run(IProgressMonitor monitor) {
-                                return buildAndExecuteQuery((ICompilationUnit)javaElement, 
-                                        textViewer.getTopIndex(), textViewer.getBottomIndex(),
-                                        monitor);
+                                IDocument doc = textViewer.getDocument();
+                                int topLine = textViewer.getTopIndex();
+                                int bottomLine = textViewer.getBottomIndex();
+                                try {
+                                    int topPosition = doc.getLineOffset(topLine);
+                                    int bottomPosition = doc.getLineOffset(bottomLine) + doc.getLineLength(bottomLine) - 1;
+                                    return buildAndExecuteQuery((ICompilationUnit)javaElement, 
+                                            topPosition, bottomPosition, monitor);
+                                } catch (Exception e) {
+                                    String msg = "Error creating/executing query";
+                                    getLogger().logError(msg, e);
+                                    return new Status(IStatus.ERROR, PluginActivator.PLUGIN_ID, msg, e);
+                                }
                             }
                             
                         };

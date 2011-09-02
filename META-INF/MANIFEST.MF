@@ -12,3 +12,9 @@ Require-Bundle: org.eclipse.ui,
  org.eclipse.jface.text;bundle-version="3.7.0"
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Bundle-ClassPath: lib/HistoryMinerIndexerMessages.jar,
+ lib/NamedPipeWrapperJava.jar,
+ lib/jackson-core-asl-1.8.5.jar,
+ lib/jackson-mapper-asl-1.8.5.jar
+Export-Package: ca.ubc.cs.hminer.eclipseplugin,
+ ca.ubc.cs.hminer.eclipseplugin.views
