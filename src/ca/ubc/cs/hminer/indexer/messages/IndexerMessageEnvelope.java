@@ -1,11 +1,13 @@
 package ca.ubc.cs.hminer.indexer.messages;
 
 public class IndexerMessageEnvelope {
-    public IndexerMessageEnvelope(long requestId, IndexerMessage payload) {
-        this.requestId = requestId;
+    public IndexerMessageEnvelope() {
+        
+    }
+    
+    public IndexerMessageEnvelope(IndexerMessage payload) {
         this.message = payload;
     }
     
-    public long requestId;
     public IndexerMessage message;
 }
