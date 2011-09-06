@@ -1,6 +1,9 @@
 package ca.ubc.cs.hminer.eclipseplugin.views;
 
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.part.*;
 import org.eclipse.jface.viewers.*;
@@ -96,7 +99,13 @@ public class RelatedPagesView extends ViewPart {
                 if (message != null) {
                     return new Object[] { message };
                 } 
-                return batchQueryResult.queryResults.toArray();
+                List<QueryResult> filteredResults = new ArrayList<QueryResult>();
+                for (QueryResult result: batchQueryResult.queryResults) {
+                    if (result.locations != null && !result.locations.isEmpty()) {
+                        filteredResults.add(result);
+                    }
+                }
+                return filteredResults.toArray();
             }
             return getChildren(parent);
         }
@@ -130,7 +139,14 @@ public class RelatedPagesView extends ViewPart {
         }
     }
     
-    class ViewLabelProvider extends LabelProvider {
+    class ViewLabelProvider extends ColumnLabelProvider {
+
+        public String getToolTipText(Object obj) {
+            if (obj instanceof Location) {
+                return ((Location)obj).url;
+            } 
+            return super.getToolTipText(obj);
+        }
 
         public String getText(Object obj) {
             if (obj instanceof QueryResult) {
@@ -150,9 +166,6 @@ public class RelatedPagesView extends ViewPart {
         }
     }
     
-    class NameSorter extends ViewerSorter {
-    }
-
     class NavigationListener implements IPartListener, ISelectionListener {
 
         @Override
@@ -193,7 +206,6 @@ public class RelatedPagesView extends ViewPart {
 
         try {
             indexerConnection = new IndexerConnection();
-            indexerConnection.start();
         } catch (PluginException e) {
             throw new PartInitException("Error initializing Related Pages view: " + e, e);
         }
@@ -208,8 +220,8 @@ public class RelatedPagesView extends ViewPart {
         viewer = new TreeViewer(parent, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL);
         drillDownAdapter = new DrillDownAdapter(viewer);
         viewer.setContentProvider(contentProvider);
+        ColumnViewerToolTipSupport.enableFor(viewer);
         viewer.setLabelProvider(new ViewLabelProvider());
-        viewer.setSorter(new NameSorter());
         viewer.setInput(getViewSite());
         makeActions();
         hookContextMenu();
@@ -220,7 +232,7 @@ public class RelatedPagesView extends ViewPart {
     @Override 
     public void dispose() {
         if (indexerConnection != null) {
-            indexerConnection.stop();
+            indexerConnection.close();
             indexerConnection = null;
         }
     }
@@ -279,17 +291,17 @@ public class RelatedPagesView extends ViewPart {
         parser.setSource(compilationUnit);
         CompilationUnit compileUnit = (CompilationUnit)parser.createAST(null);
         QueryBuilderASTVisitor visitor = new QueryBuilderASTVisitor(topPosition, bottomPosition);
-        visitor.visit(compileUnit);
+        compileUnit.accept(visitor);
         
-        final BatchQueryResult result = indexerConnection.runQuery(new IndexerBatchQuery(visitor.getQueryStrings()), 8000);
+        final BatchQueryResult result = indexerConnection.runQuery(new IndexerBatchQuery(visitor.getQueryStrings()));
         
         getSite().getShell().getDisplay().asyncExec(new Runnable() {
 
             @Override
             public void run() {
                 contentProvider.setQueryResult(result);
-                
                 viewer.refresh();
+                viewer.expandAll();
             }
         });
         
@@ -324,15 +336,17 @@ public class RelatedPagesView extends ViewPart {
                         if (!(javaElement instanceof ICompilationUnit)) {
                             throw new PluginException("Editor input Java element is not instance of ICompilationUnit");
                         } 
+                        final int topLine = textViewer.getTopIndex();
+                        final int bottomLine = textViewer.getBottomIndex();
+
                         contentProvider.setMessage("Updating view ...");
                         viewer.refresh();
+                        
                         Job updateViewJob = new Job("Update Related Pages") {
 
                             @Override
                             protected IStatus run(IProgressMonitor monitor) {
                                 IDocument doc = textViewer.getDocument();
-                                int topLine = textViewer.getTopIndex();
-                                int bottomLine = textViewer.getBottomIndex();
                                 try {
                                     int topPosition = doc.getLineOffset(topLine);
                                     int bottomPosition = doc.getLineOffset(bottomLine) + doc.getLineLength(bottomLine) - 1;

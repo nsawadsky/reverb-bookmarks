@@ -25,7 +25,8 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
     private int endPosition;
     
     public QueryBuilderASTVisitor(int startPosition, int endPosition) {
-        
+        this.startPosition = startPosition;
+        this.endPosition = endPosition;
     }
     
     public List<String> getQueryStrings() {
