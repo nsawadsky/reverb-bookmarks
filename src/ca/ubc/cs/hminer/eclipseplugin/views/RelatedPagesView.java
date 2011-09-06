@@ -355,7 +355,7 @@ public class RelatedPagesView extends ViewPart {
                 }
             }
         };
-        action1.setText("Update");
+        action1.setText("Update View");
         action1.setToolTipText("Update View");
         action1.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages().
                 getImageDescriptor(ISharedImages.IMG_OBJS_INFO_TSK));
