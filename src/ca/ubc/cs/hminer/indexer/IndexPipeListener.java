@@ -1,6 +1,5 @@
 package ca.ubc.cs.hminer.indexer;
 
-import java.util.concurrent.BlockingQueue;
 import org.codehaus.jackson.map.ObjectMapper;
 import npw.NamedPipeWrapper;
 
