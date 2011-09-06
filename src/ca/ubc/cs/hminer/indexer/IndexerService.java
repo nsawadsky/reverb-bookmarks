@@ -1,14 +1,9 @@
 package ca.ubc.cs.hminer.indexer;
 
-import java.util.concurrent.LinkedBlockingQueue;
-
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.spi.RootLogger;
-
-import ca.ubc.cs.hminer.indexer.messages.PageInfo;
-
 
 public class IndexerService {
     private static Logger log = Logger.getLogger(IndexerService.class);
@@ -29,15 +24,12 @@ public class IndexerService {
 
         try {
             this.config = new IndexerConfig();
-            LinkedBlockingQueue<PageInfo> pagesQueue = new LinkedBlockingQueue<PageInfo>();
+            indexer = new WebPageIndexer(config);
             
-            indexer = new WebPageIndexer(config, pagesQueue);
-            
-            indexPipeListener = new IndexPipeListener(config, pagesQueue);
+            indexPipeListener = new IndexPipeListener(config, indexer);
             
             queryPipeListener = new QueryPipeListener(config, indexer);
             
-            indexer.start();
             indexPipeListener.start();
             queryPipeListener.start();
             

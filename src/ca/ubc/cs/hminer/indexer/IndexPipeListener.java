@@ -15,12 +15,12 @@ public class IndexPipeListener {
     private static final int LISTENING_THREADS = 5;
     
     private IndexerConfig config;
-    private BlockingQueue<PageInfo> pagesQueue;
     private String indexPipeName;
+    private WebPageIndexer indexer;
     
-    public IndexPipeListener(IndexerConfig config, BlockingQueue<PageInfo> pagesQueue) throws IndexerException  {
+    public IndexPipeListener(IndexerConfig config, WebPageIndexer indexer) throws IndexerException  {
         this.config = config;
-        this.pagesQueue = pagesQueue;
+        this.indexer = indexer;
         this.indexPipeName = NamedPipeWrapper.makePipeName("historyminer-index", true);
         if (indexPipeName == null) {
             throw new IndexerException("Failed to make index pipe name: " + NamedPipeWrapper.getErrorMessage());
@@ -29,19 +29,19 @@ public class IndexPipeListener {
     
     public void start() {
         for (int i = 0; i < LISTENING_THREADS; i++) {
-            new Thread(new ListenerInstance(config, indexPipeName, pagesQueue)).start();
+            new Thread(new ListenerInstance(config, indexPipeName, indexer)).start();
         }
     }
    
     private class ListenerInstance implements Runnable {
         private IndexerConfig config;
         private String indexPipeName;
-        private BlockingQueue<PageInfo> pagesQueue;
+        private WebPageIndexer indexer;
         
-        public ListenerInstance(IndexerConfig config, String indexPipeName, BlockingQueue<PageInfo> pagesQueue) {
+        public ListenerInstance(IndexerConfig config, String indexPipeName, WebPageIndexer indexer) {
             this.config = config;
             this.indexPipeName = indexPipeName;
-            this.pagesQueue = pagesQueue;
+            this.indexer = indexer;
         }
         
         public void run() {
@@ -62,12 +62,19 @@ public class IndexPipeListener {
                     
                     byte[] data = null;
                     while ((data = NamedPipeWrapper.readPipe(pipeHandle)) != null) {
+                        PageInfo info = null;
                         try {
-                            PageInfo info = mapper.readValue(data, PageInfo.class);
-                            log.info("Got page: " + info.url);
-                            pagesQueue.put(info);
+                            info = mapper.readValue(data, PageInfo.class);
                         } catch (Exception e) {
                             log.error("Exception parsing message from index pipe", e);
+                        }
+                        if (info != null) {
+                            log.info("Got page: " + info.url);
+                            try {
+                                indexer.indexPage(info);
+                            } catch (Exception e) {
+                                log.error("Error indexing page '" + info.url + "'", e);
+                            }
                         }
                     }
                     

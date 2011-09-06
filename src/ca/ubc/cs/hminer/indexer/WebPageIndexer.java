@@ -3,7 +3,6 @@ package ca.ubc.cs.hminer.indexer;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.concurrent.BlockingQueue;
 import org.apache.log4j.Logger;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -21,7 +20,7 @@ import org.jsoup.select.Elements;
 
 import ca.ubc.cs.hminer.indexer.messages.PageInfo;
 
-public class WebPageIndexer implements Runnable {
+public class WebPageIndexer {
     private static Logger log = Logger.getLogger(WebPageIndexer.class);
     
     public final static String URL_FIELD_NAME = "url";
@@ -30,15 +29,12 @@ public class WebPageIndexer implements Runnable {
     
     private IndexerConfig config;
     private IndexWriter indexWriter;
-    private BlockingQueue<PageInfo> pagesQueue;
-    private Directory index;
     
-    public WebPageIndexer(IndexerConfig config, BlockingQueue<PageInfo> pagesQueue) throws IndexerException {
+    public WebPageIndexer(IndexerConfig config) throws IndexerException {
         this.config = config;
-        this.pagesQueue = pagesQueue;
 
         try {
-            index = FSDirectory.open(new File(config.getIndexPath()));
+            Directory index = FSDirectory.open(new File(config.getIndexPath()));
             IndexWriterConfig indexWriterConfig = new IndexWriterConfig(Version.LUCENE_33, new WebPageAnalyzer());
             
             // Add new documents to the existing index:
@@ -50,33 +46,11 @@ public class WebPageIndexer implements Runnable {
         }
     }
     
-    public void start() {
-        new Thread(this).start();
-    }
-    
     public IndexWriter getIndexWriter() {
         return this.indexWriter;
     }
     
-    public void run() {
-        Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
-
-        try {
-            while (true) {
-                PageInfo info = pagesQueue.take();
-                try {
-                    indexPage(info);
-                } catch (Exception e) {
-                    log.error("Exception indexing page '" + info.url + "'", e);
-                }
-            }
-            
-        } catch (InterruptedException e) {
-            log.error("Indexer thread interrupted", e);
-        }
-    }
-    
-    private void indexPage(PageInfo info) throws CorruptIndexException, IOException {
+    public void indexPage(PageInfo info) throws CorruptIndexException, IOException {
         // make a new, empty document
         Document doc = new Document();
 
