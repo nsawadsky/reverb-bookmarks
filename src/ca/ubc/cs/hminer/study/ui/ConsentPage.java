@@ -43,7 +43,7 @@ public class ConsentPage extends HistoryMinerWizardPage {
     public boolean onNextPressed() {
         RunnableWithResult<Date> earliestVisitDateExtractor = new RunnableWithResult<Date>(){
             public Date call() throws Exception {
-                return new HistoryExtractor().getEarliestVisitDate();
+                return getHistoryMinerWizard().getHistoryExtractor().getEarliestVisitDate();
             }
         };
         

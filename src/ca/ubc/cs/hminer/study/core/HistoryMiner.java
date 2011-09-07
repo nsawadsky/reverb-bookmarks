@@ -35,7 +35,7 @@ ORDER BY visits.visit_date DESC
         endDate.set(2010, Calendar.DECEMBER, 31);
         
         try {
-            HistoryExtractor extractor = new HistoryExtractor();
+            HistoryExtractor extractor = HistoryExtractor.getHistoryExtractor(WebBrowserType.MOZILLA_FIREFOX);
             List<HistoryVisit> visits = extractor.extractHistory(startDate.getTime(), endDate.getTime());
             log.info("Total visits = " + visits.size());
 

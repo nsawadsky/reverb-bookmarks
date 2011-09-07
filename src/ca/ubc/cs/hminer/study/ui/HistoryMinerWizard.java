@@ -30,7 +30,10 @@ import org.eclipse.jface.wizard.Wizard;
 import org.eclipse.jface.wizard.WizardDialog;
 import org.eclipse.swt.custom.BusyIndicator;
 
+import ca.ubc.cs.hminer.study.core.ChromeHistoryExtractor;
 import ca.ubc.cs.hminer.study.core.ClassifierData;
+import ca.ubc.cs.hminer.study.core.FirefoxHistoryExtractor;
+import ca.ubc.cs.hminer.study.core.HistoryExtractor;
 import ca.ubc.cs.hminer.study.core.HistoryMinerData;
 import ca.ubc.cs.hminer.study.core.HistoryMinerException;
 import ca.ubc.cs.hminer.study.core.HistoryReport;
@@ -247,6 +250,10 @@ public class HistoryMinerWizard extends Wizard implements IPageChangingListener,
         
         return writer.toString();
         
+    }
+    
+    public HistoryExtractor getHistoryExtractor() throws HistoryMinerException {
+        return HistoryExtractor.getHistoryExtractor(historyMinerData.participantPrimaryWebBrowser);
     }
 
 }
