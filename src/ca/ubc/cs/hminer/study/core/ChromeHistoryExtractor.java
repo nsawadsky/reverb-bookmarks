@@ -41,6 +41,7 @@ public class ChromeHistoryExtractor extends HistoryExtractor {
         final String query = "SELECT min(visit_date) FROM moz_historyvisits";
         
         Date result = new Date();
+        /*
         try {
             Connection conn = null;
             Statement stmt = null;
@@ -61,6 +62,7 @@ public class ChromeHistoryExtractor extends HistoryExtractor {
             throw new HistoryMinerException(
                     "Error retrieving earliest visit date: " + e, e);
         } 
+        */
         return result;
     }
     
@@ -77,6 +79,7 @@ public class ChromeHistoryExtractor extends HistoryExtractor {
 
         List<HistoryVisit> results = new ArrayList<HistoryVisit>();
         
+        /*
         try {
             Connection conn = null;
             Statement stmt = null;
@@ -122,6 +125,7 @@ public class ChromeHistoryExtractor extends HistoryExtractor {
             throw new HistoryMinerException(
                     "Error while processing SQLite output and generating file: " + e, e);
         } 
+        */
         return results;
     }
     

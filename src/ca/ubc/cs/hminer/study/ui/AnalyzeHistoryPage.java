@@ -115,6 +115,7 @@ public class AnalyzeHistoryPage extends HistoryMinerWizardPage implements Select
             HistoryExtractor extractor = (getHistoryMinerWizard().isTestMode() ? 
                     getMockHistoryExtractor() : getHistoryMinerWizard().getHistoryExtractor());
             
+            // TODO: Display busy cursor while extracting history
             List<HistoryVisit> visitList = extractor.extractHistory(startDate, endDate);
     
             if (getHistoryMinerWizard().getCloseBrowserRequested()) {
