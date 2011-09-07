@@ -101,7 +101,16 @@ public class ClassifyVisitsPage extends HistoryMinerWizardPage {
         
         CellLabelProvider labelProvider = new CellLabelProvider() {
 
-            public void update(ViewerCell cell) {
+            @Override
+            public String getToolTipText(Object element) {
+                if (element != null) {
+                    return element.toString();
+                }
+                return null;
+            }
+
+            @Override
+            public void update(ViewerCell arg0) {
             }
         };
 
