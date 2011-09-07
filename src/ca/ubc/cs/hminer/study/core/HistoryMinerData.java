@@ -7,7 +7,7 @@ import java.util.UUID;
 public class HistoryMinerData {
     public String participantOccupation;
     public String participantPrimaryProgrammingLanguage;
-    public WebBrowserType participantPrimaryWebBrowser;
+    public WebBrowserType participantPrimaryWebBrowser = WebBrowserType.MOZILLA_FIREFOX;
     public Date historyStartDate;
     public Date historyEndDate;
     public ClassifierData classifierData;

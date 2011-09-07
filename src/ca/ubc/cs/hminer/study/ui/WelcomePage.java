@@ -33,6 +33,7 @@ public class WelcomePage extends HistoryMinerWizardPage implements KeyListener, 
     private Text occupationText;
     private Button firefoxRadioButton;
     private Button chromeRadioButton;
+    private WebBrowserType webBrowserType = WebBrowserType.MOZILLA_FIREFOX;
     
     private final static Pattern UUID_PATTERN = Pattern.compile(
             "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}");
@@ -132,7 +133,7 @@ public class WelcomePage extends HistoryMinerWizardPage implements KeyListener, 
     public boolean onNextPressed() {
         RunnableWithResult<Date> earliestVisitDateExtractor = new RunnableWithResult<Date>(){
             public Date call() throws Exception {
-                return new HistoryExtractor().getEarliestVisitDate();
+                return HistoryExtractor.getHistoryExtractor(webBrowserType).getEarliestVisitDate();
             }
         };
         
@@ -156,8 +157,7 @@ public class WelcomePage extends HistoryMinerWizardPage implements KeyListener, 
     protected void onPageClosing() {
         getHistoryMinerData().participantId = UUID.fromString(participantIdText.getText().trim());
         getHistoryMinerData().participantOccupation = occupationText.getText().trim();
-        getHistoryMinerData().participantPrimaryWebBrowser = (firefoxRadioButton.getSelection() ? WebBrowserType.MOZILLA_FIREFOX : 
-            WebBrowserType.GOOGLE_CHROME);
+        getHistoryMinerData().participantPrimaryWebBrowser = webBrowserType;
     }
     
     private void checkPageComplete() {
@@ -180,6 +180,8 @@ public class WelcomePage extends HistoryMinerWizardPage implements KeyListener, 
     @Override
     public void widgetDefaultSelected(SelectionEvent event) {
         if (event.widget == firefoxRadioButton || event.widget == chromeRadioButton) {
+            webBrowserType = (chromeRadioButton.getSelection() ? WebBrowserType.GOOGLE_CHROME : 
+                WebBrowserType.MOZILLA_FIREFOX);
             checkPageComplete();
         }
     }
@@ -187,6 +189,8 @@ public class WelcomePage extends HistoryMinerWizardPage implements KeyListener, 
     @Override
     public void widgetSelected(SelectionEvent event) {
         if (event.widget == firefoxRadioButton || event.widget == chromeRadioButton) {
+            webBrowserType = (chromeRadioButton.getSelection() ? WebBrowserType.GOOGLE_CHROME : 
+                WebBrowserType.MOZILLA_FIREFOX);
             checkPageComplete();
         }
     }

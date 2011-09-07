@@ -113,7 +113,7 @@ public class AnalyzeHistoryPage extends HistoryMinerWizardPage implements Select
             Date endDate =  data.historyEndDate;
     
             HistoryExtractor extractor = (getHistoryMinerWizard().isTestMode() ? 
-                    getMockHistoryExtractor() : new HistoryExtractor());
+                    getMockHistoryExtractor() : getHistoryMinerWizard().getHistoryExtractor());
             
             List<HistoryVisit> visitList = extractor.extractHistory(startDate, endDate);
     
@@ -194,6 +194,11 @@ public class AnalyzeHistoryPage extends HistoryMinerWizardPage implements Select
                             "www.site" + i + ".com", "Site Number " + i, "www.site" + (i - 1) + ".com"));
                 }
                 return result;
+            }
+
+            @Override
+            public Date getEarliestVisitDate() throws HistoryMinerException {
+                return new Date();
             }
         };
     }
