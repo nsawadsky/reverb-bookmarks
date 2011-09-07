@@ -12,16 +12,18 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
+import org.ini4j.Ini;
 import org.ini4j.Profile;
-import org.ini4j.Wini;
 
 public class HistoryExtractor {
     private static Logger log = Logger.getLogger(HistoryExtractor.class);   
     
     private static final String WORKING_DIR_PROPERTY = "user.dir";
     private static final String APPDATA_ENV_VAR = "APPDATA";
+    private static final String HOME_ENV_VAR = "HOME";
     private static final String SQLITE3_EXE = "sqlite3.exe";
-    private static final String FIREFOX_SETTINGS_PATH = "Mozilla" + File.separator + "Firefox";
+    private static final String WINDOWS_FIREFOX_SETTINGS_PATH = "Mozilla" + File.separator + "Firefox";
+    private static final String LINUX_FIREFOX_SETTINGS_PATH = ".mozilla" + File.separator + "firefox";
     private static final String PROFILES_INI = "Profiles.ini";
     private static final String FIREFOX_PROFILE_SECTION_PREFIX = "Profile";
     private static final String PLACES_SQLITE = "places.sqlite";
@@ -43,15 +45,9 @@ public class HistoryExtractor {
     
     public String getFirefoxHistoryDbPath() throws HistoryMinerException {
         try {
-            // Windows-specific
-            String appDataPath = System.getenv(APPDATA_ENV_VAR);
-            if (appDataPath == null) {
-                throw new HistoryMinerException("APPDATA environment variable not found");
-            }
-            String firefoxSettingsPath = appDataPath + File.separator + FIREFOX_SETTINGS_PATH;
+            String firefoxSettingsPath = getFirefoxSettingsPath();
             String firefoxProfilesIniPath = firefoxSettingsPath + File.separator + PROFILES_INI;
-            
-            Wini profilesIni = new Wini(new File(firefoxProfilesIniPath));
+            Ini profilesIni = new Ini(new File(firefoxProfilesIniPath));
             
             Profile.Section defaultProfileSection = null;
             for (Map.Entry<String, Profile.Section> entry: profilesIni.entrySet()) {
@@ -187,4 +183,26 @@ public class HistoryExtractor {
     private Date prTimeToDate(long prTime) {
         return new Date(prTime/1000);
     }
+    
+    private boolean isWindowsOS() {
+        String os = System.getProperty("os.name");
+        return (os != null && os.contains("Windows"));
+    }
+    
+    private String getFirefoxSettingsPath() throws HistoryMinerException {
+        if (isWindowsOS()) {
+            String appDataPath = System.getenv(APPDATA_ENV_VAR);
+            if (appDataPath == null) {
+                throw new HistoryMinerException("APPDATA environment variable not found");
+            }
+            return appDataPath + File.separator + WINDOWS_FIREFOX_SETTINGS_PATH;
+        } else {
+            String homePath = System.getenv(HOME_ENV_VAR);
+            if (homePath == null) {
+                throw new HistoryMinerException("HOME environment variable not found");
+            }
+            return homePath + File.separator + LINUX_FIREFOX_SETTINGS_PATH;
+        }
+    }
+    
 }
