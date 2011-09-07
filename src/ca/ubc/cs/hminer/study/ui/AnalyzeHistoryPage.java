@@ -60,10 +60,10 @@ public class AnalyzeHistoryPage extends HistoryMinerWizardPage implements Select
         instructionLabel.setLayoutData(instructionLabelGridData);
         instructionLabel.setText(CLICK_NEXT);
         
-        progressBarLabel = new Label(container, SWT.NONE);
+        progressBarLabel = new Label(container, SWT.CENTER);
         progressBarLabel.setAlignment(SWT.CENTER);
         GridData progressBarLabelGridData = new GridData(SWT.CENTER, SWT.TOP, true, false, 1, 1); 
-        progressBarLabelGridData.widthHint = 200;
+        progressBarLabelGridData.widthHint = 482;
         progressBarLabel.setLayoutData(progressBarLabelGridData);
         
         progressBar = new ProgressBar(container, SWT.NONE);
