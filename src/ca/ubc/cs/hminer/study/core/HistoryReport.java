@@ -7,7 +7,7 @@ import java.util.UUID;
 public class HistoryReport {
     public HistoryReport() {}
     
-    public HistoryReport(String participantOccupation, String participantPrimaryProgrammingLanguage, String participantPrimaryWebBrowser,
+    public HistoryReport(String participantOccupation, String participantPrimaryProgrammingLanguage, WebBrowserType participantPrimaryWebBrowser,
             Date collectionDate, Date historyStartDate, Date historyEndDate, 
             UUID participantId, SummaryData summaryData, LocationListStats codeRelatedStats,
             List<LocationAndClassification> locationsManuallyClassified, List<Location> locationsClassified, 
@@ -28,7 +28,7 @@ public class HistoryReport {
 
     public String participantOccupation;
     public String participantPrimaryProgrammingLanguage;
-    public String participantPrimaryWebBrowser;
+    public WebBrowserType participantPrimaryWebBrowser;
     public UUID participantId;
     public Date collectionDate;
     
