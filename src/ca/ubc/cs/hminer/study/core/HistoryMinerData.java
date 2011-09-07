@@ -7,7 +7,7 @@ import java.util.UUID;
 public class HistoryMinerData {
     public String participantOccupation;
     public String participantPrimaryProgrammingLanguage;
-    public String participantPrimaryWebBrowser;
+    public WebBrowserType participantPrimaryWebBrowser;
     public Date historyStartDate;
     public Date historyEndDate;
     public ClassifierData classifierData;

@@ -51,8 +51,8 @@ public class ConsentPage extends HistoryMinerWizardPage {
         if (earliestVisitDateExtractor.getError() != null) {
             log.error("Error extracting earliest visit date", earliestVisitDateExtractor.getError());
             getHistoryMinerWizard().setCloseBrowserRequested(true);
-            MessageDialog.openError(getShell(), "Error Accessing Firefox History",
-                    "An error occurred while trying to access Firefox history.  Please close all open Firefox windows and try again.\n\n" +
+            MessageDialog.openError(getShell(), "Error Accessing Browser History",
+                    "An error occurred while trying to access browser history.  Please close all open browser windows and try again.\n\n" +
                     "Error details: " + earliestVisitDateExtractor.getError());
             return false;
         }

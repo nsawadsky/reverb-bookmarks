@@ -35,8 +35,6 @@ public class StartEndDatePage extends HistoryMinerWizardPage implements Selectio
     private Composite composite;
     private Label lblPrimaryProgrammingLanguage;
     private Text primaryProgrammingLanguageText;
-    private Label lblPrimaryWebBrowser;
-    private Text primaryWebBrowserText;
     private boolean datesAreOkay = true;
     
     /**
@@ -106,14 +104,6 @@ public class StartEndDatePage extends HistoryMinerWizardPage implements Selectio
         primaryProgrammingLanguageText.setLayoutData(gd_text);
         primaryProgrammingLanguageText.addKeyListener(this);
         
-        lblPrimaryWebBrowser = new Label(composite, SWT.NONE);
-        lblPrimaryWebBrowser.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
-        lblPrimaryWebBrowser.setText("Primary web browser during this period:");
-        
-        primaryWebBrowserText = new Text(composite, SWT.BORDER);
-        primaryWebBrowserText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
-        primaryWebBrowserText.addKeyListener(this);
-        
         endDateCal = getDateCalendar();
         startDateCal = getDateCalendar();
         startDateCal.add(Calendar.MONTH, -3);
@@ -157,7 +147,7 @@ public class StartEndDatePage extends HistoryMinerWizardPage implements Selectio
         datesAreOkay = false;
         
         if (startDateCal.before(earliestVisitCal)) {
-            this.setErrorMessage("Start date cannot be before the beginning of your Firefox history (" + DATE_FORMAT.format(earliestVisitCal.getTime()) + ").");
+            this.setErrorMessage("Start date cannot be before the beginning of your browser history (" + DATE_FORMAT.format(earliestVisitCal.getTime()) + ").");
             this.setPageComplete(false);
             return;
         }
@@ -203,15 +193,13 @@ public class StartEndDatePage extends HistoryMinerWizardPage implements Selectio
         data.historyEndDate = tempEndDateCal.getTime();
         
         data.participantPrimaryProgrammingLanguage = primaryProgrammingLanguageText.getText().trim();
-        data.participantPrimaryWebBrowser = primaryWebBrowserText.getText().trim();
         
         log.info("Start date = " + startDateCal.getTime());
         log.info("End date = " + tempEndDateCal.getTime());
     }
     
     private void checkPageComplete() {
-        setPageComplete(datesAreOkay && !primaryProgrammingLanguageText.getText().trim().isEmpty() && 
-                !primaryWebBrowserText.getText().trim().isEmpty());
+        setPageComplete(datesAreOkay && !primaryProgrammingLanguageText.getText().trim().isEmpty());
     }
     
     private void updateStartDateLabel(Date startDate) {

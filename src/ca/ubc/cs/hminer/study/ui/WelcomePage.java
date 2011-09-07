@@ -13,18 +13,26 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.custom.BusyIndicator;
 import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.KeyListener;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Text;
 
 import ca.ubc.cs.hminer.study.core.HistoryExtractor;
 import ca.ubc.cs.hminer.study.core.Util.RunnableWithResult;
+import ca.ubc.cs.hminer.study.core.WebBrowserType;
 
-public class WelcomePage extends HistoryMinerWizardPage implements KeyListener {
+import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.layout.FillLayout;
+
+public class WelcomePage extends HistoryMinerWizardPage implements KeyListener, SelectionListener {
     private final static Logger log = Logger.getLogger(HistoryMinerWizardPage.class);
 
     private Text participantIdText;
     private Text occupationText;
+    private Button firefoxRadioButton;
+    private Button chromeRadioButton;
     
     private final static Pattern UUID_PATTERN = Pattern.compile(
             "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}");
@@ -56,10 +64,9 @@ public class WelcomePage extends HistoryMinerWizardPage implements KeyListener {
         gd_lblNewLabel.heightHint = 76;
         gd_lblNewLabel.widthHint = 564;
         lblNewLabel.setLayoutData(gd_lblNewLabel);
-        lblNewLabel.setText("Welcome to the developer browsing history analyzer.  This tool will analyze a portion of your Firefox browsing history to see how often you revisit development-related web pages as you work.  No data will be submitted without your direct consent.  You will have the opportunity to review all data collected before choosing whether to submit it.");
+        lblNewLabel.setText("Welcome to the developer browsing history analyzer.  This tool will analyze a portion of your browsing history to see how often you revisit development-related web pages as you work.  No data will be submitted without your direct consent.  You will have the opportunity to review all data collected before choosing whether to submit it.");
         
         Label lblParticipantId = new Label(container, SWT.NONE);
-        lblParticipantId.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
         lblParticipantId.setText("Participant ID:");
         
         participantIdText = new Text(container, SWT.BORDER);
@@ -88,19 +95,25 @@ public class WelcomePage extends HistoryMinerWizardPage implements KeyListener {
         
         occupationText.addKeyListener(this);
         new Label(container, SWT.NONE);
-        new Label(container, SWT.NONE);
-        new Label(container, SWT.NONE);
-        new Label(container, SWT.NONE);
         
-        new Label(container, SWT.NONE);
+        Label lblPrimaryWebBrowser = new Label(container, SWT.NONE);
+        lblPrimaryWebBrowser.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
+        lblPrimaryWebBrowser.setText("Primary Web Browser: ");
+        
+        Composite composite = new Composite(container, SWT.NONE);
+        composite.setLayout(new FillLayout(SWT.HORIZONTAL));
+        
+        firefoxRadioButton = new Button(composite, SWT.RADIO);
+        firefoxRadioButton.setText("Mozilla Firefox");
+        
+        chromeRadioButton = new Button(composite, SWT.RADIO);
+        chromeRadioButton.setText("Google Chrome");
+        chromeRadioButton.addSelectionListener(this);
+        firefoxRadioButton.addSelectionListener(this);
         new Label(container, SWT.NONE);
         
         Label lblNewLabel_2 = new Label(container, SWT.NONE);
         lblNewLabel_2.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, true, 1, 1));
-        new Label(container, SWT.NONE);
-        new Label(container, SWT.NONE);
-        new Label(container, SWT.NONE);
-        new Label(container, SWT.NONE);
         new Label(container, SWT.NONE);
         new Label(container, SWT.NONE);
     }
@@ -127,8 +140,8 @@ public class WelcomePage extends HistoryMinerWizardPage implements KeyListener {
         if (earliestVisitDateExtractor.getError() != null) {
             log.error("Error extracting earliest visit date", earliestVisitDateExtractor.getError());
             getHistoryMinerWizard().setCloseBrowserRequested(true);
-            MessageDialog.openError(getShell(), "Error Accessing Firefox History",
-                    "An error occurred while trying to access Firefox history.  Please close all open Firefox windows and try again.\n\n" +
+            MessageDialog.openError(getShell(), "Error Accessing Browser History",
+                    "An error occurred while trying to access browser history.  Please close all open browser windows and try again.\n\n" +
                     "Error details: " + earliestVisitDateExtractor.getError());
             return false;
         }
@@ -143,20 +156,38 @@ public class WelcomePage extends HistoryMinerWizardPage implements KeyListener {
     protected void onPageClosing() {
         getHistoryMinerData().participantId = UUID.fromString(participantIdText.getText().trim());
         getHistoryMinerData().participantOccupation = occupationText.getText().trim();
+        getHistoryMinerData().participantPrimaryWebBrowser = (firefoxRadioButton.getSelection() ? WebBrowserType.MOZILLA_FIREFOX : 
+            WebBrowserType.GOOGLE_CHROME);
     }
     
     private void checkPageComplete() {
         boolean pageComplete = false;
-        if (!occupationText.getText().trim().isEmpty()) {
-            try {
-                String participantId = participantIdText.getText().trim();
-                UUID.fromString(participantId);
-                Matcher matcher = UUID_PATTERN.matcher(participantId);
-                if (matcher.find()) {
-                    pageComplete = true;
-                }
-            } catch (IllegalArgumentException e) {}
+        if (firefoxRadioButton.getSelection() || chromeRadioButton.getSelection()) {
+            if (!occupationText.getText().trim().isEmpty()) {
+                try {
+                    String participantId = participantIdText.getText().trim();
+                    UUID.fromString(participantId);
+                    Matcher matcher = UUID_PATTERN.matcher(participantId);
+                    if (matcher.find()) {
+                        pageComplete = true;
+                    }
+                } catch (IllegalArgumentException e) {}
+            }
         }
         setPageComplete(pageComplete);
+    }
+
+    @Override
+    public void widgetDefaultSelected(SelectionEvent event) {
+        if (event.widget == firefoxRadioButton || event.widget == chromeRadioButton) {
+            checkPageComplete();
+        }
+    }
+
+    @Override
+    public void widgetSelected(SelectionEvent event) {
+        if (event.widget == firefoxRadioButton || event.widget == chromeRadioButton) {
+            checkPageComplete();
+        }
     }
 }

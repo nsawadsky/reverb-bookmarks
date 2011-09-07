@@ -118,7 +118,7 @@ public class AnalyzeHistoryPage extends HistoryMinerWizardPage implements Select
             List<HistoryVisit> visitList = extractor.extractHistory(startDate, endDate);
     
             if (getHistoryMinerWizard().getCloseBrowserRequested()) {
-                instructionLabel.setText("You can reopen Firefox while the analysis is in progress.");
+                instructionLabel.setText("You can reopen your browser while the analysis is in progress.");
             }
             progressBar.setSelection(15);
             
@@ -174,8 +174,8 @@ public class AnalyzeHistoryPage extends HistoryMinerWizardPage implements Select
             
             getHistoryMinerWizard().setCloseBrowserRequested(true);
             instructionLabel.setText(CLICK_NEXT);
-            MessageDialog.openError(getShell(), "Error Analyzing Firefox History",
-                    "An error occurred while extracting/analyzing Firefox history.  Please close all open Firefox windows and try again.\n\n" +
+            MessageDialog.openError(getShell(), "Error Analyzing Browser History",
+                    "An error occurred while extracting/analyzing browser history.  Please close all open browser windows and try again.\n\n" +
                     "Error details: " + e);
 
             setBackButtonEnabled(true);
