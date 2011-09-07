@@ -27,7 +27,7 @@ ORDER BY visits.visit_date DESC
      */
     public static void main(String[] args) {
         BasicConfigurator.configure();
-        RootLogger.getRootLogger().setLevel(Level.WARN);
+        RootLogger.getRootLogger().setLevel(Level.INFO);
         
         Calendar startDate = Calendar.getInstance();
         startDate.set(2010, Calendar.NOVEMBER, 1);

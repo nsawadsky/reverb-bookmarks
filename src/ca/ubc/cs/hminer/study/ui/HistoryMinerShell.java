@@ -20,7 +20,7 @@ public class HistoryMinerShell extends Shell {
      */
     public static void main(String args[]) {
         BasicConfigurator.configure();
-        RootLogger.getRootLogger().setLevel(Level.INFO);
+        RootLogger.getRootLogger().setLevel(Level.WARN);
 
         boolean testMode = false;
         Map<String, String> parsedArgs = Util.parseArgs(args);
