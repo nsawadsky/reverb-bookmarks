@@ -68,10 +68,16 @@ public class StartEndDatePage extends HistoryMinerWizardPage implements Selectio
                             "A window of at least two months that includes periods of active coding is preferred.");
         
         startDateLabel = new Label(container, SWT.NONE);
-        startDateLabel.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, false, false, 1, 1));
+        startDateLabel.setAlignment(SWT.CENTER);
+        GridData gd_startDateLabel = new GridData(SWT.CENTER, SWT.TOP, false, false, 1, 1);
+        gd_startDateLabel.widthHint = 150;
+        startDateLabel.setLayoutData(gd_startDateLabel);
         
         endDateLabel = new Label(container, SWT.NONE);
-        endDateLabel.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, false, false, 1, 1));
+        endDateLabel.setAlignment(SWT.CENTER);
+        GridData gd_endDateLabel = new GridData(SWT.CENTER, SWT.TOP, false, false, 1, 1);
+        gd_endDateLabel.widthHint = 150;
+        endDateLabel.setLayoutData(gd_endDateLabel);
         
         startDateControl = new DateTime(container, SWT.CALENDAR);
         startDateControl.setLayoutData(new GridData(SWT.CENTER, SWT.TOP, true, false, 1, 1));
@@ -114,6 +120,7 @@ public class StartEndDatePage extends HistoryMinerWizardPage implements Selectio
         
         updateDateControl(startDateControl, startDateCal);
         updateDateControl(endDateControl, endDateCal);
+        new Label(container, SWT.NONE);
         new Label(container, SWT.NONE);
 
         updateStartDateLabel(startDateCal.getTime());
@@ -209,12 +216,10 @@ public class StartEndDatePage extends HistoryMinerWizardPage implements Selectio
     
     private void updateStartDateLabel(Date startDate) {
         startDateLabel.setText("Start Date: " + DATE_FORMAT.format(startDate));
-        startDateLabel.pack();
     }
     
     private void updateEndDateLabel(Date endDate) {
         endDateLabel.setText("End Date: " + DATE_FORMAT.format(endDate));
-        endDateLabel.pack();
     }
     
     private void updateDateControl(DateTime control, Calendar date) {

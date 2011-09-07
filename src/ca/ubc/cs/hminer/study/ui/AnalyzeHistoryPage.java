@@ -33,6 +33,7 @@ public class AnalyzeHistoryPage extends HistoryMinerWizardPage implements Select
     private Label instructionLabel;
     private Label progressBarLabel;
     private boolean historyAnalyzed = false;
+    private Composite container;
     
     /**
      * Create the wizard.
@@ -49,22 +50,21 @@ public class AnalyzeHistoryPage extends HistoryMinerWizardPage implements Select
      * @param parent
      */
     public void createControl(Composite parent) {
-        Composite container = new Composite(parent, SWT.NULL);
-
+        container = new Composite(parent, SWT.NULL);
+        
         setControl(container);
         container.setLayout(new GridLayout(1, false));
         
         instructionLabel = new Label(container, SWT.NONE);
-        GridData instructionLabelGridData = new GridData(SWT.LEFT, SWT.TOP, true, true, 1, 1);
-        instructionLabelGridData.widthHint = 565;
-        instructionLabel.setLayoutData(instructionLabelGridData);
+        GridData gd_instructionLabel = new GridData(SWT.LEFT, SWT.TOP, true, true, 1, 1);
+        gd_instructionLabel.widthHint = 565;
+        instructionLabel.setLayoutData(gd_instructionLabel);
         instructionLabel.setText(CLICK_NEXT);
         
         progressBarLabel = new Label(container, SWT.CENTER);
-        progressBarLabel.setAlignment(SWT.CENTER);
-        GridData progressBarLabelGridData = new GridData(SWT.CENTER, SWT.TOP, true, false, 1, 1); 
-        progressBarLabelGridData.widthHint = 482;
-        progressBarLabel.setLayoutData(progressBarLabelGridData);
+        GridData gd_progressBarLabel = new GridData(SWT.CENTER, SWT.TOP, true, false, 1, 1);
+        gd_progressBarLabel.widthHint = 300;
+        progressBarLabel.setLayoutData(gd_progressBarLabel);
         
         progressBar = new ProgressBar(container, SWT.NONE);
         GridData gd_progressBar = new GridData(SWT.CENTER, SWT.CENTER, true, false, 1, 1);
@@ -103,7 +103,7 @@ public class AnalyzeHistoryPage extends HistoryMinerWizardPage implements Select
             progressBar.setMaximum(100);
             progressBar.setSelection(5);
             progressBarLabel.setText("Analyzing browsing history ...");
-            progressBarLabel.pack();
+            container.layout();
             
             HistoryMinerData data = getHistoryMinerData();
             
@@ -159,7 +159,8 @@ public class AnalyzeHistoryPage extends HistoryMinerWizardPage implements Select
                         
                         progressBar.setSelection(progressBar.getMaximum());
                         progressBarLabel.setText("Browsing history analyzed.");
-                        progressBarLabel.pack();
+                        container.layout();
+                        
                         setPageComplete(true);
                         instructionLabel.setText("Click Next to continue.");
                         historyAnalyzed = true;
