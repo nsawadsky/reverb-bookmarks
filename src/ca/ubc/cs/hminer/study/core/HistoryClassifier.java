@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -253,10 +254,15 @@ public class HistoryClassifier {
     protected void classifyLocation(Location location, boolean dumpFile) {
         try {
             long startTimeMsecs = System.currentTimeMillis();
-            Document doc = Jsoup.connect(location.url)
-                    .userAgent(FIREFOX_USER_AGENT)
-                    .timeout(PAGE_TIMEOUT_MSECS)
-                    .get();
+            Document doc;
+            if (location.url.startsWith("file:")) {
+                doc = Jsoup.parse(new File(new URI(location.url)), null);
+            } else {
+                doc = Jsoup.connect(location.url)
+                        .userAgent(FIREFOX_USER_AGENT)
+                        .timeout(PAGE_TIMEOUT_MSECS)
+                        .get();
+            }
             long endTimeMsecs = System.currentTimeMillis();
             long pageGetTime = endTimeMsecs - startTimeMsecs;
             log.debug("Page get time = " + pageGetTime + " msecs");
