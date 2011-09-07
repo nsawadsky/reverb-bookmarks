@@ -24,7 +24,7 @@ public class HistoryExtractor {
     private static final String SQLITE3_EXE = "sqlite3.exe";
     private static final String WINDOWS_FIREFOX_SETTINGS_PATH = "Mozilla" + File.separator + "Firefox";
     private static final String LINUX_FIREFOX_SETTINGS_PATH = ".mozilla" + File.separator + "firefox";
-    private static final String PROFILES_INI = "Profiles.ini";
+    private static final String PROFILES_INI = "profiles.ini";
     private static final String FIREFOX_PROFILE_SECTION_PREFIX = "Profile";
     private static final String PLACES_SQLITE = "places.sqlite";
     private static final String LINE_SEPARATOR = System.getProperty("line.separator");
