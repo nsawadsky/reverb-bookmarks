@@ -103,6 +103,7 @@ public class AnalyzeHistoryPage extends HistoryMinerWizardPage implements Select
             progressBar.setMaximum(100);
             progressBar.setSelection(5);
             progressBarLabel.setText("Analyzing browsing history ...");
+            progressBarLabel.pack();
             
             HistoryMinerData data = getHistoryMinerData();
             
@@ -158,6 +159,7 @@ public class AnalyzeHistoryPage extends HistoryMinerWizardPage implements Select
                         
                         progressBar.setSelection(progressBar.getMaximum());
                         progressBarLabel.setText("Browsing history analyzed.");
+                        progressBarLabel.pack();
                         setPageComplete(true);
                         instructionLabel.setText("Click Next to continue.");
                         historyAnalyzed = true;
