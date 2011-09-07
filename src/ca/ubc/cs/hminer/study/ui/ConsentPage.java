@@ -9,7 +9,6 @@ import org.eclipse.swt.custom.BusyIndicator;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 
-import ca.ubc.cs.hminer.study.core.HistoryExtractor;
 import ca.ubc.cs.hminer.study.core.Util.RunnableWithResult;
 
 public class ConsentPage extends HistoryMinerWizardPage {
