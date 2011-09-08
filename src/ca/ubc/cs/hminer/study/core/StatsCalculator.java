@@ -20,15 +20,15 @@ public class StatsCalculator {
                 for (int i = 1; i < visitList.size(); i++) {
                     HistoryVisit visit = visitList.get(i);
                     switch (visit.visitType) {
-                    case VisitType.LINK: {
+                    case FirefoxVisitType.LINK: {
                         revisitCountLink++;
                         break;
                     }
-                    case VisitType.TYPED: {
+                    case FirefoxVisitType.TYPED: {
                         revisitCountTyped++;
                         break;
                     }
-                    case VisitType.BOOKMARK: {
+                    case FirefoxVisitType.BOOKMARK: {
                         revisitCountBookmark++;
                         break;
                     }

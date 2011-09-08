@@ -234,7 +234,7 @@ public class HistoryMinerWizard extends Wizard implements IPageChangingListener,
                 classifierData.codeRelatedLocations);
         
         HistoryReport historyReport = new HistoryReport(historyMinerData.participantOccupation, 
-                historyMinerData.participantPrimaryProgrammingLanguage, historyMinerData.participantPrimaryWebBrowser, new Date(), historyMinerData.historyStartDate, historyMinerData.historyEndDate,
+                historyMinerData.participantPrimaryProgrammingLanguage, HistoryExtractor.getOSType(), historyMinerData.participantPrimaryWebBrowser, new Date(), historyMinerData.historyStartDate, historyMinerData.historyEndDate,
                 historyMinerData.participantId, new SummaryData(classifierData, historyMinerData.classifierAccuracy), codeRelatedStats, 
                 historyMinerData.locationsManuallyClassified, classifierData.locationsClassified, classifierData.visitList);
         

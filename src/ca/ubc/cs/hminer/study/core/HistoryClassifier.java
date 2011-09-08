@@ -143,9 +143,9 @@ public class HistoryClassifier {
         // First filter out visits we are not interested in.
         List<HistoryVisit> redirectsFiltered = new ArrayList<HistoryVisit>();
         for (HistoryVisit visit: visitList) {
-            if (visit.visitType == VisitType.LINK ||
-                    visit.visitType == VisitType.TYPED ||
-                    visit.visitType == VisitType.BOOKMARK) {
+            if (visit.visitType == FirefoxVisitType.LINK ||
+                    visit.visitType == FirefoxVisitType.TYPED ||
+                    visit.visitType == FirefoxVisitType.BOOKMARK) {
                 redirectsFiltered.add(visit);
             }
         }

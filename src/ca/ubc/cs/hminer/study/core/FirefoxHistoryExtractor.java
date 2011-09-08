@@ -19,9 +19,9 @@ public class FirefoxHistoryExtractor extends HistoryExtractor {
     private static Logger log = Logger.getLogger(FirefoxHistoryExtractor.class);   
     
     private static final String APPDATA_ENV_VAR = "APPDATA";
-    private static final String HOME_ENV_VAR = "HOME";
-    private static final String WINDOWS_FIREFOX_SETTINGS_PATH = "Mozilla" + File.separator + "Firefox";
-    private static final String LINUX_FIREFOX_SETTINGS_PATH = ".mozilla" + File.separator + "firefox";
+    private static final String WINDOWS_FIREFOX_SETTINGS_PATH = "Mozilla\\Firefox";
+    private static final String LINUX_FIREFOX_SETTINGS_PATH = ".mozilla/firefox";
+    private static final String MAC_FIREFOX_SETTINGS_PATH = "Library/Application Support/Firefox";
     private static final String PROFILES_INI = "profiles.ini";
     private static final String FIREFOX_PROFILE_SECTION_PREFIX = "Profile";
     private static final String PLACES_SQLITE = "places.sqlite";
@@ -179,18 +179,20 @@ public class FirefoxHistoryExtractor extends HistoryExtractor {
     }
     
     private String getFirefoxSettingsPath() throws HistoryMinerException {
-        if (isWindowsOS()) {
+        switch (getOSType()) {
+        case LINUX: {
+            return "~/" + LINUX_FIREFOX_SETTINGS_PATH;
+        } 
+        case MAC: {
+            return "~/" + MAC_FIREFOX_SETTINGS_PATH;
+        } 
+        default: {
             String appDataPath = System.getenv(APPDATA_ENV_VAR);
             if (appDataPath == null) {
                 throw new HistoryMinerException("APPDATA environment variable not found");
             }
             return appDataPath + File.separator + WINDOWS_FIREFOX_SETTINGS_PATH;
-        } else {
-            String homePath = System.getenv(HOME_ENV_VAR);
-            if (homePath == null) {
-                throw new HistoryMinerException("HOME environment variable not found");
-            }
-            return homePath + File.separator + LINUX_FIREFOX_SETTINGS_PATH;
+        }
         }
     }
     
