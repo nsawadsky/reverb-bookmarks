@@ -33,6 +33,7 @@ public class WelcomePage extends HistoryMinerWizardPage implements KeyListener, 
     private Text occupationText;
     private Button firefoxRadioButton;
     private Button chromeRadioButton;
+    private Button chromiumRadioButton;
     private WebBrowserType webBrowserType = WebBrowserType.MOZILLA_FIREFOX;
     
     private final static Pattern UUID_PATTERN = Pattern.compile(
@@ -102,19 +103,29 @@ public class WelcomePage extends HistoryMinerWizardPage implements KeyListener, 
         lblPrimaryWebBrowser.setText("Primary Web Browser: ");
         
         Composite composite = new Composite(container, SWT.NONE);
-        composite.setLayout(new FillLayout(SWT.HORIZONTAL));
+        composite.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 2, 1));
+        FillLayout fl_composite = new FillLayout(SWT.HORIZONTAL);
+        fl_composite.spacing = 10;
+        composite.setLayout(fl_composite);
         
         firefoxRadioButton = new Button(composite, SWT.RADIO);
         firefoxRadioButton.setText("Mozilla Firefox");
         
         chromeRadioButton = new Button(composite, SWT.RADIO);
         chromeRadioButton.setText("Google Chrome");
+        
+        chromiumRadioButton = new Button(composite, SWT.RADIO);
+        chromiumRadioButton.setText("Chromium");
+        
         chromeRadioButton.addSelectionListener(this);
         firefoxRadioButton.addSelectionListener(this);
+        chromiumRadioButton.addSelectionListener(this);
         new Label(container, SWT.NONE);
         
         Label lblNewLabel_2 = new Label(container, SWT.NONE);
         lblNewLabel_2.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, true, 1, 1));
+        new Label(container, SWT.NONE);
+        new Label(container, SWT.NONE);
         new Label(container, SWT.NONE);
         new Label(container, SWT.NONE);
     }
@@ -162,7 +173,7 @@ public class WelcomePage extends HistoryMinerWizardPage implements KeyListener, 
     
     private void checkPageComplete() {
         boolean pageComplete = false;
-        if (firefoxRadioButton.getSelection() || chromeRadioButton.getSelection()) {
+        if (firefoxRadioButton.getSelection() || chromeRadioButton.getSelection() || chromiumRadioButton.getSelection()) {
             if (!occupationText.getText().trim().isEmpty()) {
                 try {
                     String participantId = participantIdText.getText().trim();
@@ -179,19 +190,20 @@ public class WelcomePage extends HistoryMinerWizardPage implements KeyListener, 
 
     @Override
     public void widgetDefaultSelected(SelectionEvent event) {
-        if (event.widget == firefoxRadioButton || event.widget == chromeRadioButton) {
-            webBrowserType = (chromeRadioButton.getSelection() ? WebBrowserType.GOOGLE_CHROME : 
-                WebBrowserType.MOZILLA_FIREFOX);
-            checkPageComplete();
-        }
+        widgetSelected(event);
     }
 
     @Override
     public void widgetSelected(SelectionEvent event) {
-        if (event.widget == firefoxRadioButton || event.widget == chromeRadioButton) {
-            webBrowserType = (chromeRadioButton.getSelection() ? WebBrowserType.GOOGLE_CHROME : 
-                WebBrowserType.MOZILLA_FIREFOX);
+        if (event.widget == firefoxRadioButton || event.widget == chromeRadioButton || event.widget == chromiumRadioButton) {
+            webBrowserType = WebBrowserType.MOZILLA_FIREFOX;
+            if (chromeRadioButton.getSelection()) {
+                webBrowserType = WebBrowserType.GOOGLE_CHROME;
+            } else if (chromiumRadioButton.getSelection()) {
+                webBrowserType = WebBrowserType.CHROMIUM;
+            }
             checkPageComplete();
         }
     }
+    
 }

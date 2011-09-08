@@ -1,6 +1,6 @@
 package ca.ubc.cs.hminer.study.core;
 
-public class VisitType {
+public class FirefoxVisitType {
     public final static int LINK = 1;
     public final static int TYPED = 2;
     public final static int BOOKMARK = 3;

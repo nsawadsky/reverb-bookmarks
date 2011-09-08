@@ -96,7 +96,7 @@ public class StartEndDatePage extends HistoryMinerWizardPage implements Selectio
         
         lblPrimaryProgrammingLanguage = new Label(composite, SWT.NONE);
         lblPrimaryProgrammingLanguage.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
-        lblPrimaryProgrammingLanguage.setText("Primary programming language during this period:");
+        lblPrimaryProgrammingLanguage.setText("Primary programming languages during this period:");
         
         primaryProgrammingLanguageText = new Text(composite, SWT.BORDER);
         GridData gd_text = new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1);

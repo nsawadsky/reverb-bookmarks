@@ -22,7 +22,7 @@ import ca.ubc.cs.hminer.study.core.HistoryMinerException;
 import ca.ubc.cs.hminer.study.core.HistoryVisit;
 import ca.ubc.cs.hminer.study.core.Location;
 import ca.ubc.cs.hminer.study.core.LocationType;
-import ca.ubc.cs.hminer.study.core.VisitType;
+import ca.ubc.cs.hminer.study.core.FirefoxVisitType;
 
 public class AnalyzeHistoryPage extends HistoryMinerWizardPage implements SelectionListener {
     private final static Logger log = Logger.getLogger(AnalyzeHistoryPage.class);
@@ -191,7 +191,7 @@ public class AnalyzeHistoryPage extends HistoryMinerWizardPage implements Select
             public List<HistoryVisit> extractHistory(Date startDate, Date endDate) throws HistoryMinerException {
                 List<HistoryVisit> result = new ArrayList<HistoryVisit>();
                 for (int i = 1; i <= 5; i++) {
-                    result.add(new HistoryVisit(i, new Date(), VisitType.LINK, 1, i,
+                    result.add(new HistoryVisit(i, new Date(), FirefoxVisitType.LINK, 1, i,
                             "www.site" + i + ".com", "Site Number " + i, "www.site" + (i - 1) + ".com"));
                 }
                 return result;
