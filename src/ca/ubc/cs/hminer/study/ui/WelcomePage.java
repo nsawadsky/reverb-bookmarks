@@ -20,6 +20,7 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Text;
 
 import ca.ubc.cs.hminer.study.core.HistoryExtractor;
+import ca.ubc.cs.hminer.study.core.OSType;
 import ca.ubc.cs.hminer.study.core.Util.RunnableWithResult;
 import ca.ubc.cs.hminer.study.core.WebBrowserType;
 
@@ -116,6 +117,10 @@ public class WelcomePage extends HistoryMinerWizardPage implements KeyListener, 
         
         chromiumRadioButton = new Button(composite, SWT.RADIO);
         chromiumRadioButton.setText("Chromium");
+
+        if (HistoryExtractor.getOSType() != OSType.LINUX) {
+            chromiumRadioButton.setVisible(false);
+        }
         
         chromeRadioButton.addSelectionListener(this);
         firefoxRadioButton.addSelectionListener(this);
