@@ -15,6 +15,7 @@ import org.apache.log4j.Logger;
 public class ChromeHistoryExtractor extends HistoryExtractor {
     private static Logger log = Logger.getLogger(ChromeHistoryExtractor.class);   
     
+    private static final String HOME_ENV_VAR = "HOME";
     private static final String USER_PROFILE_ENV_VAR = "USERPROFILE";
     private static final String WINDOWS_CHROME_SETTINGS_PATH = "Google\\Chrome\\User Data\\Default";
     private static final String WINDOWS_CHROMIUM_SETTINGS_PATH = "Chromium\\User Data\\Default";
@@ -142,18 +143,26 @@ ORDER BY visits.id DESC;
         OSType osType = getOSType();
         switch (osType) {
         case LINUX: {
+            String homePath = System.getenv(HOME_ENV_VAR);
+            if (homePath == null) {
+                throw new HistoryMinerException("HOME environment variable not found");
+            }
             if (isChromium) {
-                settingsPath = "~/" + LINUX_CHROMIUM_SETTINGS_PATH;
+                settingsPath = homePath + File.separator + LINUX_CHROMIUM_SETTINGS_PATH;
             } else {
-                settingsPath = "~/" + LINUX_CHROME_SETTINGS_PATH;
+                settingsPath = homePath + File.separator + LINUX_CHROME_SETTINGS_PATH;
             }
             break;
         }
         case MAC: {
+            String homePath = System.getenv(HOME_ENV_VAR);
+            if (homePath == null) {
+                throw new HistoryMinerException("HOME environment variable not found");
+            }
             if (isChromium) {
-                settingsPath = "~/" + MAC_CHROMIUM_SETTINGS_PATH;
+                settingsPath = homePath + File.separator + MAC_CHROMIUM_SETTINGS_PATH;
             } else {
-                settingsPath = "~/" + MAC_CHROME_SETTINGS_PATH;
+                settingsPath = homePath + File.separator + MAC_CHROME_SETTINGS_PATH;
             }
             break;
         } 

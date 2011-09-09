@@ -18,6 +18,7 @@ import org.ini4j.Profile;
 public class FirefoxHistoryExtractor extends HistoryExtractor {
     private static Logger log = Logger.getLogger(FirefoxHistoryExtractor.class);   
     
+    private static final String HOME_ENV_VAR = "HOME";
     private static final String APPDATA_ENV_VAR = "APPDATA";
     private static final String WINDOWS_FIREFOX_SETTINGS_PATH = "Mozilla\\Firefox";
     private static final String LINUX_FIREFOX_SETTINGS_PATH = ".mozilla/firefox";
@@ -190,10 +191,18 @@ ORDER BY visits.visit_date DESC
     private String getFirefoxSettingsPath() throws HistoryMinerException {
         switch (getOSType()) {
         case LINUX: {
-            return "~/" + LINUX_FIREFOX_SETTINGS_PATH;
+            String homePath = System.getenv(HOME_ENV_VAR);
+            if (homePath == null) {
+                throw new HistoryMinerException("HOME environment variable not found");
+            }
+            return homePath + File.separator + LINUX_FIREFOX_SETTINGS_PATH;
         } 
         case MAC: {
-            return "~/" + MAC_FIREFOX_SETTINGS_PATH;
+            String homePath = System.getenv(HOME_ENV_VAR);
+            if (homePath == null) {
+                throw new HistoryMinerException("HOME environment variable not found");
+            }
+            return homePath + File.separator + MAC_FIREFOX_SETTINGS_PATH;
         } 
         default: {
             String appDataPath = System.getenv(APPDATA_ENV_VAR);
