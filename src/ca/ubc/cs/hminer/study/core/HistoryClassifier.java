@@ -313,12 +313,15 @@ public class HistoryClassifier {
             matches.add(match);
         }
 
+        // False positives on this pattern, e.g. references at bottom of page http://en.wikipedia.org/wiki/Fukushima_Daiichi_nuclear_disaster
+        /*
         matcher = methodInvocationPattern.matcher(text);
         while (matcher.find()) {
             String match = text.substring(matcher.start(), matcher.end());
             log.debug("Found pattern: " + match);
             matches.add(match);
         }
+        */
         
         long endTimeMsecs = System.currentTimeMillis();
         long classifyTime = endTimeMsecs - startTimeMsecs;
