@@ -69,17 +69,17 @@ public class ChromeHistoryExtractor extends HistoryExtractor {
         return result;
     }
     
-    /**
+    /*
 SELECT visits.id, visits.visit_time, visits.transition, visits.segment_id, urls.id, urls.url, urls.title, from_urls.url 
 FROM visits JOIN urls ON visits.url = urls.id 
 LEFT OUTER JOIN visits AS from_visits ON visits.from_visit = from_visits.id 
 LEFT OUTER JOIN urls AS from_urls ON from_visits.url = from_urls.id 
-ORDER BY visits.id;
+ORDER BY visits.id DESC;
      */
     public List<HistoryVisit> extractHistory(Date startDate, Date endDate) throws HistoryMinerException {
         final String queryTemplate = 
             "SELECT visits.id, visits.visit_time, visits.transition, urls.id, urls.url, urls.title, " +
-                "from_urls.url " + 
+                "from_visits.id, from_urls.url " + 
             "FROM visits JOIN urls ON visits.url = urls.id " +
             "LEFT OUTER JOIN visits AS from_visits ON visits.from_visit = from_visits.id " + 
             "LEFT OUTER JOIN urls AS from_urls ON from_visits.url = from_urls.id " +
@@ -106,7 +106,8 @@ ORDER BY visits.id;
                     long locationId = rs.getLong(4);
                     String url = rs.getString(5);
                     String title = rs.getString(6);
-                    String fromUrl = rs.getString(7);
+                    long fromVisitId = rs.getLong(7);
+                    String fromUrl = rs.getString(8);
                     
                     if (log.isTraceEnabled()) {
                         StringBuilder logMsg = new StringBuilder();
@@ -123,7 +124,7 @@ ORDER BY visits.id;
                         log.trace(logMsg.toString());
                     }
                     
-                    results.add(new HistoryVisit(visitId, visitDate, visitType, 0, locationId, url, title, fromUrl));
+                    results.add(new HistoryVisit(visitId, visitDate, visitType, 0, locationId, url, title, fromVisitId, fromUrl));
                 }
             } finally {
                 if (conn != null) { conn.close(); }

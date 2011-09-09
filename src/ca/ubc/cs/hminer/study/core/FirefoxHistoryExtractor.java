@@ -109,10 +109,18 @@ public class FirefoxHistoryExtractor extends HistoryExtractor {
         return result;
     }
     
+    /*
+SELECT datetime(visits.visit_date/1000000, 'unixepoch', 'localtime'), places.url, places.title, visits.visit_type, visits.from_visit, from_places.url
+FROM moz_historyvisits AS visits JOIN moz_places AS places ON visits.place_id = places.id 
+LEFT OUTER JOIN moz_historyvisits AS from_visits ON visits.from_visit = from_visits.id 
+LEFT OUTER JOIN moz_places AS from_places ON from_visits.place_id = from_places.id 
+WHERE visits.visit_date > strftime('%s', '2011-07-01', 'utc') * 1000000
+ORDER BY visits.visit_date DESC
+     */
     public List<HistoryVisit> extractHistory(Date startDate, Date endDate) throws HistoryMinerException {
         final String queryTemplate = 
             "SELECT visits.id, visits.visit_date, visits.visit_type, visits.session, places.id, places.url, places.title, " +
-                "from_places.url " + 
+                "from_visits.id, from_places.url " + 
             "FROM moz_historyvisits AS visits JOIN moz_places AS places ON visits.place_id = places.id " +
             "LEFT OUTER JOIN moz_historyvisits AS from_visits ON visits.from_visit = from_visits.id " + 
             "LEFT OUTER JOIN moz_places AS from_places ON from_visits.place_id = from_places.id " +
@@ -140,7 +148,8 @@ public class FirefoxHistoryExtractor extends HistoryExtractor {
                     long locationId = rs.getLong(5);
                     String url = rs.getString(6);
                     String title = rs.getString(7);
-                    String fromUrl = rs.getString(8);
+                    long fromVisitId = rs.getLong(8);
+                    String fromUrl = rs.getString(9);
                     
                     if (log.isTraceEnabled()) {
                         StringBuilder logMsg = new StringBuilder();
@@ -157,7 +166,7 @@ public class FirefoxHistoryExtractor extends HistoryExtractor {
                         log.trace(logMsg.toString());
                     }
                     
-                    results.add(new HistoryVisit(visitId, visitDate, visitType, sessionId, locationId, url, title, fromUrl));
+                    results.add(new HistoryVisit(visitId, visitDate, visitType, sessionId, locationId, url, title, fromVisitId, fromUrl));
                 }
             } finally {
                 if (conn != null) { conn.close(); }

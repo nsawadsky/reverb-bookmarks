@@ -14,6 +14,7 @@ public class HistoryReport {
             List<HistoryVisit> visitList) {
         this.participantOccupation = participantOccupation;
         this.participantPrimaryProgrammingLanguage = participantPrimaryProgrammingLanguage;
+        this.participantOSType = osType;
         this.participantPrimaryWebBrowser = participantPrimaryWebBrowser;
         this.collectionDate = collectionDate;
         this.historyStartDate = historyStartDate;
@@ -28,7 +29,7 @@ public class HistoryReport {
 
     public String participantOccupation;
     public String participantPrimaryProgrammingLanguage;
-    public OSType osType;
+    public OSType participantOSType;
     public WebBrowserType participantPrimaryWebBrowser;
     public UUID participantId;
     public Date collectionDate;

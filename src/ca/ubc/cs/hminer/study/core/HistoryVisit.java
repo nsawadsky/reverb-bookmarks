@@ -13,16 +13,17 @@ public class HistoryVisit {
     public boolean isGoogleSearch = false;
     
     /**
-     * This attribute cannot be trusted.  The Firefox database frequently has a null
+     * These attributes cannot be trusted.  The Firefox database frequently has a null
      * value for the from_visit column, even though the page was reached via a link on 
      * another page.
      */
+    public long fromVisitId;
     public transient String fromUrl;
 
     public HistoryVisit() {}
     
     public HistoryVisit(long visitId, Date visitDate, int visitType, long sessionId, long locationId, String url, 
-            String title, String fromUrl) {
+            String title, long fromVisitId, String fromUrl) {
         this.visitId = visitId;
         this.locationId = locationId;
         this.sessionId = sessionId;
@@ -30,6 +31,7 @@ public class HistoryVisit {
         this.title = title;
         this.visitDate = visitDate;
         this.visitType = visitType;
+        this.fromVisitId = fromVisitId;
         this.fromUrl = fromUrl;
     }
     
