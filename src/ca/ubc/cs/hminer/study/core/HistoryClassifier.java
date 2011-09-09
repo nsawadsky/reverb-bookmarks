@@ -48,10 +48,11 @@ public class HistoryClassifier {
      *   OR
      * Starts with two or more upper-case and contains at least one lower-case
      *   OR
-     * Starts with lower-case, contains lower-case, decimal digits, and at least one underscore.
+     * Starts with letter, contains letters, decimal digits, and at least one underscore.
      */
     private final static String IDENTIFIER_PATTERN = 
-        "(?x) \\b (?: [a-z] \\w*? [A-Z] \\w* | [A-Z] \\w*? [a-z] \\w*? [A-Z] \\w* | [A-Z]{2,} \\w*? [a-z] \\w* | [a-z][a-z0-9]* _ [a-z0-9] [a-z0-9_]* )";
+        "(?x) \\b (?: [a-z] \\w*? [A-Z] \\w* | [A-Z] \\w*? [a-z] \\w*? [A-Z] \\w* | [A-Z]{2,} \\w*? [a-z] \\w* |" + 
+                "[a-zA-Z] \\w*? _ [a-zA-Z0-9] \\w* )";
     
     /**
      * Starts with an identifier, followed by open-bracket, followed by
