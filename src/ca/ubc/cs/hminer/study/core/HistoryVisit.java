@@ -6,6 +6,7 @@ public class HistoryVisit {
     public long visitId;
     public long locationId;
     public long sessionId;
+    // transient used for fields which must *not* be included in the report that is submitted.
     public transient String url;
     public transient String title;
     public Date visitDate;
