@@ -47,16 +47,18 @@ public class HistoryClassifier {
      * Starts with upper-case and contains at least one lower-case, followed by at least one upper-case
      *   OR
      * Starts with two or more upper-case and contains at least one lower-case
+     *   OR
+     * Starts with lower-case, contains lower-case, decimal digits, and at least one underscore.
      */
-    private final static String CAMEL_CASE_PATTERN = 
-        "(?x) \\b (?: [a-z] \\w*? [A-Z] \\w* | [A-Z] \\w*? [a-z] \\w*? [A-Z] \\w* | [A-Z]{2,} \\w*? [a-z] \\w* )";
+    private final static String IDENTIFIER_PATTERN = 
+        "(?x) \\b (?: [a-z] \\w*? [A-Z] \\w* | [A-Z] \\w*? [a-z] \\w*? [A-Z] \\w* | [A-Z]{2,} \\w*? [a-z] \\w* | [a-z][a-z0-9]* _ [a-z0-9] [a-z0-9_]* )";
     
     /**
-     * Starts with a camel-case word, followed by open-bracket, followed by
-     * at most 40 non-close-bracket characters, followed by a camel-case word. 
+     * Starts with an identifier, followed by open-bracket, followed by
+     * at most 40 non-close-bracket characters, followed by an identifier. 
      */
     private final static String METHOD_PATTERN = 
-        "(?x)" + CAMEL_CASE_PATTERN + "\\s* \\( [^\\)]{0,40}?" + CAMEL_CASE_PATTERN;
+        "(?x)" + IDENTIFIER_PATTERN + "\\s* \\( [^\\)]{0,40}?" + IDENTIFIER_PATTERN;
     
     /**
      * Starts with a word that begins with a lower- or upper-case letter, followed by
@@ -67,12 +69,12 @@ public class HistoryClassifier {
 
     /**
      * Starts with a word that begins with a lower- or upper-case letter, followed
-     * by a dot, followed by another word starting with a lower- or upper-case letter,
+     * by a dot or "->", followed by another word starting with a lower- or upper-case letter,
      * followed by open-bracket, followed by up to 200 characters, followed by 
-     * close-bracket and semi-colon.
+     * close-bracket.
      */
     private final static String METHOD_INVOCATION_PATTERN = 
-        "(?x) \\b [a-zA-Z]\\w* \\s* \\. \\s* [a-zA-Z]\\w* \\s* \\( .{0,200}? \\);";
+        "(?x) \\b [a-zA-Z]\\w* \\s* (?: \\. | ->) \\s* [a-zA-Z]\\w* \\s* \\( .{0,200}? \\)";
     
     private List<HistoryVisit> visitList;
     private Pattern methodPattern;
@@ -85,10 +87,13 @@ public class HistoryClassifier {
     private double overallRevisitRate = 0.0;
     private int googleVisitCount = 0;
     private int locationsToClassifyCount = 0;
+    private WebBrowserType webBrowserType;
     
     private Queue<LocationAndVisits> locationsClassified;  
 
-    public HistoryClassifier(List<HistoryVisit> visitList) {
+    public HistoryClassifier(List<HistoryVisit> visitList, WebBrowserType webBrowserType) {
+        this.webBrowserType = webBrowserType;
+        
         ThreadFactory factory = new ThreadFactory() {
 
             @Override
@@ -114,7 +119,7 @@ public class HistoryClassifier {
     public static void main(String[] args) {
         BasicConfigurator.configure();
         
-        HistoryClassifier classifier = new HistoryClassifier(null);
+        HistoryClassifier classifier = new HistoryClassifier(null, WebBrowserType.MOZILLA_FIREFOX);
         classifier.testClassifier(args[0]);
     }
     
@@ -141,15 +146,8 @@ public class HistoryClassifier {
         this.initialVisitCount = visitList.size();
         
         // First filter out visits we are not interested in.
-        List<HistoryVisit> redirectsFiltered = new ArrayList<HistoryVisit>();
-        for (HistoryVisit visit: visitList) {
-            if (visit.visitType == FirefoxVisitType.LINK ||
-                    visit.visitType == FirefoxVisitType.TYPED ||
-                    visit.visitType == FirefoxVisitType.BOOKMARK) {
-                redirectsFiltered.add(visit);
-            }
-        }
-        
+        List<HistoryVisit> redirectsFiltered = filterRedirects(visitList);
+
         this.redirectVisitCount = initialVisitCount - redirectsFiltered.size();
         
         // Get unique location ID's in filtered list.
@@ -351,5 +349,46 @@ public class HistoryClassifier {
         }
     }
     
+    private List<HistoryVisit> filterRedirects(List<HistoryVisit> visitList) {
+        if (webBrowserType == WebBrowserType.MOZILLA_FIREFOX) {
+            return filterRedirectsFirefox(visitList);
+        }
+        return filterRedirectsChrome(visitList);
+    }
     
+    private List<HistoryVisit> filterRedirectsFirefox(List<HistoryVisit> visitList) {
+        List<HistoryVisit> result= new ArrayList<HistoryVisit>();
+        for (HistoryVisit visit: visitList) {
+            if (visit.visitType == FirefoxVisitType.LINK ||
+                    visit.visitType == FirefoxVisitType.TYPED ||
+                    visit.visitType == FirefoxVisitType.BOOKMARK) {
+                result.add(visit);
+            }
+        }
+        return result;
+    }
+    
+    private List<HistoryVisit> filterRedirectsChrome(List<HistoryVisit> visitList) {
+        List<HistoryVisit> result= new ArrayList<HistoryVisit>();
+        for (HistoryVisit visit: visitList) {
+            // Transition is not a redirect, or is end of redirect chain.
+            // For Chrome, not all redirect chains start with a CHAIN_START transition (e.g.
+            // transition generated by a search at the Wikipedia home page).  As a result, 
+            // unlike Firefox, we include the *end* of the redirect chain, rather than the start.
+            if ((visit.visitType & 0xF0000000) == 0 || (visit.visitType & ChromeVisitType.CHAIN_END) != 0) {
+                int maskedVisitType = (visit.visitType & ChromeVisitType.CORE_MASK);
+                if (maskedVisitType == ChromeVisitType.LINK ||
+                        maskedVisitType == ChromeVisitType.TYPED ||
+                        maskedVisitType == ChromeVisitType.AUTO_BOOKMARK ||
+                        maskedVisitType == ChromeVisitType.GENERATED ||
+                        maskedVisitType == ChromeVisitType.START_PAGE ||
+                        maskedVisitType == ChromeVisitType.FORM_SUBMIT ||
+                        maskedVisitType == ChromeVisitType.KEYWORD) {
+                    result.add(visit);
+                }
+                
+            }
+        }
+        return result;
+    }
 }

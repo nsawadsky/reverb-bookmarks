@@ -9,6 +9,7 @@ import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.ProgressBar;
+import org.eclipse.swt.custom.BusyIndicator;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.layout.GridLayout;
@@ -23,6 +24,8 @@ import ca.ubc.cs.hminer.study.core.HistoryVisit;
 import ca.ubc.cs.hminer.study.core.Location;
 import ca.ubc.cs.hminer.study.core.LocationType;
 import ca.ubc.cs.hminer.study.core.FirefoxVisitType;
+import ca.ubc.cs.hminer.study.core.WebBrowserType;
+import ca.ubc.cs.hminer.study.core.Util.RunnableWithResult;
 
 public class AnalyzeHistoryPage extends HistoryMinerWizardPage implements SelectionListener {
     private final static Logger log = Logger.getLogger(AnalyzeHistoryPage.class);
@@ -105,26 +108,31 @@ public class AnalyzeHistoryPage extends HistoryMinerWizardPage implements Select
             progressBarLabel.setText("Analyzing browsing history ...");
             container.layout();
             
-            HistoryMinerData data = getHistoryMinerData();
+            RunnableWithResult<List<HistoryVisit>> historyExtractor = new RunnableWithResult<List<HistoryVisit>>(){
+                public List<HistoryVisit> call() throws Exception {
+                    HistoryMinerData data = getHistoryMinerData();
+                    
+                    HistoryExtractor extractor = (getHistoryMinerWizard().isTestMode() ? 
+                            getMockHistoryExtractor() : getHistoryMinerWizard().getHistoryExtractor());
+                    
+                    return extractor.extractHistory(data.historyStartDate, data.historyEndDate);
+                }
+            };
             
-            // Note that the values in the wizard may change (if user hits Back button and adjusts start/end dates).
-            // Need to capture the values we are using for this extraction.
-            Date startDate = data.historyStartDate;
-            Date endDate =  data.historyEndDate;
+            BusyIndicator.showWhile(getShell().getDisplay(), historyExtractor);
+            if (historyExtractor.getError() != null) {
+                throw historyExtractor.getError();
+            }
     
-            HistoryExtractor extractor = (getHistoryMinerWizard().isTestMode() ? 
-                    getMockHistoryExtractor() : getHistoryMinerWizard().getHistoryExtractor());
+            List<HistoryVisit> visitList = historyExtractor.getResult();
             
-            // TODO: Display busy cursor while extracting history
-            List<HistoryVisit> visitList = extractor.extractHistory(startDate, endDate);
-    
             if (getHistoryMinerWizard().getCloseBrowserRequested()) {
                 instructionLabel.setText("You can reopen your browser while the analysis is in progress.");
             }
             progressBar.setSelection(15);
             
             final HistoryClassifier classifier = (getHistoryMinerWizard().isTestMode() ? 
-                    getMockClassifier(visitList) : new HistoryClassifier(visitList)); 
+                    getMockClassifier(visitList) : getHistoryMinerWizard().getHistoryClassifier(visitList)); 
             
             classifier.startClassifying();
             
@@ -170,7 +178,7 @@ public class AnalyzeHistoryPage extends HistoryMinerWizardPage implements Select
                     }
                 }
             });
-        } catch (HistoryMinerException e) {
+        } catch (Exception e) {
             log.error("Error extracting/analysing history", e);
             
             getHistoryMinerWizard().setCloseBrowserRequested(true);
@@ -192,7 +200,7 @@ public class AnalyzeHistoryPage extends HistoryMinerWizardPage implements Select
                 List<HistoryVisit> result = new ArrayList<HistoryVisit>();
                 for (int i = 1; i <= 5; i++) {
                     result.add(new HistoryVisit(i, new Date(), FirefoxVisitType.LINK, 1, i,
-                            "www.site" + i + ".com", "Site Number " + i, "www.site" + (i - 1) + ".com"));
+                            "www.site" + i + ".com", "Site Number " + i, i - 1, "www.site" + (i - 1) + ".com"));
                 }
                 return result;
             }
@@ -205,7 +213,7 @@ public class AnalyzeHistoryPage extends HistoryMinerWizardPage implements Select
     }
     
     private HistoryClassifier getMockClassifier(List<HistoryVisit> visits) throws HistoryMinerException {
-        return new HistoryClassifier(visits) {
+        return new HistoryClassifier(visits, WebBrowserType.MOZILLA_FIREFOX) {
             
             @Override
             protected void classifyLocation(Location location, boolean dumpFile) {

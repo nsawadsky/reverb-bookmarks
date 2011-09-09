@@ -5,6 +5,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.Date;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -31,10 +32,12 @@ import org.eclipse.jface.wizard.WizardDialog;
 import org.eclipse.swt.custom.BusyIndicator;
 
 import ca.ubc.cs.hminer.study.core.ClassifierData;
+import ca.ubc.cs.hminer.study.core.HistoryClassifier;
 import ca.ubc.cs.hminer.study.core.HistoryExtractor;
 import ca.ubc.cs.hminer.study.core.HistoryMinerData;
 import ca.ubc.cs.hminer.study.core.HistoryMinerException;
 import ca.ubc.cs.hminer.study.core.HistoryReport;
+import ca.ubc.cs.hminer.study.core.HistoryVisit;
 import ca.ubc.cs.hminer.study.core.LocationListStats;
 import ca.ubc.cs.hminer.study.core.StatsCalculator;
 import ca.ubc.cs.hminer.study.core.SummaryData;
@@ -231,7 +234,7 @@ public class HistoryMinerWizard extends Wizard implements IPageChangingListener,
     public String generateReport() throws IOException {
         ClassifierData classifierData = historyMinerData.classifierData;
         LocationListStats codeRelatedStats = StatsCalculator.calculateStats(
-                classifierData.codeRelatedLocations);
+                classifierData.codeRelatedLocations, historyMinerData.participantPrimaryWebBrowser);
         
         HistoryReport historyReport = new HistoryReport(historyMinerData.participantOccupation, 
                 historyMinerData.participantPrimaryProgrammingLanguage, HistoryExtractor.getOSType(), historyMinerData.participantPrimaryWebBrowser, new Date(), historyMinerData.historyStartDate, historyMinerData.historyEndDate,
@@ -252,6 +255,10 @@ public class HistoryMinerWizard extends Wizard implements IPageChangingListener,
     
     public HistoryExtractor getHistoryExtractor() throws HistoryMinerException {
         return HistoryExtractor.getHistoryExtractor(historyMinerData.participantPrimaryWebBrowser);
+    }
+    
+    public HistoryClassifier getHistoryClassifier(List<HistoryVisit> visitList) throws HistoryMinerException {
+        return new HistoryClassifier(visitList, historyMinerData.participantPrimaryWebBrowser);
     }
 
 }

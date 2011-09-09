@@ -24,7 +24,7 @@ import ca.ubc.cs.hminer.study.core.Util.RunnableWithResult;
 import ca.ubc.cs.hminer.study.core.WebBrowserType;
 
 import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.layout.RowLayout;
 
 public class WelcomePage extends HistoryMinerWizardPage implements KeyListener, SelectionListener {
     private final static Logger log = Logger.getLogger(HistoryMinerWizardPage.class);
@@ -103,10 +103,10 @@ public class WelcomePage extends HistoryMinerWizardPage implements KeyListener, 
         lblPrimaryWebBrowser.setText("Primary Web Browser: ");
         
         Composite composite = new Composite(container, SWT.NONE);
+        RowLayout rl_composite = new RowLayout(SWT.HORIZONTAL);
+        rl_composite.spacing = 10;
+        composite.setLayout(rl_composite);
         composite.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 2, 1));
-        FillLayout fl_composite = new FillLayout(SWT.HORIZONTAL);
-        fl_composite.spacing = 10;
-        composite.setLayout(fl_composite);
         
         firefoxRadioButton = new Button(composite, SWT.RADIO);
         firefoxRadioButton.setText("Mozilla Firefox");

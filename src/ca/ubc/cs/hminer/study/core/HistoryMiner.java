@@ -10,16 +10,6 @@ import org.apache.log4j.spi.RootLogger;
 
 public class HistoryMiner {
 
-    /*
-SELECT datetime(visits.visit_date/1000000, 'unixepoch', 'localtime'), places.url, places.title, visits.visit_type, visits.from_visit, from_places.url
-FROM moz_historyvisits AS visits JOIN moz_places AS places ON visits.place_id = places.id 
-LEFT OUTER JOIN moz_historyvisits AS from_visits ON visits.from_visit = from_visits.id 
-LEFT OUTER JOIN moz_places AS from_places ON from_visits.place_id = from_places.id 
-WHERE visits.visit_date > strftime('%s', '2011-07-01', 'utc') * 1000000
-AND visits.visit_date < strftime('%s', '2011-08-31', 'utc') * 1000000
-ORDER BY visits.visit_date DESC
-     */
-    
     private static Logger log = Logger.getLogger(HistoryMiner.class);
   
     /**
@@ -39,7 +29,7 @@ ORDER BY visits.visit_date DESC
             List<HistoryVisit> visits = extractor.extractHistory(startDate.getTime(), endDate.getTime());
             log.info("Total visits = " + visits.size());
 
-            HistoryClassifier classifier = new HistoryClassifier(visits);
+            HistoryClassifier classifier = new HistoryClassifier(visits, WebBrowserType.MOZILLA_FIREFOX);
             
             classifier.startClassifying();
             
@@ -58,7 +48,8 @@ ORDER BY visits.visit_date DESC
             
             ClassifierData classifierResults = classifier.getResults();
             
-            LocationListStats codeRelatedStats = StatsCalculator.calculateStats(classifierResults.codeRelatedLocations);
+            LocationListStats codeRelatedStats = StatsCalculator.calculateStats(classifierResults.codeRelatedLocations,
+                    WebBrowserType.MOZILLA_FIREFOX);
             
             log.info("Total code-related visits = " + codeRelatedStats.visitCount);
             log.info("Code-related revisit rate = " + codeRelatedStats.revisitRate);

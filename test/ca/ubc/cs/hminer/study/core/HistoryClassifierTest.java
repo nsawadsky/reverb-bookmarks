@@ -18,7 +18,7 @@ public class HistoryClassifierTest {
     @Test
     public void testClassifyVisit() {
         HistoryClassifier classifier = new HistoryClassifier(
-                new ArrayList<HistoryVisit>());
+                new ArrayList<HistoryVisit>(), WebBrowserType.MOZILLA_FIREFOX);
         
         // No text
         Document doc = Jsoup.parse("<html><body></body></html>");
@@ -32,10 +32,18 @@ public class HistoryClassifierTest {
         doc = Jsoup.parse("<html><body>myMethod(int myArg) myMethod(int myArg)</body></html>");
         assertEquals(LocationType.CODE_RELATED, classifier.classifyDocument(doc, false));
 
+        // Two C++-style method declarations, each with an argument
+        doc = Jsoup.parse("<html><body>my_method(int my_arg) my_method(int my_arg)</body></html>");
+        assertEquals(LocationType.CODE_RELATED, classifier.classifyDocument(doc, false));
+
         // Two method invocations
-        doc = Jsoup.parse("<html><body>myInstance.myMethod(5); myInstance.myMethod(5);</body></html>");
+        doc = Jsoup.parse("<html><body>myInstance.myMethod(5) myInstance.myMethod(5)</body></html>");
         assertEquals(LocationType.CODE_RELATED, classifier.classifyDocument(doc, false));
         
+        // Two C++ method invocations
+        doc = Jsoup.parse("<html><body>myInstance->myMethod(5); myInstance->myMethod(5);</body></html>");
+        assertEquals(LocationType.CODE_RELATED, classifier.classifyDocument(doc, false));
+
         Pattern pat = Pattern.compile("http://www\\.google\\.\\S+/search");
         
         assertTrue(pat.matcher("http://www.google.co.uk/search?test").find());
