@@ -1,9 +1,14 @@
 package ca.ubc.cs.hminer.study.core;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Writer;
+import java.net.CookiePolicy;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,8 +29,18 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import org.apache.http.Header;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.params.BasicHttpParams;
+import org.apache.http.params.HttpConnectionParams;
+import org.apache.http.params.HttpParams;
 import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.apache.log4j.spi.RootLogger;
 
 public class HistoryClassifier {
     private static Logger log = Logger.getLogger(HistoryClassifier.class);
@@ -34,7 +49,7 @@ public class HistoryClassifier {
     private final static String FIREFOX_USER_AGENT = 
         "Mozilla/5.0 (Windows NT 6.0; rv:5.0) Gecko/20100101 Firefox/5.0";
     private final static int CODE_RELATED_MATCH_THRESHOLD = 2;
-    private final static int PAGE_TIMEOUT_MSECS = 5000;
+    private final static int PAGE_TIMEOUT_MSECS = 8000;
     
     // TODO: Better handling for other locales
     public final static String GOOGLE_PREFIX = "http://www.google.";
@@ -119,6 +134,8 @@ public class HistoryClassifier {
     
     public static void main(String[] args) {
         BasicConfigurator.configure();
+        RootLogger.getRootLogger().setLevel(Level.INFO);
+        log.setLevel(Level.DEBUG);
         
         HistoryClassifier classifier = new HistoryClassifier(null, WebBrowserType.MOZILLA_FIREFOX);
         classifier.testClassifier(args[0]);
@@ -251,20 +268,60 @@ public class HistoryClassifier {
     }
     
     protected void classifyLocation(Location location, boolean dumpFile) {
+        InputStream inputStream = null;
         try {
             long startTimeMsecs = System.currentTimeMillis();
-            Document doc;
+            
             if (location.url.startsWith("file:")) {
-                doc = Jsoup.parse(new File(new URI(location.url)), null);
+                inputStream = new FileInputStream(new File(new URI(location.url)));
             } else {
-                doc = Jsoup.connect(location.url)
-                        .userAgent(FIREFOX_USER_AGENT)
-                        .timeout(PAGE_TIMEOUT_MSECS)
-                        .get();
+                // TODO: Share HttpClient instance
+                HttpParams params = new BasicHttpParams();
+                HttpConnectionParams.setConnectionTimeout(params, PAGE_TIMEOUT_MSECS);
+                HttpConnectionParams.setSoTimeout(params, PAGE_TIMEOUT_MSECS);
+                HttpClient httpClient = new DefaultHttpClient(params);
+                
+                HttpGet httpGet = new HttpGet(location.url);
+                httpGet.setHeader("User-Agent", FIREFOX_USER_AGENT);
+                
+                HttpResponse response = httpClient.execute(httpGet);
+                inputStream = response.getEntity().getContent();
+                Header contentType = response.getEntity().getContentType();
+                if (contentType == null || contentType.getValue() == null) {
+                    throw new HistoryMinerException("Missing content type header");
+                }
+                String contentTypeValue = contentType.getValue();
+                if (!(contentTypeValue.startsWith("text/") || contentTypeValue.startsWith("application/xml") || 
+                        contentTypeValue.startsWith("application/xhtml+xml"))) {
+                    throw new HistoryMinerException("Unsupported content type '" + contentTypeValue + "'");
+                }
             }
+            
+            ByteArrayOutputStream page = new ByteArrayOutputStream();
+            
+            final int BUF_SIZE = 10 * 1024;
+            final int MAX_PAGE_SIZE = 2 * 1024 * 1024;
+            byte buffer[] = new byte[BUF_SIZE];
+            
+            int bytesRead = 0;
+            while (bytesRead > -1) {
+                bytesRead = inputStream.read(buffer);
+                if (bytesRead > -1) {
+                    page.write(buffer, 0, bytesRead);
+                    if (page.size() > MAX_PAGE_SIZE) {
+                        throw new HistoryMinerException("URL exceeded max page size (" + 
+                                MAX_PAGE_SIZE + " bytes): " + location.url);
+                    }
+                }
+            }
+            
+            ByteArrayInputStream byteStream = new ByteArrayInputStream(page.toByteArray());
+            
+            Document doc = Jsoup.parse(byteStream, null, location.url);
+            
             long endTimeMsecs = System.currentTimeMillis();
             long pageGetTime = endTimeMsecs - startTimeMsecs;
-            log.debug("Page get time = " + pageGetTime + " msecs");
+            log.debug("Page get/parse time = " + pageGetTime + " msecs");
             location.locationType = classifyDocument(doc, dumpFile);
             
             // baseUri attribute is not reliable.
@@ -273,7 +330,13 @@ public class HistoryClassifier {
         } catch (Exception e) {
             log.info("Exception processing URL '" + location.url + "': " + e);
             location.locationType = LocationType.UNKNOWN;
-        } 
+        } finally {
+            if (inputStream != null) {
+                try {
+                    inputStream.close();
+                } catch (Exception e) {}
+            }
+        }
     }
     
     
