@@ -354,7 +354,7 @@ public class HistoryClassifier {
             // location.url = doc.baseUri();
             location.title = doc.title();
         } catch (Exception e) {
-            log.error("Exception processing URL '" + location.url + "': " + e);
+            log.info("Exception processing URL '" + location.url + "': " + e);
             location.locationType = LocationType.UNKNOWN;
         } 
     }
