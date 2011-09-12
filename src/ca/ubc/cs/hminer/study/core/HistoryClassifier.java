@@ -8,19 +8,14 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
-import java.net.CookiePolicy;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -30,13 +25,23 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import org.apache.http.Header;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.params.ClientPNames;
+import org.apache.http.client.params.CookiePolicy;
+import org.apache.http.client.protocol.ClientContext;
+import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
+import org.apache.http.protocol.BasicHttpContext;
+import org.apache.http.protocol.HttpContext;
+import org.apache.http.util.EntityUtils;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -50,6 +55,12 @@ public class HistoryClassifier {
         "Mozilla/5.0 (Windows NT 6.0; rv:5.0) Gecko/20100101 Firefox/5.0";
     private final static int CODE_RELATED_MATCH_THRESHOLD = 2;
     private final static int PAGE_TIMEOUT_MSECS = 8000;
+    
+    // Access to each list must be synchronized on the list.
+    private List<LocationAndVisits> locationsToClassify = new LinkedList<LocationAndVisits>();
+    private List<LocationAndVisits> locationsClassified = new ArrayList<LocationAndVisits>(); 
+    
+    private volatile boolean isShutdown = false;
     
     // TODO: Better handling for other locales
     public final static String GOOGLE_PREFIX = "http://www.google.";
@@ -97,32 +108,16 @@ public class HistoryClassifier {
     private Pattern methodInvocationPattern;
     private Pattern noArgsMethodPattern;
     private Pattern googleSearchPattern;
-    private ThreadPoolExecutor executor;
     private int initialVisitCount = 0;
     private int redirectVisitCount = 0;
     private double overallRevisitRate = 0.0;
     private int googleVisitCount = 0;
     private int locationsToClassifyCount = 0;
     private WebBrowserType webBrowserType;
+    private HttpClient httpClient = null;
     
-    private Queue<LocationAndVisits> locationsClassified;  
-
     public HistoryClassifier(List<HistoryVisit> visitList, WebBrowserType webBrowserType) {
         this.webBrowserType = webBrowserType;
-        
-        ThreadFactory factory = new ThreadFactory() {
-
-            @Override
-            public Thread newThread(Runnable runnable) {
-                Thread thread = new Thread(runnable);
-                thread.setDaemon(true);
-                return thread;
-            }
-            
-        };
-        this.executor = new ThreadPoolExecutor(POOL_SIZE, POOL_SIZE, 0, TimeUnit.SECONDS, 
-                new LinkedBlockingQueue<Runnable>(), factory);
-        this.locationsClassified = new LinkedBlockingQueue<LocationAndVisits>();
         
         this.visitList = visitList;
         this.methodPattern = Pattern.compile(METHOD_PATTERN, Pattern.DOTALL);
@@ -143,6 +138,7 @@ public class HistoryClassifier {
     
     public void testClassifier(String url) {
         Location location = new Location(0, url, "");
+        httpClient = createHttpClient();
         classifyLocation(location, true);
 
         switch (location.locationType) {
@@ -158,6 +154,8 @@ public class HistoryClassifier {
             break;
         }
         }
+
+        httpClient.getConnectionManager().shutdown();
     }
     
     public void startClassifying() {
@@ -209,16 +207,29 @@ public class HistoryClassifier {
         }
         locationsToClassifyCount = locationsById.size();
         
-        for (final LocationAndVisits locationAndVisits: locationsById.values()) {
-            executor.submit(new Runnable() {
-
+        synchronized (locationsToClassify) {
+            for (LocationAndVisits locationAndVisits: locationsById.values()) {
+                locationsToClassify.add(locationAndVisits);
+            }
+        }
+        
+        httpClient = createHttpClient();
+        for (int i = 0; i < POOL_SIZE; i++) {
+            Thread thread = new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    classifyLocation(locationAndVisits.location, false);
-                    locationsClassified.add(locationAndVisits);
+                    LocationAndVisits next = null;
+                    do {
+                        next = getNextLocation();
+                        if (next != null) {
+                            classifyLocation(next.location, false);
+                            addClassifiedLocation(next);
+                        }
+                    } while (!isShutdown && next != null);
                 }
-                
             });
+            thread.setDaemon(true);
+            thread.start();
         }
     }
 
@@ -227,19 +238,22 @@ public class HistoryClassifier {
     }
     
     public int getLocationsClassifiedCount() {
-        return locationsClassified.size();
+        synchronized (locationsClassified) {
+            return locationsClassified.size();
+        }
     }
     
     /**
-     * Drains the queue of already-classified locations.
+     * Returns all already-classified locations.
      */
     public ClassifierData getResults() {
         List<Location> locationList = new ArrayList<Location>();
         List<LocationAndVisits> locationAndVisitsList = new ArrayList<LocationAndVisits>();
-        while (!locationsClassified.isEmpty()) {
-            LocationAndVisits locationAndVisits = locationsClassified.remove();
-            locationList.add(locationAndVisits.location);
-            locationAndVisitsList.add(locationAndVisits);
+        synchronized (locationsClassified) {
+            for (LocationAndVisits locationAndVisits: locationsClassified) {
+                locationList.add(locationAndVisits.location);
+                locationAndVisitsList.add(locationAndVisits);
+            }
         }
         List<LocationAndVisits> codeRelatedLocations = new ArrayList<LocationAndVisits>();
         List<LocationAndVisits> nonCodeRelatedLocations = new ArrayList<LocationAndVisits>();
@@ -259,59 +273,76 @@ public class HistoryClassifier {
                 codeRelatedLocations, locationList, visitList);
     }
     
-    public boolean isDone() {
-        return getLocationsClassifiedCount() == getLocationsToClassifyCount();
-    }
-    
     public void shutdown() {
-        executor.shutdown();
+        isShutdown = true;
+        if (httpClient != null) {
+            httpClient.getConnectionManager().shutdown();
+        }
     }
     
     protected void classifyLocation(Location location, boolean dumpFile) {
-        InputStream inputStream = null;
         try {
             long startTimeMsecs = System.currentTimeMillis();
             
-            if (location.url.startsWith("file:")) {
-                inputStream = new FileInputStream(new File(new URI(location.url)));
-            } else {
-                // TODO: Share HttpClient instance
-                HttpParams params = new BasicHttpParams();
-                HttpConnectionParams.setConnectionTimeout(params, PAGE_TIMEOUT_MSECS);
-                HttpConnectionParams.setSoTimeout(params, PAGE_TIMEOUT_MSECS);
-                HttpClient httpClient = new DefaultHttpClient(params);
-                
-                HttpGet httpGet = new HttpGet(location.url);
-                httpGet.setHeader("User-Agent", FIREFOX_USER_AGENT);
-                
-                HttpResponse response = httpClient.execute(httpGet);
-                inputStream = response.getEntity().getContent();
-                Header contentType = response.getEntity().getContentType();
-                if (contentType == null || contentType.getValue() == null) {
-                    throw new HistoryMinerException("Missing content type header");
-                }
-                String contentTypeValue = contentType.getValue();
-                if (!(contentTypeValue.startsWith("text/") || contentTypeValue.startsWith("application/xml") || 
-                        contentTypeValue.startsWith("application/xhtml+xml"))) {
-                    throw new HistoryMinerException("Unsupported content type '" + contentTypeValue + "'");
-                }
-            }
-            
-            ByteArrayOutputStream page = new ByteArrayOutputStream();
-            
-            final int BUF_SIZE = 10 * 1024;
-            final int MAX_PAGE_SIZE = 2 * 1024 * 1024;
-            byte buffer[] = new byte[BUF_SIZE];
-            
-            int bytesRead = 0;
-            while (bytesRead > -1) {
-                bytesRead = inputStream.read(buffer);
-                if (bytesRead > -1) {
-                    page.write(buffer, 0, bytesRead);
-                    if (page.size() > MAX_PAGE_SIZE) {
-                        throw new HistoryMinerException("URL exceeded max page size (" + 
-                                MAX_PAGE_SIZE + " bytes): " + location.url);
+            InputStream inputStream = null;
+            HttpGet httpGet = null;
+            ByteArrayOutputStream page = null;
+            HttpEntity responseEntity = null;
+            try {
+                if (location.url.startsWith("file:")) {
+                    inputStream = new FileInputStream(new File(new URI(location.url)));
+                } else {
+                    httpGet = new HttpGet(location.url);
+                    httpGet.setHeader("User-Agent", FIREFOX_USER_AGENT);
+    
+                    HttpResponse response = httpClient.execute(httpGet);
+                    responseEntity = response.getEntity();
+                    inputStream = responseEntity.getContent();
+                    Header contentType = responseEntity.getContentType();
+                    if (contentType == null || contentType.getValue() == null) {
+                        throw new HistoryMinerException("Missing content type header");
                     }
+                    String contentTypeValue = contentType.getValue();
+                    if (!(contentTypeValue.startsWith("text/") || contentTypeValue.startsWith("application/xml") || 
+                            contentTypeValue.startsWith("application/xhtml+xml"))) {
+                        throw new HistoryMinerException("Unsupported content type '" + contentTypeValue + "'");
+                    }
+                }
+                
+                page = new ByteArrayOutputStream();
+                
+                final int BUF_SIZE = 10 * 1024;
+                final int MAX_PAGE_SIZE = 2 * 1024 * 1024;
+                byte buffer[] = new byte[BUF_SIZE];
+                
+                int bytesRead = 0;
+                while (bytesRead > -1) {
+                    bytesRead = inputStream.read(buffer);
+                    if (bytesRead > -1) {
+                        page.write(buffer, 0, bytesRead);
+                        if (page.size() > MAX_PAGE_SIZE) {
+                            throw new HistoryMinerException("Page exceeded max size (" + 
+                                    MAX_PAGE_SIZE + " bytes): " + location.url);
+                        }
+                    }
+                }
+                
+                if (responseEntity != null) {
+                    // Ensures input stream is closed and connection is released.
+                    EntityUtils.consume(responseEntity);
+                }
+            } catch (Exception e) {
+                if (httpGet != null) {
+                    // Recommended cleanup for HTTP request in case of exception.
+                    httpGet.abort();
+                }
+                throw e;
+            } finally {
+                // Need this for the case where input stream is associated with a file.
+                if (inputStream != null) {
+                    try {
+                        inputStream.close();
+                    } catch (Exception e) { }
                 }
             }
             
@@ -328,17 +359,10 @@ public class HistoryClassifier {
             // location.url = doc.baseUri();
             location.title = doc.title();
         } catch (Exception e) {
-            log.info("Exception processing URL '" + location.url + "': " + e);
+            log.error("Exception processing URL '" + location.url + "': " + e);
             location.locationType = LocationType.UNKNOWN;
-        } finally {
-            if (inputStream != null) {
-                try {
-                    inputStream.close();
-                } catch (Exception e) {}
-            }
-        }
+        } 
     }
-    
     
     protected LocationType classifyDocument(Document doc, boolean dumpFile) {
             
@@ -415,7 +439,7 @@ public class HistoryClassifier {
             return LocationType.NON_CODE_RELATED;
         }
     }
-    
+
     private List<HistoryVisit> filterRedirects(List<HistoryVisit> visitList) {
         if (webBrowserType == WebBrowserType.MOZILLA_FIREFOX) {
             return filterRedirectsFirefox(visitList);
@@ -458,4 +482,33 @@ public class HistoryClassifier {
         }
         return result;
     }
+
+    private LocationAndVisits getNextLocation() {
+        synchronized (locationsToClassify) {
+            if (locationsToClassify.isEmpty()) {
+                return null;
+            }
+            return locationsToClassify.remove(0);
+        }
+    }
+    
+    private void addClassifiedLocation(LocationAndVisits locationAndVisits) {
+        synchronized (locationsClassified) {
+            locationsClassified.add(locationAndVisits);
+        }
+    }
+    
+    private HttpClient createHttpClient() {
+        HttpParams params = new BasicHttpParams();
+        HttpConnectionParams.setConnectionTimeout(params, PAGE_TIMEOUT_MSECS);
+        HttpConnectionParams.setSoTimeout(params, PAGE_TIMEOUT_MSECS);
+        
+        params.setParameter(ClientPNames.COOKIE_POLICY, CookiePolicy.IGNORE_COOKIES);
+        
+        ThreadSafeClientConnManager connectionManager = new ThreadSafeClientConnManager();
+        connectionManager.setMaxTotal(POOL_SIZE + 5);
+        connectionManager.setDefaultMaxPerRoute(5);
+        return new DefaultHttpClient(connectionManager, params);
+    }
+    
 }

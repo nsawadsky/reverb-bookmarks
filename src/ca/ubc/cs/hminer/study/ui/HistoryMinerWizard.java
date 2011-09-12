@@ -114,6 +114,7 @@ public class HistoryMinerWizard extends Wizard implements IPageChangingListener,
             
             public void run() {
                 File zipFile = null;
+                HttpClient httpClient = null;
                 try {
                     String report = generateReport();
                     ZipOutputStream zipOutput = null;
@@ -134,7 +135,7 @@ public class HistoryMinerWizard extends Wizard implements IPageChangingListener,
                         if (zipOutput != null) { zipOutput.close(); }
                     }
                     
-                    HttpClient httpClient = new DefaultHttpClient();
+                    httpClient = new DefaultHttpClient();
                     HttpPost httpPost = new HttpPost(UPLOAD_URL);
                     
                     MultipartEntity requestEntity = new MultipartEntity();
@@ -162,6 +163,7 @@ public class HistoryMinerWizard extends Wizard implements IPageChangingListener,
                     error = e;
                 } finally {
                     if (zipFile != null) { zipFile.delete(); }
+                    if (httpClient !=null) { httpClient.getConnectionManager().shutdown(); }
                 }
             }
         }
