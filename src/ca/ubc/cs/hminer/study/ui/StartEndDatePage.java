@@ -8,6 +8,7 @@ import org.apache.log4j.Logger;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.DateTime;
+import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.KeyListener;
 import org.eclipse.swt.events.SelectionEvent;
@@ -196,6 +197,21 @@ public class StartEndDatePage extends HistoryMinerWizardPage implements Selectio
         
         log.info("Start date = " + startDateCal.getTime());
         log.info("End date = " + tempEndDateCal.getTime());
+    }
+    
+    @Override 
+    protected boolean onNextPressed() {
+        Calendar tempStartDateCal = Calendar.getInstance();
+        tempStartDateCal.setTime(startDateCal.getTime());
+        tempStartDateCal.add(Calendar.MONTH, 6);
+        if (tempStartDateCal.before(endDateCal)) {
+            MessageBox mb = new MessageBox(getShell(), SWT.OK | SWT.ICON_ERROR);
+            mb.setText("Date Range Too Large");
+            mb.setMessage("Date range must be less than 6 months.");
+            mb.open();
+            return false;
+        }
+        return true;
     }
     
     private void checkPageComplete() {

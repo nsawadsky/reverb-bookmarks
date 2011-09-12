@@ -36,6 +36,7 @@ public class HistoryClassifierTest {
         doc = Jsoup.parse("<html><body>my_method(int my_arg) my_method(int my_arg)</body></html>");
         assertEquals(LocationType.CODE_RELATED, classifier.classifyDocument(doc, false));
 
+        /*
         // Two method invocations
         doc = Jsoup.parse("<html><body>myInstance.myMethod(5) myInstance.myMethod(5)</body></html>");
         assertEquals(LocationType.CODE_RELATED, classifier.classifyDocument(doc, false));
@@ -43,6 +44,7 @@ public class HistoryClassifierTest {
         // Two C++ method invocations
         doc = Jsoup.parse("<html><body>myInstance->myMethod(5); myInstance->myMethod(5);</body></html>");
         assertEquals(LocationType.CODE_RELATED, classifier.classifyDocument(doc, false));
+        */
 
         Pattern pat = Pattern.compile("http://www\\.google\\.\\S+/search");
         

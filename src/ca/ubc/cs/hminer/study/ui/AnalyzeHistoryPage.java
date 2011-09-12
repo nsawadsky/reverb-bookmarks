@@ -142,38 +142,49 @@ public class AnalyzeHistoryPage extends HistoryMinerWizardPage implements Select
                 
                 @Override 
                 public void run() {
-                    double fractionComplete = 100.0;
-                    if ( classifier.getLocationsToClassifyCount() > 0 ) {
-                        fractionComplete = (double)classifier.getLocationsClassifiedCount() / 
-                                classifier.getLocationsToClassifyCount();
-                    }
-                    progressBar.setSelection(15 + (int)(fractionComplete * 80));
-                    iterationCount++;
-                    
-                    boolean done = classifier.isDone();
-                    
-                    if (!done) {
-                        if (iterationCount % 4 == 0) {
-                            if (classifier.getLocationsClassifiedCount() == prevLocationsClassified) {
-                                done = true;
-                            } else {
-                                prevLocationsClassified = classifier.getLocationsClassifiedCount();
+                    boolean done = false;
+                    try {
+                        double fractionComplete = 100.0;
+                        int locationsToClassifyCount = classifier.getLocationsToClassifyCount();
+                        int locationsClassifiedCount = classifier.getLocationsClassifiedCount();
+                        if ( locationsToClassifyCount > 0 ) {
+                            fractionComplete = (double)locationsClassifiedCount / locationsToClassifyCount;
+                        }
+                        progressBar.setSelection(15 + (int)(fractionComplete * 80));
+                        iterationCount++;
+                        
+                        done = (locationsClassifiedCount == locationsToClassifyCount);
+                        
+                        if (!done) {
+                            if (iterationCount % 4 == 0) {
+                                if (locationsClassifiedCount == prevLocationsClassified) {
+                                    done = true;
+                                } else {
+                                    prevLocationsClassified = locationsClassifiedCount;
+                                }
                             }
                         }
+                        if (done) {
+                            try {
+                                classifier.shutdown();
+                            } catch (Exception e) {
+                                log.error("Error shutting down classifier: " + e);
+                            }
+                            
+                            getHistoryMinerData().classifierData = classifier.getResults();
+                            
+                            progressBar.setSelection(progressBar.getMaximum());
+                            progressBarLabel.setText("Browsing history analyzed.");
+                            container.layout();
+                            
+                            setPageComplete(true);
+                            instructionLabel.setText("Click Next to continue.");
+                            historyAnalyzed = true;
+                        } 
+                    } catch (Exception e) {
+                        log.error("Error monitoring classifier progress: " + e);
                     }
-                    if (done) {
-                        classifier.shutdown();
-                        
-                        getHistoryMinerData().classifierData = classifier.getResults();
-                        
-                        progressBar.setSelection(progressBar.getMaximum());
-                        progressBarLabel.setText("Browsing history analyzed.");
-                        container.layout();
-                        
-                        setPageComplete(true);
-                        instructionLabel.setText("Click Next to continue.");
-                        historyAnalyzed = true;
-                    } else {
+                    if (!done) {
                         getShell().getDisplay().timerExec(1000, this);
                     }
                 }
@@ -214,8 +225,7 @@ public class AnalyzeHistoryPage extends HistoryMinerWizardPage implements Select
     
     private HistoryClassifier getMockClassifier(List<HistoryVisit> visits) throws HistoryMinerException {
         return new HistoryClassifier(visits, WebBrowserType.MOZILLA_FIREFOX) {
-            
-            @Override
+            @Override 
             protected void classifyLocation(Location location, boolean dumpFile) {
                 location.locationType = LocationType.CODE_RELATED;
             }
