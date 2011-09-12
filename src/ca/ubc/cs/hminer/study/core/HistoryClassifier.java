@@ -379,29 +379,32 @@ public class HistoryClassifier {
 
         String text = doc.text();
         
-        // TODO: Only capture as many matches as are needed to classify page.
         Matcher matcher = methodPattern.matcher(text);
         List<String> matches = new ArrayList<String>();
-        while (matcher.find()) {
+        while (matches.size() < CODE_RELATED_MATCH_THRESHOLD && matcher.find()) {
             String match = text.substring(matcher.start(), matcher.end());
             log.debug("Found pattern: " + match);
             matches.add(match);
         }
         
-        matcher = noArgsMethodPattern.matcher(text);
-        while (matcher.find()) {
-            String match = text.substring(matcher.start(), matcher.end());
-            log.debug("Found pattern: " + match);
-            matches.add(match);
+        if (matches.size() < CODE_RELATED_MATCH_THRESHOLD) {
+            matcher = noArgsMethodPattern.matcher(text);
+            while (matches.size() < CODE_RELATED_MATCH_THRESHOLD && matcher.find()) {
+                String match = text.substring(matcher.start(), matcher.end());
+                log.debug("Found pattern: " + match);
+                matches.add(match);
+            }
         }
 
         // False positives on this pattern, e.g. references at bottom of page http://en.wikipedia.org/wiki/Fukushima_Daiichi_nuclear_disaster
         /*
-        matcher = methodInvocationPattern.matcher(text);
-        while (matcher.find()) {
-            String match = text.substring(matcher.start(), matcher.end());
-            log.debug("Found pattern: " + match);
-            matches.add(match);
+        if (matches.size() < CODE_RELATED_MATCH_THRESHOLD) {
+            matcher = methodInvocationPattern.matcher(text);
+            while (matches.size() < CODE_RELATED_MATCH_THRESHOLD && matcher.find()) {
+                String match = text.substring(matcher.start(), matcher.end());
+                log.debug("Found pattern: " + match);
+                matches.add(match);
+            }
         }
         */
         

@@ -156,7 +156,7 @@ public class AnalyzeHistoryPage extends HistoryMinerWizardPage implements Select
                         done = (locationsClassifiedCount == locationsToClassifyCount);
                         
                         if (!done) {
-                            if (iterationCount % 4 == 0) {
+                            if (iterationCount % 8 == 0) {
                                 if (locationsClassifiedCount == prevLocationsClassified) {
                                     done = true;
                                 } else {
