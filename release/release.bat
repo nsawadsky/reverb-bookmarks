@@ -11,3 +11,7 @@ copy /y ..\lib\linux-x64\swt.jar HistoryAnalyzer_Linux_64\HistoryAnalyzer_lib\sw
 copy /y ..\lib\mac-x86\swt.jar HistoryAnalyzer_Mac\HistoryAnalyzer_lib\swt.jar
 copy /y ..\lib\mac-x64\swt.jar HistoryAnalyzer_Mac_64\HistoryAnalyzer_lib\swt.jar
 
+copy /y StartHistoryAnalyzer.sh HistoryAnalyzer_Mac
+copy /y StartHistoryAnalyzer.sh HistoryAnalyzer_Mac_64
+
+
