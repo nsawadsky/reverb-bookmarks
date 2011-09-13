@@ -48,7 +48,10 @@ public class HistoryMinerShell extends Shell {
         }
         
         HistoryMinerWizardDialog dialog = new HistoryMinerWizardDialog(shell, new HistoryMinerWizard(testMode));
+        dialog.setBlockOnOpen(true);
         dialog.open();
+        
+        Display.getDefault().dispose();
     }
 
     /**
