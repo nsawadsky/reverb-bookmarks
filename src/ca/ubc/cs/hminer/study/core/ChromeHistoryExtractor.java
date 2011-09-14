@@ -60,8 +60,8 @@ public class ChromeHistoryExtractor extends HistoryExtractor {
                     result = chromeTimestampToDate(rs.getLong(1));
                 }
             } finally {
-                if (conn != null) { conn.close(); }
                 if (stmt != null) { stmt.close(); }
+                if (conn != null) { conn.close(); }
             }
         } catch (Exception e) {
             throw new HistoryMinerException(
@@ -128,8 +128,8 @@ ORDER BY visits.id DESC;
                     results.add(new HistoryVisit(visitId, visitDate, visitType, 0, locationId, url, title, fromVisitId, fromUrl));
                 }
             } finally {
-                if (conn != null) { conn.close(); }
                 if (stmt != null) { stmt.close(); }
+                if (conn != null) { conn.close(); }
             }
         } catch (Exception e) {
             throw new HistoryMinerException(
