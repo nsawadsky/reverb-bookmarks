@@ -44,12 +44,12 @@ public class HistoryMinerShell extends Shell {
         if (majorVersion < 1 || minorVersion < 6) {
             MessageDialog.openError(shell, "Unsupported Java Version", 
                     "Java 1.6 or later required.  Please install the latest version from www.java.com.");
-            return;
-        }
+        } else {
         
-        HistoryMinerWizardDialog dialog = new HistoryMinerWizardDialog(shell, new HistoryMinerWizard(testMode));
-        dialog.setBlockOnOpen(true);
-        dialog.open();
+            HistoryMinerWizardDialog dialog = new HistoryMinerWizardDialog(shell, new HistoryMinerWizard(testMode));
+            dialog.setBlockOnOpen(true);
+            dialog.open();
+        }
         
         Display.getDefault().dispose();
     }
