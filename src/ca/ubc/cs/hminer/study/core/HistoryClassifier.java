@@ -42,6 +42,8 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.spi.RootLogger;
 
+import ca.ubc.cs.hminer.indexer.messages.PageInfo;
+
 public class HistoryClassifier {
     private static Logger log = Logger.getLogger(HistoryClassifier.class);
     
@@ -110,8 +112,22 @@ public class HistoryClassifier {
     private int locationsToClassifyCount = 0;
     private WebBrowserType webBrowserType;
     private HttpClient httpClient = null;
+    private IndexerConnection indexerConnection = null;
+    
+    public HistoryClassifier(List<HistoryVisit> visitList, WebBrowserType webBrowserType, boolean indexMode) 
+            throws HistoryMinerException {
+        init(visitList, webBrowserType);
+        
+        if (indexMode) {
+            indexerConnection = new IndexerConnection();
+        }
+    }
     
     public HistoryClassifier(List<HistoryVisit> visitList, WebBrowserType webBrowserType) {
+        init(visitList, webBrowserType);
+    }
+    
+    private void init(List<HistoryVisit> visitList, WebBrowserType webBrowserType) {
         this.webBrowserType = webBrowserType;
         
         this.visitList = visitList;
@@ -121,7 +137,7 @@ public class HistoryClassifier {
         
         this.googleSearchPattern = Pattern.compile(GOOGLE_SEARCH_PATTERN);
     }
-    
+
     public static void main(String[] args) {
         BasicConfigurator.configure();
         RootLogger.getRootLogger().setLevel(Level.INFO);
@@ -349,6 +365,14 @@ public class HistoryClassifier {
             long pageGetTime = endTimeMsecs - startTimeMsecs;
             log.debug("Page get/parse time = " + pageGetTime + " msecs");
             location.locationType = classifyDocument(doc, dumpFile);
+            
+            try {
+                if (indexerConnection != null) {
+                    indexerConnection.indexPage(new PageInfo(location.url, doc.outerHtml()));
+                }
+            } catch (HistoryMinerException e) {
+                log.error("Error submitting page for indexing: " + location.url, e);
+            }
             
             // baseUri attribute is not reliable.
             // location.url = doc.baseUri();

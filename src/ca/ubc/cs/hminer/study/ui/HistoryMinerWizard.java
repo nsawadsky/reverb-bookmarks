@@ -51,16 +51,22 @@ public class HistoryMinerWizard extends Wizard implements IPageChangingListener,
     // be careful not to shadow field name in parent class
     private boolean myCanFinish = false;
     private boolean testMode = false;
+    private boolean indexMode = false;
     private boolean closeBrowserRequested = false;
     private Date earliestVisitDate = new Date();
     
-    public HistoryMinerWizard(boolean testMode) {
+    public HistoryMinerWizard(boolean testMode, boolean indexMode) {
         setWindowTitle("Developer Browsing History Analyzer");
         this.testMode = testMode;
+        this.indexMode = indexMode;
     }
     
     public boolean isTestMode() {
         return testMode;
+    }
+    
+    public boolean isIndexMode() {
+        return indexMode;
     }
     
     @Override
@@ -260,7 +266,7 @@ public class HistoryMinerWizard extends Wizard implements IPageChangingListener,
     }
     
     public HistoryClassifier getHistoryClassifier(List<HistoryVisit> visitList) throws HistoryMinerException {
-        return new HistoryClassifier(visitList, historyMinerData.participantPrimaryWebBrowser);
+        return new HistoryClassifier(visitList, historyMinerData.participantPrimaryWebBrowser, indexMode);
     }
 
 }
