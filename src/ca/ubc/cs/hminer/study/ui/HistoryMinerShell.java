@@ -23,10 +23,15 @@ public class HistoryMinerShell extends Shell {
         RootLogger.getRootLogger().setLevel(Level.WARN);
 
         boolean testMode = false;
+        boolean indexMode = false;
         Map<String, String> parsedArgs = Util.parseArgs(args);
         String mode = parsedArgs.get("mode");
-        if (mode != null && mode.equals("test")) {
-            testMode = true;
+        if (mode != null) {
+            if (mode.equals("test")) {
+                testMode = true;
+            } else if (mode.equals("index")) {
+                indexMode = true;
+            }
         }
         
         Display display = Display.getDefault();
@@ -46,7 +51,7 @@ public class HistoryMinerShell extends Shell {
                     "Java 1.6 or later required.  Please install the latest version from www.java.com.");
         } else {
         
-            HistoryMinerWizardDialog dialog = new HistoryMinerWizardDialog(shell, new HistoryMinerWizard(testMode));
+            HistoryMinerWizardDialog dialog = new HistoryMinerWizardDialog(shell, new HistoryMinerWizard(testMode, indexMode));
             dialog.setBlockOnOpen(true);
             dialog.open();
         }
