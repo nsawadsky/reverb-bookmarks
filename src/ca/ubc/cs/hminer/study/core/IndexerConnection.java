@@ -8,6 +8,11 @@ import ca.ubc.cs.hminer.indexer.messages.PageInfo;
 
 import npw.NamedPipeWrapper;
 
+// It's important that we don't have a field of type NamedPipeWrapper -- otherwise when this class is 
+// loaded, then the NamedPipeWrapper class would be loaded immediately as well.  Then we would 
+// need to bundle a platform-specific NamedPipeWrapper.dll with each deployment package.  That 
+// would add complexity to the deployment process, when we really only need the indexing functionality
+// for testing purposes.
 public class IndexerConnection {
     private long pipeHandle = 0;
     
