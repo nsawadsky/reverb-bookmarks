@@ -12,7 +12,7 @@
 	<classpathentry kind="lib" path="lib/org.eclipse.jface_3.7.0.I20110522-1430.jar"/>
 	<classpathentry kind="lib" path="lib/org.eclipse.osgi_3.7.0.v20110613.jar"/>
 	<classpathentry kind="lib" path="lib/windows-x86/swt.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/HistoryMinerIndexerMessages"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/NamedPipeWrapperJava"/>
+	<classpathentry kind="lib" path="lib/HistoryMinerIndexerMessages.jar"/>
+	<classpathentry kind="lib" path="lib/NamedPipeWrapper.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

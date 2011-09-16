@@ -39,16 +39,6 @@
   		</exclusions>
   	</dependency>
   	<dependency>
-  		<groupId>org.codehaus.jackson</groupId>
-  		<artifactId>jackson-core-asl</artifactId>
-  		<version>1.8.3</version>
-  	</dependency>
-  	<dependency>
-  		<groupId>org.codehaus.jackson</groupId>
-  		<artifactId>jackson-mapper-asl</artifactId>
-  		<version>1.8.3</version>
-  	</dependency>
-  	<dependency>
   		<groupId>org.apache.httpcomponents</groupId>
   		<artifactId>httpclient</artifactId>
   		<version>4.1.1</version>
@@ -62,6 +52,16 @@
   		<groupId>org.ini4j</groupId>
   		<artifactId>ini4j</artifactId>
   		<version>0.5.2</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>org.codehaus.jackson</groupId>
+  		<artifactId>jackson-core-asl</artifactId>
+  		<version>1.8.5</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>org.codehaus.jackson</groupId>
+  		<artifactId>jackson-mapper-asl</artifactId>
+  		<version>1.8.5</version>
   	</dependency>
   </dependencies>
 </project>
