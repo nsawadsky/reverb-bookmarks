@@ -42,7 +42,6 @@ public class IndexerConnection {
     private IndexerMessage sendMessage(IndexerMessage msg) throws PluginException {
         IndexerMessageEnvelope envelope = new IndexerMessageEnvelope(msg);
         ObjectMapper mapper = new ObjectMapper();
-        mapper.enableDefaultTyping();
         byte [] jsonData = null;
         try {
             jsonData = mapper.writeValueAsBytes(envelope);
