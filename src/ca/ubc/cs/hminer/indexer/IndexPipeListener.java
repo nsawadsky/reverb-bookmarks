@@ -5,6 +5,7 @@ import npw.NamedPipeWrapper;
 
 import org.apache.log4j.Logger;
 
+import ca.ubc.cs.hminer.indexer.messages.IndexerMessageEnvelope;
 import ca.ubc.cs.hminer.indexer.messages.PageInfo;
 
 
@@ -63,7 +64,14 @@ public class IndexPipeListener {
                     while ((data = NamedPipeWrapper.readPipe(pipeHandle)) != null) {
                         PageInfo info = null;
                         try {
-                            info = mapper.readValue(data, PageInfo.class);
+                            IndexerMessageEnvelope envelope = mapper.readValue(data, IndexerMessageEnvelope.class);
+                            if (envelope.message == null) {
+                                throw new IndexerException("envelope.message is null");
+                            }
+                            if (!(envelope.message instanceof PageInfo)) {
+                                throw new IndexerException("Unexpected message content: " + envelope.message.getClass());
+                            }
+                            info = (PageInfo)envelope.message;
                         } catch (Exception e) {
                             log.error("Exception parsing message from index pipe", e);
                         }

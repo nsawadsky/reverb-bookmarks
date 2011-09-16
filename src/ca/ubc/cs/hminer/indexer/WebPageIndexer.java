@@ -88,9 +88,8 @@ public class WebPageIndexer {
         
         // Add the content of the page to a field named "content".  Specify a Reader,
         // so that the text of the file is tokenized and indexed, but not stored.
-        // Note that FileReader expects the file to be in UTF-8 encoding.
-        // If that's not the case searching for special characters will fail.
-        doc.add(new Field(CONTENT_FIELD_NAME, new StringReader(text)));
+        Field contentField = new Field(CONTENT_FIELD_NAME, new StringReader(text));
+        doc.add(contentField);
 
         // Existing index (an old copy of this page may have been indexed) so 
         // we use updateDocument instead to replace the old one matching the exact 

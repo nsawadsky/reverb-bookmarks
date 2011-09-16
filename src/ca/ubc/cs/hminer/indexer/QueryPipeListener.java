@@ -66,7 +66,6 @@ public class QueryPipeListener {
                 Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
                 
                 ObjectMapper mapper = new ObjectMapper();
-                mapper.enableDefaultTyping();
                 while (true) {
                     if (!NamedPipeWrapper.connectPipe(pipeHandle)) {
                         log.error("Failed to connect query pipe: " + NamedPipeWrapper.getErrorMessage());
@@ -113,7 +112,6 @@ public class QueryPipeListener {
                 }
             }
             ObjectMapper mapper = new ObjectMapper();
-            mapper.enableDefaultTyping();
             
             IndexerMessageEnvelope envelope = new IndexerMessageEnvelope(result);
             byte [] jsonData = null;
