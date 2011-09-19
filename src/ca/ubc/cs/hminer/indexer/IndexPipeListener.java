@@ -1,7 +1,7 @@
 package ca.ubc.cs.hminer.indexer;
 
 import org.codehaus.jackson.map.ObjectMapper;
-import npw.NamedPipeWrapper;
+import npw.WindowsNamedPipe;
 
 import org.apache.log4j.Logger;
 
@@ -21,9 +21,9 @@ public class IndexPipeListener {
     public IndexPipeListener(IndexerConfig config, WebPageIndexer indexer) throws IndexerException  {
         this.config = config;
         this.indexer = indexer;
-        this.indexPipeName = NamedPipeWrapper.makePipeName("historyminer-index", true);
+        this.indexPipeName = WindowsNamedPipe.makePipeName("historyminer-index", true);
         if (indexPipeName == null) {
-            throw new IndexerException("Failed to make index pipe name: " + NamedPipeWrapper.getErrorMessage());
+            throw new IndexerException("Failed to make index pipe name: " + WindowsNamedPipe.getErrorMessage());
         }
     }
     
@@ -45,9 +45,9 @@ public class IndexPipeListener {
         }
         
         public void run() {
-            long pipeHandle = NamedPipeWrapper.createPipe(indexPipeName, true);
+            long pipeHandle = WindowsNamedPipe.createPipe(indexPipeName, true);
             if (pipeHandle == 0) {
-                log.error("Failed to create pipe '" + indexPipeName + "': " + NamedPipeWrapper.getErrorMessage());
+                log.error("Failed to create pipe '" + indexPipeName + "': " + WindowsNamedPipe.getErrorMessage());
                 return;
             }
             try {
@@ -55,13 +55,13 @@ public class IndexPipeListener {
                 
                 ObjectMapper mapper = new ObjectMapper();
                 while (true) {
-                    if (!NamedPipeWrapper.connectPipe(pipeHandle)) {
-                        log.error("Failed to connect index pipe: " + NamedPipeWrapper.getErrorMessage());
+                    if (!WindowsNamedPipe.connectPipe(pipeHandle)) {
+                        log.error("Failed to connect index pipe: " + WindowsNamedPipe.getErrorMessage());
                         return;
                     }
                     
                     byte[] data = null;
-                    while ((data = NamedPipeWrapper.readPipe(pipeHandle)) != null) {
+                    while ((data = WindowsNamedPipe.readPipe(pipeHandle)) != null) {
                         PageInfo info = null;
                         try {
                             IndexerMessageEnvelope envelope = mapper.readValue(data, IndexerMessageEnvelope.class);
@@ -85,15 +85,15 @@ public class IndexPipeListener {
                         }
                     }
                     
-                    log.info("Error reading index pipe: " + NamedPipeWrapper.getErrorMessage());
+                    log.info("Error reading index pipe: " + WindowsNamedPipe.getErrorMessage());
                     
-                    if (!NamedPipeWrapper.disconnectPipe(pipeHandle)) {
-                        log.error("Failed to disconnect index pipe: " + NamedPipeWrapper.getErrorMessage());
+                    if (!WindowsNamedPipe.disconnectPipe(pipeHandle)) {
+                        log.error("Failed to disconnect index pipe: " + WindowsNamedPipe.getErrorMessage());
                         return;
                     }
                 }
             } finally {
-                NamedPipeWrapper.closePipe(pipeHandle);
+                WindowsNamedPipe.closePipe(pipeHandle);
             }
         }
     }
