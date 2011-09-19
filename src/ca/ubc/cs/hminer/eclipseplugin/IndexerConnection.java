@@ -7,26 +7,26 @@ import ca.ubc.cs.hminer.indexer.messages.IndexerMessage;
 import ca.ubc.cs.hminer.indexer.messages.BatchQueryResult;
 import ca.ubc.cs.hminer.indexer.messages.IndexerMessageEnvelope;
 
-import npw.NamedPipeWrapper;
+import npw.WindowsNamedPipe;
 
 public class IndexerConnection {
     private long pipeHandle = 0;
     
     public IndexerConnection() throws PluginException {
-        String pipeName = NamedPipeWrapper.makePipeName("historyminer-query", true);
+        String pipeName = WindowsNamedPipe.makePipeName("historyminer-query", true);
         if (pipeName == null) {
             throw new PluginException("Failed to make pipe name: " + 
-                    NamedPipeWrapper.getErrorMessage());
+                    WindowsNamedPipe.getErrorMessage());
         }
-        pipeHandle = NamedPipeWrapper.openPipe(pipeName);
+        pipeHandle = WindowsNamedPipe.openPipe(pipeName);
         if (pipeHandle == 0) {
-            throw new PluginException("Failed to open pipe: " + NamedPipeWrapper.getErrorMessage());
+            throw new PluginException("Failed to open pipe: " + WindowsNamedPipe.getErrorMessage());
         }
     }
     
     public void close() {
         if (pipeHandle != 0) {
-            NamedPipeWrapper.closePipe(pipeHandle);
+            WindowsNamedPipe.closePipe(pipeHandle);
             pipeHandle = 0;
         }
     }
@@ -48,15 +48,15 @@ public class IndexerConnection {
         } catch (Exception e) {
             throw new PluginException("Error serializing message to JSON: " + e, e);
         }
-        if (!NamedPipeWrapper.writePipe(pipeHandle, jsonData)) {
+        if (!WindowsNamedPipe.writePipe(pipeHandle, jsonData)) {
             // TODO: Close and reopen pipe?
-            throw new PluginException("Error writing data to pipe: " + NamedPipeWrapper.getErrorMessage());
+            throw new PluginException("Error writing data to pipe: " + WindowsNamedPipe.getErrorMessage());
         }
         
-        byte[] responseData = NamedPipeWrapper.readPipe(pipeHandle);
+        byte[] responseData = WindowsNamedPipe.readPipe(pipeHandle);
         if (responseData == null) {
             // TODO: Close and reopen pipe?
-            throw new PluginException("Error reading response from pipe: " + NamedPipeWrapper.getErrorMessage());
+            throw new PluginException("Error reading response from pipe: " + WindowsNamedPipe.getErrorMessage());
         } else {
             try {
                 return mapper.readValue(responseData, IndexerMessageEnvelope.class).message;

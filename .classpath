@@ -7,6 +7,6 @@
 	<classpathentry kind="con" path="org.eclipse.m2e.MAVEN2_CLASSPATH_CONTAINER"/>
 	<classpathentry kind="con" path="org.eclipse.pde.core.requiredPlugins"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/HistoryMinerIndexerMessages"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/NamedPipeWrapperJava"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/NamedPipeWrapper"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>
