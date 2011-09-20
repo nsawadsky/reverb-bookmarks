@@ -9,7 +9,7 @@ import ca.ubc.cs.hminer.indexer.messages.IndexerMessageEnvelope;
 import ca.ubc.cs.hminer.indexer.messages.PageInfo;
 
 
-public class IndexPipeListener {
+public class IndexPipeListener implements Runnable {
     private static Logger log = Logger.getLogger(IndexPipeListener.class);
 
     private static final int LISTENING_THREADS = 5;
@@ -96,5 +96,11 @@ public class IndexPipeListener {
                 WindowsNamedPipe.closePipe(pipeHandle);
             }
         }
+    }
+
+    @Override
+    public void run() {
+        // TODO Auto-generated method stub
+        
     }
 }
