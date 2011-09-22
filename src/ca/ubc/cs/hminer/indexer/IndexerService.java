@@ -30,8 +30,8 @@ public class IndexerService {
             
             queryPipeListener = new QueryPipeListener(config, indexer);
             
-            new Thread(indexPipeListener).start();
-            new Thread(queryPipeListener).start();
+            indexPipeListener.start();
+            queryPipeListener.start();
             
             log.info("Indexer service started");
         } catch (IndexerException e) {

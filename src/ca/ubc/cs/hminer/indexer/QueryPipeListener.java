@@ -12,19 +12,25 @@ import ca.ubc.cs.hminer.indexer.messages.IndexerMessageEnvelope;
 import ca.ubc.cs.hminer.indexer.messages.QueryResult;
 
 
-public class QueryPipeListener implements Runnable {
+public class QueryPipeListener {
     private static Logger log = Logger.getLogger(QueryPipeListener.class);
 
+    private static final int LISTENING_THREADS = 5;
+    
     private IndexerConfig config;
+    private String queryPipeName;
     private WebPageIndexer indexer;
     
-    public QueryPipeListener(IndexerConfig config, WebPageIndexer indexer) {
+    public QueryPipeListener(IndexerConfig config, WebPageIndexer indexer) throws IndexerException  {
         this.config = config;
         this.indexer = indexer;
+        this.queryPipeName = WindowsNamedPipe.makePipeName("historyminer-query", true);
+        if (queryPipeName == null) {
+            throw new IndexerException("Failed to make query pipe name: " + WindowsNamedPipe.getErrorMessage());
+        }
     }
     
-    @Override
-    public void run() {
+    public void start() throws IndexerException {
         IndexReader reader;
         try {
             // IndexReader is thread-safe, share it for efficiency.
