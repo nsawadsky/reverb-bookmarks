@@ -1,4 +1,4 @@
-package ca.ubc.cs.hminer.indexer.messages;
+package ca.ubc.cs.periscope.indexer.messages;
 
 import org.codehaus.jackson.annotate.JsonTypeInfo;
 import org.codehaus.jackson.annotate.JsonSubTypes;

@@ -1,4 +1,4 @@
-package ca.ubc.cs.hminer.indexer.messages;
+package ca.ubc.cs.periscope.indexer.messages;
 
 public class Location {
     public Location() {
