@@ -2,10 +2,10 @@ package ca.ubc.cs.periscope.eclipseplugin;
 
 import org.codehaus.jackson.map.ObjectMapper;
 
-import ca.ubc.cs.hminer.indexer.messages.IndexerBatchQuery;
-import ca.ubc.cs.hminer.indexer.messages.IndexerMessage;
-import ca.ubc.cs.hminer.indexer.messages.BatchQueryResult;
-import ca.ubc.cs.hminer.indexer.messages.IndexerMessageEnvelope;
+import ca.ubc.cs.periscope.indexer.messages.BatchQueryResult;
+import ca.ubc.cs.periscope.indexer.messages.IndexerBatchQuery;
+import ca.ubc.cs.periscope.indexer.messages.IndexerMessage;
+import ca.ubc.cs.periscope.indexer.messages.IndexerMessageEnvelope;
 
 import npw.WindowsNamedPipe;
 
