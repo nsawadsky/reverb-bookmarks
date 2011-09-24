@@ -1,4 +1,4 @@
-package ca.ubc.cs.hminer.indexer;
+package ca.ubc.cs.periscope.indexer;
 
 public class IndexerException extends Exception {
 

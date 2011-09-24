@@ -1,4 +1,4 @@
-package ca.ubc.cs.hminer.indexer;
+package ca.ubc.cs.periscope.indexer;
 
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;

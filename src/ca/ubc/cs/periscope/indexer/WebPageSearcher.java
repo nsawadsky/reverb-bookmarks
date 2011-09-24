@@ -1,4 +1,4 @@
-package ca.ubc.cs.hminer.indexer;
+package ca.ubc.cs.periscope.indexer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,7 +13,7 @@ import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.util.Version;
 
-import ca.ubc.cs.hminer.indexer.messages.Location;
+import ca.ubc.cs.periscope.indexer.messages.Location;
 
 public class WebPageSearcher {
     private final static int MAX_RESULTS = 5;

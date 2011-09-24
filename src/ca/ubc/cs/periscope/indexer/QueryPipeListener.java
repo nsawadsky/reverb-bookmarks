@@ -1,4 +1,4 @@
-package ca.ubc.cs.hminer.indexer;
+package ca.ubc.cs.periscope.indexer;
 
 import org.codehaus.jackson.map.ObjectMapper;
 import npw.WindowsNamedPipe;
@@ -6,10 +6,10 @@ import npw.WindowsNamedPipe;
 import org.apache.log4j.Logger;
 import org.apache.lucene.index.IndexReader;
 
-import ca.ubc.cs.hminer.indexer.messages.BatchQueryResult;
-import ca.ubc.cs.hminer.indexer.messages.IndexerBatchQuery;
-import ca.ubc.cs.hminer.indexer.messages.IndexerMessageEnvelope;
-import ca.ubc.cs.hminer.indexer.messages.QueryResult;
+import ca.ubc.cs.periscope.indexer.messages.BatchQueryResult;
+import ca.ubc.cs.periscope.indexer.messages.IndexerBatchQuery;
+import ca.ubc.cs.periscope.indexer.messages.IndexerMessageEnvelope;
+import ca.ubc.cs.periscope.indexer.messages.QueryResult;
 
 
 public class QueryPipeListener {

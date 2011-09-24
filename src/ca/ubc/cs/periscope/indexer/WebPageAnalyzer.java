@@ -1,4 +1,4 @@
-package ca.ubc.cs.hminer.indexer;
+package ca.ubc.cs.periscope.indexer;
 
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more

@@ -1,12 +1,12 @@
-package ca.ubc.cs.hminer.indexer;
+package ca.ubc.cs.periscope.indexer;
 
 import org.codehaus.jackson.map.ObjectMapper;
 import npw.WindowsNamedPipe;
 
 import org.apache.log4j.Logger;
 
-import ca.ubc.cs.hminer.indexer.messages.IndexerMessageEnvelope;
-import ca.ubc.cs.hminer.indexer.messages.PageInfo;
+import ca.ubc.cs.periscope.indexer.messages.IndexerMessageEnvelope;
+import ca.ubc.cs.periscope.indexer.messages.PageInfo;
 
 
 public class IndexPipeListener {

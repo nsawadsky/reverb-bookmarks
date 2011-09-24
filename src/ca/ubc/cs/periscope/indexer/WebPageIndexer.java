@@ -1,4 +1,4 @@
-package ca.ubc.cs.hminer.indexer;
+package ca.ubc.cs.periscope.indexer;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,7 +18,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import ca.ubc.cs.hminer.indexer.messages.PageInfo;
+import ca.ubc.cs.periscope.indexer.messages.PageInfo;
 
 public class WebPageIndexer {
     private static Logger log = Logger.getLogger(WebPageIndexer.class);
