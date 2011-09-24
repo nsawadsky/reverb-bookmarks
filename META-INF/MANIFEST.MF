@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: HistoryMinerPlugin
 Bundle-SymbolicName: ca.ubc.cs.hminer.eclipseplugin; singleton:=true
 Bundle-Version: 1.0.0.qualifier
-Bundle-Activator: ca.ubc.cs.hminer.eclipseplugin.PluginActivator
+Bundle-Activator: ca.ubc.cs.periscope.eclipseplugin.PluginActivator
 Require-Bundle: org.eclipse.ui,
  org.eclipse.core.runtime,
  org.eclipse.jdt.core;bundle-version="3.7.0",

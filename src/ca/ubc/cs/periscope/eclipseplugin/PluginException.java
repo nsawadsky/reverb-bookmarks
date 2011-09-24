@@ -1,4 +1,4 @@
-package ca.ubc.cs.hminer.eclipseplugin;
+package ca.ubc.cs.periscope.eclipseplugin;
 
 public class PluginException extends Exception {
 

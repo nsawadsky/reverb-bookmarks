@@ -1,4 +1,4 @@
-package ca.ubc.cs.hminer.eclipseplugin;
+package ca.ubc.cs.periscope.eclipseplugin;
 
 import org.codehaus.jackson.map.ObjectMapper;
 

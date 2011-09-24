@@ -1,4 +1,4 @@
-package ca.ubc.cs.hminer.eclipseplugin.views;
+package ca.ubc.cs.periscope.eclipseplugin.views;
 
 import java.util.ArrayList;
 import java.util.List;

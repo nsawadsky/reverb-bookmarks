@@ -1,4 +1,4 @@
-package ca.ubc.cs.hminer.eclipseplugin;
+package ca.ubc.cs.periscope.eclipseplugin;
 
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.ui.plugin.AbstractUIPlugin;

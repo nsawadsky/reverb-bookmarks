@@ -1,4 +1,4 @@
-package ca.ubc.cs.hminer.eclipseplugin.views;
+package ca.ubc.cs.periscope.eclipseplugin.views;
 
 
 import java.util.ArrayList;
@@ -28,14 +28,14 @@ import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.ITextOperationTarget;
 import org.eclipse.jface.text.ITextViewer;
 
-import ca.ubc.cs.hminer.eclipseplugin.IndexerConnection;
-import ca.ubc.cs.hminer.eclipseplugin.PluginActivator;
-import ca.ubc.cs.hminer.eclipseplugin.PluginLogger;
-import ca.ubc.cs.hminer.eclipseplugin.PluginException;
 import ca.ubc.cs.hminer.indexer.messages.BatchQueryResult;
 import ca.ubc.cs.hminer.indexer.messages.IndexerBatchQuery;
 import ca.ubc.cs.hminer.indexer.messages.Location;
 import ca.ubc.cs.hminer.indexer.messages.QueryResult;
+import ca.ubc.cs.periscope.eclipseplugin.IndexerConnection;
+import ca.ubc.cs.periscope.eclipseplugin.PluginActivator;
+import ca.ubc.cs.periscope.eclipseplugin.PluginException;
+import ca.ubc.cs.periscope.eclipseplugin.PluginLogger;
 
 
 /**
