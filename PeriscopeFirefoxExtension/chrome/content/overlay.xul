@@ -2,11 +2,16 @@
 <?xml-stylesheet href="chrome://historyminer/skin/overlay.css" type="text/css"?>
 <!DOCTYPE overlay SYSTEM "chrome://historyminer/locale/overlay.dtd">
 <overlay id="historyminer-overlay"
-    xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+    xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+    xmlns:html="http://www.w3.org/1999/xhtml">
   <script src="overlay.js"/>
 
   <menupopup id="menu_ToolsPopup">
     <menuitem id="historyminer-launch" label="&historyminer;"
         oncommand="historyMiner.onMenuItemCommand(event);"/>
   </menupopup>
+  
+  <object id="periscope" type="application/x-periscope" width="0" height="0"
+    <param name="onload" value="pluginLoaded" />
+  </object>
 </overlay> 
