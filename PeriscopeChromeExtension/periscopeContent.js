@@ -31,7 +31,6 @@ var periscope = {
         if (plugin != null) {
           //TODO: Centralize this call.
           plugin.startBackgroundThread();
-          var html = doc.documentElement.innerHTML;
           if (!plugin.sendPage(doc.location.href, doc.documentElement.innerHTML)) {
             console.log("Failed to send message: " + plugin.getErrorMessage());
             console.log("Background thread status: " + plugin.getBackgroundThreadStatus());
