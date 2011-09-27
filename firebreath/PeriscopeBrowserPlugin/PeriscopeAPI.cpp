@@ -295,18 +295,13 @@ void PeriscopeAPI::handlePageContentMessage(MSG& msg, HANDLE pipe) throw (std::w
     bool error = false;
     std::wstring errorMsg;
 
-    wchar_t* url = (wchar_t*)msg.wParam;
-    wchar_t* pageData = (wchar_t*)msg.lParam;
-    char* utf8Url = NULL;
-    char* utf8PageData = NULL;
+    char* url = (char*)msg.wParam;
+    char* pageData = (char*)msg.lParam;
     try {
-        utf8Url = toUtf8(url);
-        utf8PageData = toUtf8(pageData);
-
         Json::Value root;
         Json::Value& pageInfo = root["message"]["pageInfo"];
-        pageInfo["url"] = utf8Url;
-        pageInfo["html"] = utf8PageData;
+        pageInfo["url"] = url;
+        pageInfo["html"] = pageData;
 
         Json::FastWriter writer;
         std::string output = writer.write(root);
@@ -323,8 +318,6 @@ void PeriscopeAPI::handlePageContentMessage(MSG& msg, HANDLE pipe) throw (std::w
 
     if (url != NULL) { delete [] url; }
     if (pageData != NULL) { delete [] pageData; }
-    if (utf8Url != NULL) { delete [] utf8Url; }
-    if (utf8PageData != NULL) { delete [] utf8PageData; }
 
     if (error) {
         throw errorMsg;
@@ -450,30 +443,30 @@ bool PeriscopeAPI::stopBackgroundThread() {
     return true;
 }
 
-bool PeriscopeAPI::sendPage(const std::wstring& url, const std::wstring& pageContent) {
+bool PeriscopeAPI::sendPage(const std::string& url, const std::string& pageContent) {
     bool success = false;
-    wchar_t* urlBuffer = NULL;
-    wchar_t* pageBuffer = NULL;
+    char* urlBuffer = NULL;
+    char* pageBuffer = NULL;
     try {
         if (backgroundThreadExited) {
             throw std::wstring(L"Background thread exited");
         }
         int urlLen = url.length() + 1;
-        urlBuffer = new wchar_t[urlLen];
+        urlBuffer = new char[urlLen];
         if (urlBuffer == NULL) {
             throw std::wstring(L"Out of memory");
         }
-        wcscpy_s(urlBuffer, urlLen, url.c_str());
+        strcpy_s(urlBuffer, urlLen, url.c_str());
 
         int pageLen = pageContent.length() + 1;
-        wchar_t* pageBuffer = new wchar_t[pageLen];
+        char* pageBuffer = new char[pageLen];
         if (pageBuffer == NULL) {
             throw std::wstring(L"Out of memory");
         }
-        wcscpy_s(pageBuffer, pageLen, pageContent.c_str());
+        strcpy_s(pageBuffer, pageLen, pageContent.c_str());
 
         if (!PostThreadMessage(backgroundThreadId, MSG_PAGE_CONTENT, (WPARAM)urlBuffer, (LPARAM)pageBuffer)) {
-            throw getWindowsErrorMessage(L"PostThreadMessage").c_str();
+           throw getWindowsErrorMessage(L"PostThreadMessage");
         }
         success = true;
     } catch (std::wstring& errorMsg) {
