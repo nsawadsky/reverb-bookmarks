@@ -65,17 +65,18 @@ public:
 
 private:
     // Private Periscope methods
-    bool setErrorMessage(const wchar_t* errorMessage);
-    std::wstring getWindowsErrorMessage(wchar_t* funcName);
-    void setBackgroundThreadStatus(const wchar_t* status);
+    static bool initialize();
+    static bool setErrorMessage(const wchar_t* errorMessage);
+    static std::wstring getWindowsErrorMessage(wchar_t* funcName);
+    static void setBackgroundThreadStatus(const wchar_t* status);
 
-    char* toUtf8(wchar_t* utf16) throw (std::wstring);
+    static char* toUtf8(wchar_t* utf16) throw (std::wstring);
 
-    std::wstring getUserSid() throw (std::wstring);
+    static std::wstring getUserSid() throw (std::wstring);
 
-    std::wstring makePipeName(const wchar_t* shortName, bool userLocal) throw (std::wstring);
+    static std::wstring makePipeName(const wchar_t* shortName, bool userLocal) throw (std::wstring);
 
-    void handlePageContentMessage(MSG& msg, HANDLE pipe);
+    static void handlePageContentMessage(MSG& msg, HANDLE pipe) throw (std::wstring);
 
     static DWORD WINAPI handleMessages(LPVOID param);
 
@@ -86,17 +87,19 @@ private:
     std::string m_testString;
 
     // Private Periscope fields
-    DWORD errorMessageTlsIndex;
+    static DWORD errorMessageTlsIndex;
 
-    CRITICAL_SECTION backgroundThreadStartupCS;
-    CRITICAL_SECTION backgroundThreadStatusCS;
-    std::wstring backgroundThreadStatus;
+    static CRITICAL_SECTION backgroundThreadStartupCS;
+    static CRITICAL_SECTION backgroundThreadStatusCS;
+    static std::wstring backgroundThreadStatus;
 
-    DWORD backgroundThreadId;
-    HANDLE backgroundThread;
-    HANDLE backgroundThreadStarted;
+    static DWORD backgroundThreadId;
+    static HANDLE backgroundThread;
+    static HANDLE backgroundThreadStarted;
 
-    volatile bool backgroundThreadExited;
+    static volatile bool backgroundThreadExited;
+
+    static bool classInitialized;
 };
 
 #endif // H_PeriscopeAPI
