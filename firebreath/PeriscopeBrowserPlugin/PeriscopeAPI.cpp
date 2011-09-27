@@ -19,6 +19,21 @@ const int PIPE_BUF_SIZE = 10 * 1024;
 
 const int BUF_LEN = 1024;
 
+// Static Periscope fields
+DWORD PeriscopeAPI::errorMessageTlsIndex = TlsAlloc();
+
+CRITICAL_SECTION PeriscopeAPI::backgroundThreadStartupCS;
+CRITICAL_SECTION PeriscopeAPI::backgroundThreadStatusCS;
+std::wstring PeriscopeAPI::backgroundThreadStatus = L"Thread not started";
+
+DWORD PeriscopeAPI::backgroundThreadId = 0;
+HANDLE PeriscopeAPI::backgroundThread = NULL;
+HANDLE PeriscopeAPI::backgroundThreadStarted = NULL;
+
+volatile bool PeriscopeAPI::backgroundThreadExited = false;
+
+bool PeriscopeAPI::classInitialized = PeriscopeAPI::initialize();
+
 ///////////////////////////////////////////////////////////////////////////////
 /// @fn PeriscopeAPI::PeriscopeAPI(const PeriscopePtr& plugin, const FB::BrowserHostPtr host)
 ///
@@ -51,20 +66,6 @@ PeriscopeAPI::PeriscopeAPI(const PeriscopePtr& plugin, const FB::BrowserHostPtr&
     registerMethod("sendPage", make_method(this, &PeriscopeAPI::sendPage));
     registerMethod("getErrorMessage", make_method(this, &PeriscopeAPI::getErrorMessage));
     registerMethod("getBackgroundThreadStatus", make_method(this, &PeriscopeAPI::getBackgroundThreadStatus));
-
-    // Initialize Periscope fields
-    errorMessageTlsIndex = TlsAlloc();
-
-    backgroundThreadStatus = L"Thread not started";
-
-    backgroundThreadId = 0;
-    backgroundThread = NULL;
-    backgroundThreadStarted = NULL;
-
-    backgroundThreadExited = false;
-
-    InitializeCriticalSection(&backgroundThreadStartupCS);
-    InitializeCriticalSection(&backgroundThreadStatusCS);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -127,6 +128,12 @@ void PeriscopeAPI::testEvent(const FB::variant& var)
 }
 
 // Private Periscope methods
+bool PeriscopeAPI::initialize() {
+    InitializeCriticalSection(&backgroundThreadStartupCS);
+    InitializeCriticalSection(&backgroundThreadStatusCS);
+    return true;
+}
+
 bool PeriscopeAPI::setErrorMessage(const wchar_t* errorMessage) {
     wchar_t* currMessage = (wchar_t*)TlsGetValue(errorMessageTlsIndex);
     if (currMessage != NULL) {
@@ -284,7 +291,7 @@ std::wstring PeriscopeAPI::makePipeName(const wchar_t* shortName, bool userLocal
     return pipeName;
 }
 
-void PeriscopeAPI::handlePageContentMessage(MSG& msg, HANDLE pipe) {
+void PeriscopeAPI::handlePageContentMessage(MSG& msg, HANDLE pipe) throw (std::wstring) {
     bool error = false;
     std::wstring errorMsg;
 
@@ -325,22 +332,21 @@ void PeriscopeAPI::handlePageContentMessage(MSG& msg, HANDLE pipe) {
 }
 
 DWORD WINAPI PeriscopeAPI::handleMessages(LPVOID param) {
-    PeriscopeAPI* api = (PeriscopeAPI*)param;
     HANDLE indexPipe = INVALID_HANDLE_VALUE;
     try {
         // Create message queue
         MSG msg;
         PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE);
 
-        if (!SetEvent(api->backgroundThreadStarted)) {
-            throw std::wstring(L"Failed to set backgroundThreadStarted event") + api->getWindowsErrorMessage(L"SetEvent");
+        if (!SetEvent(PeriscopeAPI::backgroundThreadStarted)) {
+            throw std::wstring(L"Failed to set backgroundThreadStarted event") + PeriscopeAPI::getWindowsErrorMessage(L"SetEvent");
         }
 
         if (!SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST)) {
-            throw api->getWindowsErrorMessage(L"SetThreadPriority");
+            throw PeriscopeAPI::getWindowsErrorMessage(L"SetThreadPriority");
         }
 
-        std::wstring pipeName = api->makePipeName(L"historyminer-index", true);
+        std::wstring pipeName = PeriscopeAPI::makePipeName(L"historyminer-index", true);
 
         int tries = 0;
         do {
@@ -348,7 +354,7 @@ DWORD WINAPI PeriscopeAPI::handleMessages(LPVOID param) {
             tries++;
             if (indexPipe == INVALID_HANDLE_VALUE) {
                 if (GetLastError() != ERROR_PIPE_BUSY) {
-                    throw std::wstring(L"Failed to open pipe '") + pipeName + L"': " + api->getWindowsErrorMessage(L"CreateFile");
+                    throw std::wstring(L"Failed to open pipe '") + pipeName + L"': " + PeriscopeAPI::getWindowsErrorMessage(L"CreateFile");
                 }
                 if (tries < 5) {
                     Sleep(100);
@@ -357,23 +363,23 @@ DWORD WINAPI PeriscopeAPI::handleMessages(LPVOID param) {
         } while (indexPipe == INVALID_HANDLE_VALUE && tries < 5);
 
         if (indexPipe == INVALID_HANDLE_VALUE) {
-            throw std::wstring(L"Failed to open pipe '") + pipeName + L"': " + api->getWindowsErrorMessage(L"CreateFile");
+            throw std::wstring(L"Failed to open pipe '") + pipeName + L"': " + PeriscopeAPI::getWindowsErrorMessage(L"CreateFile");
         }
 
         DWORD mode = PIPE_READMODE_MESSAGE;
         if (! SetNamedPipeHandleState(indexPipe, &mode, NULL, NULL)) {
-            throw std::wstring(L"Failed to set pipe to PIPE_READMODE_MESSAGE: ") + api->getWindowsErrorMessage(L"SetNamedPipeHandleState");
+            throw std::wstring(L"Failed to set pipe to PIPE_READMODE_MESSAGE: ") + PeriscopeAPI::getWindowsErrorMessage(L"SetNamedPipeHandleState");
         }
 
-        api->setBackgroundThreadStatus(L"Thread running");
+        PeriscopeAPI::setBackgroundThreadStatus(L"Thread running");
         while (true) {
             if (!GetMessage(&msg, NULL, 0, 0)) {
-                throw api->getWindowsErrorMessage(L"GetMessage");
+                throw PeriscopeAPI::getWindowsErrorMessage(L"GetMessage");
             } else {
                 switch (msg.message) {
                 case MSG_PAGE_CONTENT: 
                     {
-                        api->handlePageContentMessage(msg, indexPipe);
+                        PeriscopeAPI::handlePageContentMessage(msg, indexPipe);
                         break;
                     }
                 case MSG_SHUTDOWN_THREAD: 
@@ -388,14 +394,14 @@ DWORD WINAPI PeriscopeAPI::handleMessages(LPVOID param) {
             }
         }
     } catch (std::wstring& tempErrorMsg) {
-        api->setBackgroundThreadStatus(tempErrorMsg.c_str());
+        PeriscopeAPI::setBackgroundThreadStatus(tempErrorMsg.c_str());
     }
 
     if (indexPipe != INVALID_HANDLE_VALUE) {
         CloseHandle(indexPipe);
     }
 
-    api->backgroundThreadExited = true;
+    PeriscopeAPI::backgroundThreadExited = true;
     return 0;
 }
 
@@ -413,7 +419,7 @@ bool PeriscopeAPI::startBackgroundThread() {
         if (backgroundThreadStarted == NULL) {
             throw getWindowsErrorMessage(L"CreateEvent");
         }
-        backgroundThread = CreateThread(NULL, 0, handleMessages, this, 0, &backgroundThreadId);
+        backgroundThread = CreateThread(NULL, 0, handleMessages, NULL, 0, &backgroundThreadId);
         if (backgroundThread == NULL) {
             throw getWindowsErrorMessage(L"CreateThread");
         }
