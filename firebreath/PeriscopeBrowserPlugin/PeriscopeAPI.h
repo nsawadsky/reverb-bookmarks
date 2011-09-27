@@ -59,7 +59,7 @@ public:
     // Periscope methods
     bool startBackgroundThread();
     bool stopBackgroundThread();
-    bool sendPage(const std::wstring& url, const std::wstring& pageContent);
+    bool sendPage(const std::string& url, const std::string& pageContent);
     std::wstring getErrorMessage();
     std::wstring getBackgroundThreadStatus();
 
