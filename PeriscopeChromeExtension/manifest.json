@@ -1,0 +1,12 @@
+{
+    "name": "Periscope",
+    "version": "1.0",
+    "description": "Indexes web pages for quick retrieval in the IDE.",
+    "content_scripts": [ 
+    	{
+    		"matches": ["<all_urls>"],
+    		"exclude_globs": ["*://www.google.*"],
+    		"js": ["periscopeContent.js"]
+    	}
+   	]
+}
