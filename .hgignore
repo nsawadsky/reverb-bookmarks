@@ -2,3 +2,10 @@
 syntax: regexp
 /target$
 
+/Debug$
+syntax: glob
+*.ipch
+*.vcxproj.user
+*.sdf
+*.suo
+*.opensdf
