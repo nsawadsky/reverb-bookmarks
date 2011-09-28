@@ -1,5 +1,5 @@
 var periscope = {
-    addPlugin: function(win) {
+    startTimer: function(win) {
       var doc = win.document;
       
       // Ensure we filter out images.
@@ -11,13 +11,6 @@ var periscope = {
 
       var href = win.location.href;
       
-      var element = doc.createElement("object");
-      element.type = "application/x-periscope";
-      element.id = "periscopePlugin";
-      element.width = 0;
-      element.height = 0;
-      doc.body.appendChild(element);
-      
       setTimeout(function() { periscope.onPageLoadTimerCallback(doc, win, href); }, 5000);
 
     },
@@ -27,18 +20,10 @@ var periscope = {
         // This catches cases where the tab has been closed, the back button was hit, or a new page was opened in the tab.
         // If the window has been closed, the timer never fires.
       } else {
-        var plugin = doc.getElementById("periscopePlugin");
-        if (plugin != null) {
-          //TODO: Centralize this call.
-          plugin.startBackgroundThread();
-          if (!plugin.sendPage(doc.location.href, doc.documentElement.innerHTML)) {
-            console.log("Failed to send message: " + plugin.getErrorMessage());
-            console.log("Background thread status: " + plugin.getBackgroundThreadStatus());
-          }
-        }
+        chrome.extension.sendRequest({url: doc.location.href, page: doc.documentElement.innerHTML});
       }
     },
 };
 
-periscope.addPlugin(window); 
+periscope.startTimer(window); 
 
