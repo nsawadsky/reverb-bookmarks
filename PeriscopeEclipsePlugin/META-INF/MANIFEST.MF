@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: HistoryMinerPlugin
-Bundle-SymbolicName: ca.ubc.cs.hminer.eclipseplugin; singleton:=true
+Bundle-Name: PeriscopePlugin
+Bundle-SymbolicName: ca.ubc.cs.periscope.eclipseplugin;singleton:=true
 Bundle-Version: 1.0.0.qualifier
 Bundle-Activator: ca.ubc.cs.periscope.eclipseplugin.PluginActivator
 Require-Bundle: org.eclipse.ui,
@@ -12,9 +12,9 @@ Require-Bundle: org.eclipse.ui,
  org.eclipse.jface.text;bundle-version="3.7.0"
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
-Bundle-ClassPath: lib/HistoryMinerIndexerMessages.jar,
- lib/NamedPipeWrapperJava.jar,
+Bundle-ClassPath: lib/PeriscopeIndexerMessages.jar,
+ lib/NamedPipeWrapper.jar,
  lib/jackson-core-asl-1.8.5.jar,
  lib/jackson-mapper-asl-1.8.5.jar,
  .
-Bundle-NativeCode: lib/NamedPipeWrapper.dll; lib/NamedPipeWrapper_64.dll
+Bundle-NativeCode: lib/WindowsNamedPipe.dll; lib/WindowsNamedPipe_64.dll
