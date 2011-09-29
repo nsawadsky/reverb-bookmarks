@@ -47,13 +47,16 @@ add_windows_plugin(${PROJECT_NAME} SOURCES)
 # add library dependencies here; leave ${PLUGIN_INTERNAL_DEPS} there unless you know what you're doing!
 target_link_libraries(${PROJECT_NAME}
     ${PLUGIN_INTERNAL_DEPS}
-	Ws2_32.lib
-	Rpcrt4.lib
     )
+
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../native/PeriscopeIndexerClient)
 
 target_link_libraries(${PROJECT_NAME} debug ${CMAKE_CURRENT_SOURCE_DIR}/jsoncpp/json_vc71_libmtd.lib)
 target_link_libraries(${PROJECT_NAME} optimized ${CMAKE_CURRENT_SOURCE_DIR}/jsoncpp/json_vc71_libmt.lib)
     
+target_link_libraries(${PROJECT_NAME} debug ${CMAKE_CURRENT_SOURCE_DIR}/../../native/Debug/PeriscopeIndexerClient.lib)
+target_link_libraries(${PROJECT_NAME} optimized ${CMAKE_CURRENT_SOURCE_DIR}/../../native/Release/PeriscopeIndexerClient.lib)
+
 set(WIX_HEAT_FLAGS
     -gg                 # Generate GUIDs
     -srd                # Suppress Root Dir

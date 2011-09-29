@@ -1,0 +1,1 @@
+prep2010.cmd c:\Periscope\firebreath c:\VSProjects\firebreath

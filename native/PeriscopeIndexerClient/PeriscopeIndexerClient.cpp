@@ -33,7 +33,9 @@ static bool setErrorMessage(const wchar_t* errorMessage);
 static std::wstring getWindowsErrorMessage(wchar_t* funcName);
 static void setBackgroundThreadStatus(const wchar_t* status);
 
-static char* toUtf8(wchar_t* utf16) throw (std::wstring);
+static char* toUtf8(const wchar_t* utf16) throw (std::wstring);
+
+static std::string toUtf8String(const wchar_t* utf16) throw (std::wstring);
 
 static std::wstring getUserSid() throw (std::wstring);
 
@@ -88,7 +90,7 @@ std::wstring getWindowsErrorMessage(wchar_t* funcName) {
     return std::wstring(msg);
 }
 
-char* toUtf8(wchar_t* utf16) throw (std::wstring) {
+char* toUtf8(const wchar_t* utf16) throw (std::wstring) {
     char* result = NULL;
     std::wstring errorMsg;
     bool error = false;
@@ -116,6 +118,13 @@ char* toUtf8(wchar_t* utf16) throw (std::wstring) {
     if (error) {
         throw errorMsg;
     }
+    return result;
+}
+
+std::string toUtf8String(const wchar_t* utf16) throw (std::wstring) {
+    char* utf8 = toUtf8(utf16);
+    std::string result = utf8;
+    delete [] utf8;
     return result;
 }
 
@@ -354,7 +363,7 @@ bool PICL_stopBackgroundThread() {
     return true;
 }
 
-bool PICL_sendPage(char* url, char* pageContent) {
+bool PICL_sendPage(const char* url, const char* pageContent) {
     bool success = false;
     char* urlBuffer = NULL;
     char* pageBuffer = NULL;
@@ -393,7 +402,7 @@ bool PICL_sendPage(char* url, char* pageContent) {
     return success;
 }
 
-void PICL_getErrorMessage(wchar_t* buffer, int bufLenChars) {
+std::string PICL_getErrorMessage() {
     std::wstring errorMessageStr;
     wchar_t* errorMessage = (wchar_t*)TlsGetValue(GBL_errorMessageTlsIndex);
     if (errorMessage == NULL) {
@@ -404,13 +413,27 @@ void PICL_getErrorMessage(wchar_t* buffer, int bufLenChars) {
     } else {
         errorMessageStr = errorMessage;
     }
-    wcscpy_s(buffer, bufLenChars, errorMessageStr.c_str());
+    std::string result;
+    try {
+        result = toUtf8String(errorMessageStr.c_str());
+    } catch (std::wstring) {
+        result = "Failed to convert error message to UTF-8";
+    }
+    return result;
 }
 
-void PICL_getBackgroundThreadStatus(wchar_t* buffer, int bufLenChars) {
+std::string PICL_getBackgroundThreadStatus() {
+    std::wstring backgroundThreadStatus;
     EnterCriticalSection(&GBL_backgroundThreadStatusCS);
-    wcscpy_s(buffer, bufLenChars, GBL_backgroundThreadStatus);
+    backgroundThreadStatus = GBL_backgroundThreadStatus;
     LeaveCriticalSection(&GBL_backgroundThreadStatusCS);
+    std::string result;
+    try {
+        result = toUtf8String(backgroundThreadStatus.c_str());
+    } catch (std::wstring) {
+        result = "Failed to convert background thread status to UTF-8";
+    }
+    return result;
 }
 
 
