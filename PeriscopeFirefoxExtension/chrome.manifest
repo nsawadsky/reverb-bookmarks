@@ -1,7 +1,7 @@
-content historyminer chrome/content/
-overlay chrome://browser/content/browser.xul chrome://historyminer/content/overlay.xul
+content periscope chrome/content/
+overlay chrome://browser/content/browser.xul chrome://periscope/content/overlay.xul
 
-locale historyminer en-US chrome/locale/en-US/
+locale periscope en-US chrome/locale/en-US/
 
-skin historyminer classic/1.0 chrome/skin/
-style chrome://global/content/customizeToolbar.xul chrome://historyminer/skin/overlay.css
+skin periscope classic/1.0 chrome/skin/
+style chrome://global/content/customizeToolbar.xul chrome://periscope/skin/overlay.css
