@@ -4,10 +4,10 @@
 
   <Description about="urn:mozilla:install-manifest">
    
-    <em:id>historyminer@cs.ubc.ca</em:id>
-    <em:name>History Miner</em:name>
+    <em:id>periscope@cs.ubc.ca</em:id>
+    <em:name>Periscope</em:name>
     <em:version>1.0</em:version>
-    <em:description>Tracks and indexes your browsing history, so that links to development-related pages can be displayed within Eclipse.</em:description>
+    <em:description>Indexes web pages for quick retrieval inside the IDE.</em:description>
     <em:creator>Nick Sawadsky</em:creator>
     <!-- optional items -->
     <em:contributor></em:contributor>
