@@ -5,15 +5,15 @@
    <extension
          point="org.eclipse.ui.views">
       <category
-            name="History Miner"
-            id="ca.ubc.cs.hminer.eclipseplugin">
+            name="Periscope"
+            id="ca.ubc.cs.periscope.eclipseplugin">
       </category>
       <view
             name="Related Pages"
             icon="icons/sample.gif"
-            category="ca.ubc.cs.hminer.eclipseplugin"
+            category="ca.ubc.cs.periscope.eclipseplugin"
             class="ca.ubc.cs.periscope.eclipseplugin.views.RelatedPagesView"
-            id="ca.ubc.cs.hminer.eclipseplugin.views.RelatedPagesView">
+            id="ca.ubc.cs.periscope.eclipseplugin.views.RelatedPagesView">
       </view>
    </extension>
    <extension
@@ -24,7 +24,7 @@
                ratio="0.5"
                relative="org.eclipse.ui.views.TaskList"
                relationship="right"
-               id="ca.ubc.cs.hminer.eclipseplugin.views.RelatedPagesView">
+               id="ca.ubc.cs.periscope.eclipseplugin.views.RelatedPagesView">
          </view>
       </perspectiveExtension>
    </extension>
