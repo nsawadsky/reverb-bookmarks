@@ -1,20 +1,15 @@
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <string>
 
 // Exported function declarations
 bool PICL_startBackgroundThread();
 
 bool PICL_stopBackgroundThread();
 
-bool PICL_sendPage(char* url, char* pageContent);
+bool PICL_sendPage(const char* url, const char* pageContent);
 
-void PICL_getErrorMessage(wchar_t* buffer, int bufLenChars);
+std::string PICL_getErrorMessage();
 
-void PICL_getBackgroundThreadStatus(wchar_t* buffer, int bufLenChars);
+std::string PICL_getBackgroundThreadStatus();
 
-#ifdef __cplusplus
-}
-#endif
