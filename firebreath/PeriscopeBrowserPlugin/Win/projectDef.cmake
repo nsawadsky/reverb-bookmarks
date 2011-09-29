@@ -51,8 +51,8 @@ target_link_libraries(${PROJECT_NAME}
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../native/PeriscopeIndexerClient)
 
-target_link_libraries(${PROJECT_NAME} debug ${CMAKE_CURRENT_SOURCE_DIR}/jsoncpp/json_vc71_libmtd.lib)
-target_link_libraries(${PROJECT_NAME} optimized ${CMAKE_CURRENT_SOURCE_DIR}/jsoncpp/json_vc71_libmt.lib)
+target_link_libraries(${PROJECT_NAME} debug ${CMAKE_CURRENT_SOURCE_DIR}/../../native/PeriscopeIndexerClient/jsoncpp/json_vc71_libmtd.lib)
+target_link_libraries(${PROJECT_NAME} optimized ${CMAKE_CURRENT_SOURCE_DIR}/../../native/PeriscopeIndexerClient/jsoncpp/json_vc71_libmt.lib)
     
 target_link_libraries(${PROJECT_NAME} debug ${CMAKE_CURRENT_SOURCE_DIR}/../../native/Debug/PeriscopeIndexerClient.lib)
 target_link_libraries(${PROJECT_NAME} optimized ${CMAKE_CURRENT_SOURCE_DIR}/../../native/Release/PeriscopeIndexerClient.lib)
