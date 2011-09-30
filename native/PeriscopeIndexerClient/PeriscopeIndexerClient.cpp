@@ -262,18 +262,17 @@ DWORD WINAPI handleMessages(LPVOID param) {
         std::wstring pipeName = makePipeName(L"historyminer-index", true);
 
         int tries = 0;
+        DWORD createError = 0;
         do {
             indexPipe = CreateFile(pipeName.c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
             tries++;
-            if (indexPipe == INVALID_HANDLE_VALUE) {
-                if (GetLastError() != ERROR_PIPE_BUSY) {
-                    throw std::wstring(L"Failed to open pipe '") + pipeName + L"': " + getWindowsErrorMessage(L"CreateFile");
-                }
-                if (tries < 5) {
+            if (indexPipe == INVALID_HANDLE_VALUE && tries < 5) {
+                createError = GetLastError();
+                if (createError == ERROR_PIPE_BUSY) {
                     Sleep(100);
                 }
             }
-        } while (indexPipe == INVALID_HANDLE_VALUE && tries < 5);
+        } while (indexPipe == INVALID_HANDLE_VALUE && tries < 5 && createError == ERROR_PIPE_BUSY);
 
         if (indexPipe == INVALID_HANDLE_VALUE) {
             throw std::wstring(L"Failed to open pipe '") + pipeName + L"': " + getWindowsErrorMessage(L"CreateFile");
