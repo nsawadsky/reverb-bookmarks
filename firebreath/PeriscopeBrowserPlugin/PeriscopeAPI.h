@@ -4,9 +4,6 @@
 
 \**********************************************************/
 
-// Avoid warnings for use of throw as exception specification.
-#pragma warning( disable : 4290 )
-
 #include <string>
 #include <sstream>
 #include <boost/weak_ptr.hpp>
