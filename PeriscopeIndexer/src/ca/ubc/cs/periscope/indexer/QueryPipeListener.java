@@ -1,7 +1,9 @@
 package ca.ubc.cs.periscope.indexer;
 
+import java.io.IOException;
+
 import org.codehaus.jackson.map.ObjectMapper;
-import npw.WindowsNamedPipe;
+import npw.NamedPipeWrapper;
 
 import org.apache.log4j.Logger;
 import org.apache.lucene.index.IndexReader;
@@ -12,35 +14,57 @@ import ca.ubc.cs.periscope.indexer.messages.IndexerMessageEnvelope;
 import ca.ubc.cs.periscope.indexer.messages.QueryResult;
 
 
-public class QueryPipeListener {
+public class QueryPipeListener implements Runnable {
     private static Logger log = Logger.getLogger(QueryPipeListener.class);
 
-    private static final int LISTENING_THREADS = 5;
-    
     private IndexerConfig config;
-    private String queryPipeName;
     private WebPageIndexer indexer;
+    private long listeningPipe = 0;
+    private IndexReader indexReader = null;
     
-    public QueryPipeListener(IndexerConfig config, WebPageIndexer indexer) throws IndexerException  {
+    public QueryPipeListener(IndexerConfig config, WebPageIndexer indexer) {
         this.config = config;
         this.indexer = indexer;
-        this.queryPipeName = WindowsNamedPipe.makePipeName("historyminer-query", true);
-        if (queryPipeName == null) {
-            throw new IndexerException("Failed to make query pipe name: " + WindowsNamedPipe.getErrorMessage());
-        }
     }
     
     public void start() throws IndexerException {
-        IndexReader reader;
         try {
-            // IndexReader is thread-safe, share it for efficiency.
-            reader = IndexReader.open(indexer.getIndexWriter(), true);
-        } catch (Exception e) {
-            throw new IndexerException("Error creating IndexReader: " + e, e);
+            try {
+                // IndexReader is thread-safe, share it for efficiency.
+                indexReader = IndexReader.open(indexer.getIndexWriter(), true);
+            } catch (Exception e) {
+                throw new IndexerException("Error creating IndexReader: " + e, e);
+            }
+            
+            String queryPipeName = NamedPipeWrapper.makePipeName("historyminer-query", true);
+            if (queryPipeName == null) {
+                throw new IndexerException("Failed to make query pipe name: " + NamedPipeWrapper.getErrorMessage());
+            }
+    
+            listeningPipe = NamedPipeWrapper.createPipe(queryPipeName, true);
+            if (listeningPipe == 0) {
+                throw new IndexerException("Failed to create query pipe: " + NamedPipeWrapper.getErrorMessage());
+            }
+
+            new Thread(this).start();
+        } catch (IndexerException e) {
+            if (indexReader != null) {
+                try {
+                    indexReader.close();
+                } catch (IOException ioExcept) {}
+            }
+            throw e;
         }
-        
-        for (int i = 0; i < LISTENING_THREADS; i++) {
-            new Thread(new ListenerInstance(config, queryPipeName, reader)).start();
+    }
+    
+    public void run() {
+        while (true) {
+            long newPipe = NamedPipeWrapper.acceptConnection(listeningPipe);
+            if (newPipe == 0) {
+                log.error("Error accepting connection on index pipe: " + NamedPipeWrapper.getErrorMessage());
+            } else {
+                new Thread(new ListenerInstance(config, newPipe, indexReader)).start();
+            }
         }
     }
    
@@ -48,57 +72,39 @@ public class QueryPipeListener {
         private long pipeHandle = 0;
         private WebPageSearcher searcher;
         private IndexerConfig config;
-        private String queryPipeName;
         
-        public ListenerInstance(IndexerConfig config, String queryPipeName, IndexReader reader) {
+        public ListenerInstance(IndexerConfig config, long pipeHandle, IndexReader reader) {
             this.config = config;
-            this.queryPipeName = queryPipeName;
+            this.pipeHandle = pipeHandle;
             searcher = new WebPageSearcher(config, reader);
         }
         
         public void run() {
-            pipeHandle = WindowsNamedPipe.createPipe(queryPipeName, true);
-            if (pipeHandle == 0) {
-                log.error("Failed to create pipe '" + queryPipeName + "': " + WindowsNamedPipe.getErrorMessage());
-                return;
-            }
             try {
                 Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
                 
                 ObjectMapper mapper = new ObjectMapper();
-                while (true) {
-                    if (!WindowsNamedPipe.connectPipe(pipeHandle)) {
-                        log.error("Failed to connect query pipe: " + WindowsNamedPipe.getErrorMessage());
-                        return;
-                    }
-                    
-                    byte[] data = null;
-                    while ((data = WindowsNamedPipe.readPipe(pipeHandle)) != null) {
-                        try {
-                            IndexerMessageEnvelope envelope = mapper.readValue(data, IndexerMessageEnvelope.class);
-                            if (envelope.message == null) {
-                                throw new IndexerException("envelope.message is null");
-                            }
-                            if (envelope.message instanceof IndexerBatchQuery) {
-                                handleBatchQuery((IndexerBatchQuery)envelope.message);
-                            } else {
-                                throw new IndexerException("Unexpected message content: " + envelope.message.getClass());
-                            }
-                            
-                        } catch (Exception e) {
-                            log.error("Exception handling message from query pipe", e);
+                byte[] data = null;
+                while ((data = NamedPipeWrapper.readPipe(pipeHandle)) != null) {
+                    try {
+                        IndexerMessageEnvelope envelope = mapper.readValue(data, IndexerMessageEnvelope.class);
+                        if (envelope.message == null) {
+                            throw new IndexerException("envelope.message is null");
                         }
+                        if (envelope.message instanceof IndexerBatchQuery) {
+                            handleBatchQuery((IndexerBatchQuery)envelope.message);
+                        } else {
+                            throw new IndexerException("Unexpected message content: " + envelope.message.getClass());
+                        }
+                        
+                    } catch (Exception e) {
+                        log.error("Exception handling message from query pipe", e);
                     }
-                    
-                    log.info("Error reading query pipe: " + WindowsNamedPipe.getErrorMessage());
-                    
-                    if (!WindowsNamedPipe.disconnectPipe(pipeHandle)) {
-                        log.error("Failed to disconnect query pipe: " + WindowsNamedPipe.getErrorMessage());
-                        return;
-                    }
-                } 
+                }
+                
+                log.info("Error reading query pipe: " + NamedPipeWrapper.getErrorMessage());
             } finally {
-                WindowsNamedPipe.closePipe(pipeHandle);
+                NamedPipeWrapper.closePipe(pipeHandle);
             }
         }
         
@@ -120,8 +126,8 @@ public class QueryPipeListener {
             } catch (Exception e) {
                 throw new IndexerException("Error serializing message to JSON: " + e, e);
             }
-            if (!WindowsNamedPipe.writePipe(pipeHandle, jsonData)) {
-                throw new IndexerException("Error writing data to pipe: " + WindowsNamedPipe.getErrorMessage());
+            if (!NamedPipeWrapper.writePipe(pipeHandle, jsonData)) {
+                throw new IndexerException("Error writing data to pipe: " + NamedPipeWrapper.getErrorMessage());
             }
     
         }
