@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry exported="true" kind="lib" path="lib/NamedPipeWrapper.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/XpNamedPipe.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/PeriscopeIndexerMessages.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/jackson-core-asl-1.8.5.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/jackson-mapper-asl-1.8.5.jar"/>
@@ -9,6 +9,6 @@
 	<classpathentry kind="con" path="org.eclipse.m2e.MAVEN2_CLASSPATH_CONTAINER"/>
 	<classpathentry kind="con" path="org.eclipse.pde.core.requiredPlugins"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/PeriscopeIndexerMessages"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/NamedPipeWrapper"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/XpNamedPipeJava"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

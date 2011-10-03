@@ -7,26 +7,26 @@ import ca.ubc.cs.periscope.indexer.messages.IndexerBatchQuery;
 import ca.ubc.cs.periscope.indexer.messages.IndexerMessage;
 import ca.ubc.cs.periscope.indexer.messages.IndexerMessageEnvelope;
 
-import npw.NamedPipeWrapper;
+import xpnp.XpNamedPipe;
 
 public class IndexerConnection {
     private long pipeHandle = 0;
     
     public IndexerConnection() throws PluginException {
-        String pipeName = NamedPipeWrapper.makePipeName("historyminer-query", true);
+        String pipeName = XpNamedPipe.makePipeName("historyminer-query", true);
         if (pipeName == null) {
             throw new PluginException("Failed to make pipe name: " + 
-                    NamedPipeWrapper.getErrorMessage());
+                    XpNamedPipe.getErrorMessage());
         }
-        pipeHandle = NamedPipeWrapper.openPipe(pipeName);
+        pipeHandle = XpNamedPipe.openPipe(pipeName);
         if (pipeHandle == 0) {
-            throw new PluginException("Failed to open pipe: " + NamedPipeWrapper.getErrorMessage());
+            throw new PluginException("Failed to open pipe: " + XpNamedPipe.getErrorMessage());
         }
     }
     
     public void close() {
         if (pipeHandle != 0) {
-            NamedPipeWrapper.closePipe(pipeHandle);
+            XpNamedPipe.closePipe(pipeHandle);
             pipeHandle = 0;
         }
     }
@@ -48,15 +48,15 @@ public class IndexerConnection {
         } catch (Exception e) {
             throw new PluginException("Error serializing message to JSON: " + e, e);
         }
-        if (!NamedPipeWrapper.writePipe(pipeHandle, jsonData)) {
+        if (!XpNamedPipe.writePipe(pipeHandle, jsonData)) {
             // TODO: Close and reopen pipe?
-            throw new PluginException("Error writing data to pipe: " + NamedPipeWrapper.getErrorMessage());
+            throw new PluginException("Error writing data to pipe: " + XpNamedPipe.getErrorMessage());
         }
         
-        byte[] responseData = NamedPipeWrapper.readPipe(pipeHandle);
+        byte[] responseData = XpNamedPipe.readPipe(pipeHandle);
         if (responseData == null) {
             // TODO: Close and reopen pipe?
-            throw new PluginException("Error reading response from pipe: " + NamedPipeWrapper.getErrorMessage());
+            throw new PluginException("Error reading response from pipe: " + XpNamedPipe.getErrorMessage());
         } else {
             try {
                 return mapper.readValue(responseData, IndexerMessageEnvelope.class).message;

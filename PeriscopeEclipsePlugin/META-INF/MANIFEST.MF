@@ -12,9 +12,9 @@ Require-Bundle: org.eclipse.ui,
  org.eclipse.jface.text;bundle-version="3.7.0"
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
-Bundle-ClassPath: lib/PeriscopeIndexerMessages.jar,
- lib/NamedPipeWrapper.jar,
+Bundle-ClassPath: lib/XpNamedPipe.jar,
+ lib/PeriscopeIndexerMessages.jar,
  lib/jackson-core-asl-1.8.5.jar,
  lib/jackson-mapper-asl-1.8.5.jar,
  .
-Bundle-NativeCode: lib/WindowsNamedPipe.dll; lib/WindowsNamedPipe_64.dll
+Bundle-NativeCode: lib/XpNamedPipeJni.dll; lib/XpNamedPipeJni_64.dll
