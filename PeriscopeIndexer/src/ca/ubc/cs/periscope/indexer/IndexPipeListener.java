@@ -40,6 +40,7 @@ public class IndexPipeListener implements Runnable {
             if (newPipe == 0) {
                 log.error("Error accepting connection on index pipe: " + NamedPipeWrapper.getErrorMessage());
             } else {
+                log.info("Accepted connection on index pipe");
                 new Thread(new ListenerInstance(config, newPipe, indexer)).start();
             }
         }
