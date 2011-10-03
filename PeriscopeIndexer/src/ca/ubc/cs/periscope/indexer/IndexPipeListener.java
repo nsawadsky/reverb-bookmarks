@@ -1,7 +1,7 @@
 package ca.ubc.cs.periscope.indexer;
 
 import org.codehaus.jackson.map.ObjectMapper;
-import npw.NamedPipeWrapper;
+import xpnp.XpNamedPipe;
 
 import org.apache.log4j.Logger;
 
@@ -22,23 +22,23 @@ public class IndexPipeListener implements Runnable {
     }
     
     public void start() throws IndexerException {
-        String indexPipeName = NamedPipeWrapper.makePipeName("historyminer-index", true); 
+        String indexPipeName = XpNamedPipe.makePipeName("historyminer-index", true); 
         if (indexPipeName == null) {
-            throw new IndexerException("Failed to make index pipe name: " + NamedPipeWrapper.getErrorMessage());
+            throw new IndexerException("Failed to make index pipe name: " + XpNamedPipe.getErrorMessage());
         }
 
-        listeningPipe = NamedPipeWrapper.createPipe(indexPipeName, true);
+        listeningPipe = XpNamedPipe.createPipe(indexPipeName, true);
         if (listeningPipe == 0) {
-            throw new IndexerException("Failed to create index pipe: " + NamedPipeWrapper.getErrorMessage());
+            throw new IndexerException("Failed to create index pipe: " + XpNamedPipe.getErrorMessage());
         }
         new Thread(this).start();
     }
     
     public void run() {
         while (true) {
-            long newPipe = NamedPipeWrapper.acceptConnection(listeningPipe);
+            long newPipe = XpNamedPipe.acceptConnection(listeningPipe);
             if (newPipe == 0) {
-                log.error("Error accepting connection on index pipe: " + NamedPipeWrapper.getErrorMessage());
+                log.error("Error accepting connection on index pipe: " + XpNamedPipe.getErrorMessage());
             } else {
                 log.info("Accepted connection on index pipe");
                 new Thread(new ListenerInstance(config, newPipe, indexer)).start();
@@ -63,7 +63,7 @@ public class IndexPipeListener implements Runnable {
                 
                 ObjectMapper mapper = new ObjectMapper();
                 byte[] data = null;
-                while ((data = NamedPipeWrapper.readPipe(pipeHandle)) != null) {
+                while ((data = XpNamedPipe.readPipe(pipeHandle)) != null) {
                     PageInfo info = null;
                     try {
                         IndexerMessageEnvelope envelope = mapper.readValue(data, IndexerMessageEnvelope.class);
@@ -87,9 +87,9 @@ public class IndexPipeListener implements Runnable {
                     }
                 }
                 
-                log.info("Error reading index pipe: " + NamedPipeWrapper.getErrorMessage());
+                log.info("Error reading index pipe: " + XpNamedPipe.getErrorMessage());
             } finally {
-                NamedPipeWrapper.closePipe(pipeHandle);
+                XpNamedPipe.closePipe(pipeHandle);
             }
         }
     }

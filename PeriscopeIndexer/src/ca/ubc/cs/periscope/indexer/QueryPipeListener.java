@@ -3,7 +3,7 @@ package ca.ubc.cs.periscope.indexer;
 import java.io.IOException;
 
 import org.codehaus.jackson.map.ObjectMapper;
-import npw.NamedPipeWrapper;
+import xpnp.XpNamedPipe;
 
 import org.apache.log4j.Logger;
 import org.apache.lucene.index.IndexReader;
@@ -36,14 +36,14 @@ public class QueryPipeListener implements Runnable {
                 throw new IndexerException("Error creating IndexReader: " + e, e);
             }
             
-            String queryPipeName = NamedPipeWrapper.makePipeName("historyminer-query", true);
+            String queryPipeName = XpNamedPipe.makePipeName("historyminer-query", true);
             if (queryPipeName == null) {
-                throw new IndexerException("Failed to make query pipe name: " + NamedPipeWrapper.getErrorMessage());
+                throw new IndexerException("Failed to make query pipe name: " + XpNamedPipe.getErrorMessage());
             }
     
-            listeningPipe = NamedPipeWrapper.createPipe(queryPipeName, true);
+            listeningPipe = XpNamedPipe.createPipe(queryPipeName, true);
             if (listeningPipe == 0) {
-                throw new IndexerException("Failed to create query pipe: " + NamedPipeWrapper.getErrorMessage());
+                throw new IndexerException("Failed to create query pipe: " + XpNamedPipe.getErrorMessage());
             }
 
             new Thread(this).start();
@@ -59,9 +59,9 @@ public class QueryPipeListener implements Runnable {
     
     public void run() {
         while (true) {
-            long newPipe = NamedPipeWrapper.acceptConnection(listeningPipe);
+            long newPipe = XpNamedPipe.acceptConnection(listeningPipe);
             if (newPipe == 0) {
-                log.error("Error accepting connection on index pipe: " + NamedPipeWrapper.getErrorMessage());
+                log.error("Error accepting connection on index pipe: " + XpNamedPipe.getErrorMessage());
             } else {
                 new Thread(new ListenerInstance(config, newPipe, indexReader)).start();
             }
@@ -85,7 +85,7 @@ public class QueryPipeListener implements Runnable {
                 
                 ObjectMapper mapper = new ObjectMapper();
                 byte[] data = null;
-                while ((data = NamedPipeWrapper.readPipe(pipeHandle)) != null) {
+                while ((data = XpNamedPipe.readPipe(pipeHandle)) != null) {
                     try {
                         IndexerMessageEnvelope envelope = mapper.readValue(data, IndexerMessageEnvelope.class);
                         if (envelope.message == null) {
@@ -102,9 +102,9 @@ public class QueryPipeListener implements Runnable {
                     }
                 }
                 
-                log.info("Error reading query pipe: " + NamedPipeWrapper.getErrorMessage());
+                log.info("Error reading query pipe: " + XpNamedPipe.getErrorMessage());
             } finally {
-                NamedPipeWrapper.closePipe(pipeHandle);
+                XpNamedPipe.closePipe(pipeHandle);
             }
         }
         
@@ -126,8 +126,8 @@ public class QueryPipeListener implements Runnable {
             } catch (Exception e) {
                 throw new IndexerException("Error serializing message to JSON: " + e, e);
             }
-            if (!NamedPipeWrapper.writePipe(pipeHandle, jsonData)) {
-                throw new IndexerException("Error writing data to pipe: " + NamedPipeWrapper.getErrorMessage());
+            if (!XpNamedPipe.writePipe(pipeHandle, jsonData)) {
+                throw new IndexerException("Error writing data to pipe: " + XpNamedPipe.getErrorMessage());
             }
     
         }
