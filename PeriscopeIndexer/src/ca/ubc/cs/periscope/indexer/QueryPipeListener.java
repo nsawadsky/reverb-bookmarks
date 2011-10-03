@@ -63,17 +63,17 @@ public class QueryPipeListener implements Runnable {
             if (newPipe == 0) {
                 log.error("Error accepting connection on index pipe: " + XpNamedPipe.getErrorMessage());
             } else {
-                new Thread(new ListenerInstance(config, newPipe, indexReader)).start();
+                new Thread(new QueryPipeConnection(config, newPipe, indexReader)).start();
             }
         }
     }
    
-    private class ListenerInstance implements Runnable {
+    private class QueryPipeConnection implements Runnable {
         private long pipeHandle = 0;
         private WebPageSearcher searcher;
         private IndexerConfig config;
         
-        public ListenerInstance(IndexerConfig config, long pipeHandle, IndexReader reader) {
+        public QueryPipeConnection(IndexerConfig config, long pipeHandle, IndexReader reader) {
             this.config = config;
             this.pipeHandle = pipeHandle;
             searcher = new WebPageSearcher(config, reader);
