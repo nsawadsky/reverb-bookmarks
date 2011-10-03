@@ -41,17 +41,17 @@ public class IndexPipeListener implements Runnable {
                 log.error("Error accepting connection on index pipe: " + XpNamedPipe.getErrorMessage());
             } else {
                 log.info("Accepted connection on index pipe");
-                new Thread(new ListenerInstance(config, newPipe, indexer)).start();
+                new Thread(new IndexPipeConnection(config, newPipe, indexer)).start();
             }
         }
     }
    
-    private class ListenerInstance implements Runnable {
+    private class IndexPipeConnection implements Runnable {
         private IndexerConfig config;
         private long pipeHandle;
         private WebPageIndexer indexer;
         
-        public ListenerInstance(IndexerConfig config, long pipeHandle, WebPageIndexer indexer) {
+        public IndexPipeConnection(IndexerConfig config, long pipeHandle, WebPageIndexer indexer) {
             this.config = config;
             this.pipeHandle = pipeHandle;
             this.indexer = indexer;
