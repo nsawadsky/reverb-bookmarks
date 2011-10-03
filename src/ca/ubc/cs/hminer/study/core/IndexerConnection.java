@@ -6,7 +6,7 @@ import ca.ubc.cs.hminer.indexer.messages.IndexerMessage;
 import ca.ubc.cs.hminer.indexer.messages.IndexerMessageEnvelope;
 import ca.ubc.cs.hminer.indexer.messages.PageInfo;
 
-import npw.NamedPipeWrapper;
+import xpnp.XpNamedPipe;
 
 // It's important that we don't have a field of type NamedPipeWrapper -- otherwise when this class is 
 // loaded, then the NamedPipeWrapper class would be loaded immediately as well.  Then we would 
@@ -17,20 +17,20 @@ public class IndexerConnection {
     private long pipeHandle = 0;
     
     public IndexerConnection() throws HistoryMinerException {
-        String pipeName = NamedPipeWrapper.makePipeName("historyminer-index", true);
+        String pipeName = XpNamedPipe.makePipeName("historyminer-index", true);
         if (pipeName == null) {
             throw new HistoryMinerException("Failed to make pipe name: " + 
-                    NamedPipeWrapper.getErrorMessage());
+                    XpNamedPipe.getErrorMessage());
         }
-        pipeHandle = NamedPipeWrapper.openPipe(pipeName);
+        pipeHandle = XpNamedPipe.openPipe(pipeName);
         if (pipeHandle == 0) {
-            throw new HistoryMinerException("Failed to open pipe: " + NamedPipeWrapper.getErrorMessage());
+            throw new HistoryMinerException("Failed to open pipe: " + XpNamedPipe.getErrorMessage());
         }
     }
     
     public void close() {
         if (pipeHandle != 0) {
-            NamedPipeWrapper.closePipe(pipeHandle);
+            XpNamedPipe.closePipe(pipeHandle);
             pipeHandle = 0;
         }
     }
@@ -48,9 +48,9 @@ public class IndexerConnection {
         } catch (Exception e) {
             throw new HistoryMinerException("Error serializing message to JSON: " + e, e);
         }
-        if (!NamedPipeWrapper.writePipe(pipeHandle, jsonData)) {
+        if (!XpNamedPipe.writePipe(pipeHandle, jsonData)) {
             // TODO: Close and reopen pipe?
-            throw new HistoryMinerException("Error writing data to pipe: " + NamedPipeWrapper.getErrorMessage());
+            throw new HistoryMinerException("Error writing data to pipe: " + XpNamedPipe.getErrorMessage());
         }
     }
     
