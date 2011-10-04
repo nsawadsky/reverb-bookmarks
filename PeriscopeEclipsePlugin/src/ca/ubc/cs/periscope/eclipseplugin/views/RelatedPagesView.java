@@ -61,7 +61,7 @@ public class RelatedPagesView extends ViewPart {
     /**
      * The ID of the view as specified by the extension.
      */
-    public static final String ID = "ca.ubc.cs.hminer.eclipseplugin.views.ResultsView";
+    public static final String ID = "ca.ubc.cs.hminer.eclipseplugin.views.RelatedPagesView";
     
     private final static String UPDATE_VIEW_ERROR_MSG = "Error updating view.";
 
@@ -207,7 +207,7 @@ public class RelatedPagesView extends ViewPart {
         try {
             indexerConnection = new IndexerConnection();
         } catch (PluginException e) {
-            throw new PartInitException("Error initializing Related Pages view: " + e, e);
+            throw new PartInitException("Error initializing Periscope view: " + e, e);
         }
     }
     
@@ -305,7 +305,7 @@ public class RelatedPagesView extends ViewPart {
             }
         });
         
-        return new Status(IStatus.OK, PluginActivator.PLUGIN_ID, "Updated Related Pages view successfully");
+        return new Status(IStatus.OK, PluginActivator.PLUGIN_ID, "Updated Periscope view successfully");
     }
     
     private void makeActions() {
@@ -342,7 +342,7 @@ public class RelatedPagesView extends ViewPart {
                         contentProvider.setMessage("Updating view ...");
                         viewer.refresh();
                         
-                        Job updateViewJob = new Job("Update Related Pages") {
+                        Job updateViewJob = new Job("Update View") {
 
                             @Override
                             protected IStatus run(IProgressMonitor monitor) {
@@ -402,7 +402,7 @@ public class RelatedPagesView extends ViewPart {
     private void showMessage(String message) {
         MessageDialog.openInformation(
                 viewer.getControl().getShell(),
-                "Related Pages",
+                "Periscope",
                 message);
     }
 
