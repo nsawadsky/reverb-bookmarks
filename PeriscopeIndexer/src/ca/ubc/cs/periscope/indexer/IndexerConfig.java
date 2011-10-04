@@ -14,14 +14,14 @@ public class IndexerConfig {
         if (localAppDataPath == null) {
             throw new IndexerException("APPDATA environment variable not found");
         }
-        indexPath = localAppDataPath + File.separator + "Periscope" + File.separator + "index";
+        indexPath = localAppDataPath + File.separator + "Periscope" + File.separator + "data" + File.separator + "index";
         File dir = new File(indexPath);
         if (!dir.exists()) {
             if (!dir.mkdirs()) {
                 throw new IndexerException("Could not create directory '" + indexPath + "'");
             }
         }
-        locationsDatabasePath = localAppDataPath + File.separator + "Periscope" + File.separator + "locations.sqlite";
+        locationsDatabasePath = localAppDataPath + File.separator + "Periscope" + File.separator + "data" + File.separator + "locations.sqlite";
     }
     
     public String getIndexerPipeName() {

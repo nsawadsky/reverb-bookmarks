@@ -2,6 +2,7 @@ package ca.ubc.cs.periscope.indexer;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -10,10 +11,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Wrapper around the SQLITE locations database.  We prevent concurrent access to this database by synchronizing the
+ * public accessors of this class (and by the fact that there should only ever be one instance of the indexer process).
+ */
 public class LocationsDatabase {
     private static final String JDBC_SQLITE = "jdbc:sqlite:";
-    private static final int VISIT_HALF_LIFE_MSECS = 3 * 30 * 24 * 60 * 60 * 1000;
-    private static final double DECAY = Math.log(0.5) / VISIT_HALF_LIFE_MSECS;
+    private static final long VISIT_HALF_LIFE_MSECS = 3 * 30 * 24 * 60 * 60 * 1000L;
+    private static final float DECAY = (float)Math.log(0.5) / VISIT_HALF_LIFE_MSECS;
     
     private IndexerConfig config;
 
@@ -67,32 +72,49 @@ public class LocationsDatabase {
         return results;
     }
     
-    public synchronized void updateLocationInfo(String url) throws IndexerException { 
+    public synchronized Date updateLocationInfo(String url) throws IndexerException { 
         Connection conn = null;
         try {
             conn = DriverManager.getConnection(JDBC_SQLITE + config.getLocationsDatabasePath());
             Statement stmt = conn.createStatement();
     
-            String query = "SELECT last_visit_time, visit_count, frecency_boost FROM locations WHERE url = '" + url + "'";
+            String query = "SELECT id, last_visit_time, visit_count, frecency_boost FROM locations WHERE url = '" + url + "'";
             ResultSet rs = stmt.executeQuery(query);
+            long id = -1;
             int visitCount = 0;
-            double frecencyBoost = 0.0;
-            long lastVisitTime = 0L;
+            float frecencyBoost = 0.0F;
+            long lastVisitTime = 0;
             long currentTime = new Date().getTime();
             if (rs.next()) {
-                lastVisitTime = rs.getLong(1);
-                visitCount = rs.getInt(2);
-                frecencyBoost = rs.getDouble(3);
+                id = rs.getLong(1);
+                lastVisitTime = rs.getLong(2);
+                visitCount = rs.getInt(3);
+                frecencyBoost = rs.getFloat(4);
                 
                 long timeDelta = currentTime - lastVisitTime;
-                frecencyBoost = frecencyBoost * Math.exp(DECAY * timeDelta);
+                frecencyBoost = frecencyBoost * (float)Math.exp(DECAY * timeDelta);
             }
-            lastVisitTime = currentTime;
             visitCount += 1;
             frecencyBoost += 1.0;
             
-            StringBuilder update 
+            StringBuilder update = new StringBuilder("INSERT OR REPLACE INTO locations (id, url, last_visit_time, visit_count, frecency_boost) VALUES " +
+                    "(?, ?, ?, ?, ?)");
             
+            PreparedStatement prep = conn.prepareStatement(update.toString());
+            if (id != -1) {
+                prep.setLong(1, id);
+            } 
+            prep.setString(2, url);
+            prep.setLong(3, currentTime);
+            prep.setInt(4, visitCount);
+            prep.setFloat(5, frecencyBoost);
+            
+            prep.execute();
+            
+            if (lastVisitTime == 0) {
+                return null;
+            }
+            return new Date(lastVisitTime);
         } catch (SQLException e) {
             throw new IndexerException("Error updating location info: " + e);
         } finally {
@@ -120,7 +142,7 @@ public class LocationsDatabase {
                     stmt = conn.createStatement();
                     
                     String update = "CREATE TABLE locations(id INTEGER PRIMARY KEY, url LONGVARCHAR NOT NULL, " +
-                            "last_visit_time INTEGER NOT NULL, visit_count INTEGER NOT NULL, frecency_boost DOUBLE NOT NULL)";
+                            "last_visit_time INTEGER NOT NULL, visit_count INTEGER NOT NULL, frecency_boost FLOAT NOT NULL)";
                     
                     stmt.executeUpdate(update);
                     

@@ -21,10 +21,12 @@ public class QueryPipeListener implements Runnable {
     private WebPageIndexer indexer;
     private long listeningPipe = 0;
     private IndexReader indexReader = null;
+    private LocationsDatabase locationsDatabase;
     
-    public QueryPipeListener(IndexerConfig config, WebPageIndexer indexer) {
+    public QueryPipeListener(IndexerConfig config, WebPageIndexer indexer, LocationsDatabase locationsDatabase) {
         this.config = config;
         this.indexer = indexer;
+        this.locationsDatabase = locationsDatabase;
     }
     
     public void start() throws IndexerException {
@@ -63,7 +65,7 @@ public class QueryPipeListener implements Runnable {
             if (newPipe == 0) {
                 log.error("Error accepting connection on index pipe: " + XpNamedPipe.getErrorMessage());
             } else {
-                new Thread(new QueryPipeConnection(config, newPipe, indexReader)).start();
+                new Thread(new QueryPipeConnection(config, newPipe, indexReader, locationsDatabase)).start();
             }
         }
     }
@@ -73,10 +75,10 @@ public class QueryPipeListener implements Runnable {
         private WebPageSearcher searcher;
         private IndexerConfig config;
         
-        public QueryPipeConnection(IndexerConfig config, long pipeHandle, IndexReader reader) {
+        public QueryPipeConnection(IndexerConfig config, long pipeHandle, IndexReader reader, LocationsDatabase locationsDatabase) {
             this.config = config;
             this.pipeHandle = pipeHandle;
-            searcher = new WebPageSearcher(config, reader);
+            searcher = new WebPageSearcher(config, reader, locationsDatabase);
         }
         
         public void run() {
