@@ -29,9 +29,11 @@ public class WebPageIndexer {
     
     private IndexerConfig config;
     private IndexWriter indexWriter;
+    private LocationsDatabase locationsDatabase;
     
-    public WebPageIndexer(IndexerConfig config) throws IndexerException {
+    public WebPageIndexer(IndexerConfig config, LocationsDatabase locationsDatabase) throws IndexerException {
         this.config = config;
+        this.locationsDatabase = locationsDatabase;
 
         try {
             Directory index = FSDirectory.open(new File(config.getIndexPath()));
