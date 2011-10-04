@@ -7,18 +7,21 @@ public class IndexerConfig {
     
     private String indexPath;
     
+    private String locationsDatabasePath;
+    
     public IndexerConfig() throws IndexerException {
         String localAppDataPath = System.getenv(LOCAL_APPDATA_ENV_VAR);
         if (localAppDataPath == null) {
             throw new IndexerException("APPDATA environment variable not found");
         }
-        indexPath = localAppDataPath + File.separator + "HistoryMiner" + File.separator + "index";
+        indexPath = localAppDataPath + File.separator + "Periscope" + File.separator + "index";
         File dir = new File(indexPath);
         if (!dir.exists()) {
             if (!dir.mkdirs()) {
                 throw new IndexerException("Could not create directory '" + indexPath + "'");
             }
         }
+        locationsDatabasePath = localAppDataPath + File.separator + "Periscope" + File.separator + "locations.sqlite";
     }
     
     public String getIndexerPipeName() {
@@ -31,5 +34,9 @@ public class IndexerConfig {
     
     public String getIndexPath() {
         return indexPath;
+    }
+    
+    public String getLocationsDatabasePath() {
+        return locationsDatabasePath;
     }
 }

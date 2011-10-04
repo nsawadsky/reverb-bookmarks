@@ -24,7 +24,9 @@ public class IndexerService {
 
         try {
             this.config = new IndexerConfig();
-            indexer = new WebPageIndexer(config);
+            
+            LocationsDatabase locationsDatabase = new LocationsDatabase(config);
+            indexer = new WebPageIndexer(config, locationsDatabase);
             
             indexPipeListener = new IndexPipeListener(config, indexer);
             

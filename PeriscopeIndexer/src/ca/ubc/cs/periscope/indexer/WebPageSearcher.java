@@ -19,7 +19,7 @@ public class WebPageSearcher {
     private final static int MAX_RESULTS = 5;
     
     private IndexerConfig config;
-    private IndexReader reader;
+    private IndexSearcher searcher;
     private QueryParser parser;
     
     public WebPageSearcher(IndexerConfig config, IndexReader reader) {
@@ -29,15 +29,14 @@ public class WebPageSearcher {
                 new String[] {WebPageIndexer.TITLE_FIELD_NAME, WebPageIndexer.CONTENT_FIELD_NAME}, 
                 new WebPageAnalyzer());
 
-        this.reader = reader;
+        this.searcher = new IndexSearcher(reader);
     }
     
     public List<Location> performSearch(String queryString) throws IndexerException {
         try {
             Query query = parser.parse(queryString);
             
-            reader.reopen();
-            IndexSearcher searcher = new IndexSearcher(reader);
+            searcher.getIndexReader().reopen();
             
             try {
                 List<Location> resultList = new ArrayList<Location>();
