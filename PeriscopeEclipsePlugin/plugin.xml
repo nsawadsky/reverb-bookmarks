@@ -9,7 +9,7 @@
             id="ca.ubc.cs.periscope.eclipseplugin">
       </category>
       <view
-            name="Related Pages"
+            name="Periscope"
             icon="icons/sample.gif"
             category="ca.ubc.cs.periscope.eclipseplugin"
             class="ca.ubc.cs.periscope.eclipseplugin.views.RelatedPagesView"
