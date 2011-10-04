@@ -30,7 +30,7 @@ public class IndexerService {
             
             indexPipeListener = new IndexPipeListener(config, indexer);
             
-            queryPipeListener = new QueryPipeListener(config, indexer);
+            queryPipeListener = new QueryPipeListener(config, indexer, locationsDatabase);
             
             indexPipeListener.start();
             queryPipeListener.start();
