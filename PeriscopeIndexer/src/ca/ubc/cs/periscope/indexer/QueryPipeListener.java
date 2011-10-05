@@ -65,6 +65,7 @@ public class QueryPipeListener implements Runnable {
             if (newPipe == 0) {
                 log.error("Error accepting connection on index pipe: " + XpNamedPipe.getErrorMessage());
             } else {
+                log.info("Accepted connection on query pipe");
                 new Thread(new QueryPipeConnection(config, newPipe, indexReader, locationsDatabase)).start();
             }
         }
