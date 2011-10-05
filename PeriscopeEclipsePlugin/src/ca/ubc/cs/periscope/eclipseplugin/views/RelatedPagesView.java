@@ -152,7 +152,8 @@ public class RelatedPagesView extends ViewPart {
             if (obj instanceof QueryResult) {
                 return ((QueryResult)obj).query;
             } else if (obj instanceof Location) {
-                return ((Location)obj).title;
+                Location loc = (Location)obj;
+                return String.format("%s (%.1f,%.1f,%.1f)", loc.title, loc.luceneScore, loc.frecencyBoost, loc.overallScore);
             } 
             return obj.toString();
         }
