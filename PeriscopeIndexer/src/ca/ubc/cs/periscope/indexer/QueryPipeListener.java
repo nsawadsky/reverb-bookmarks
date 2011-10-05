@@ -11,7 +11,6 @@ import org.apache.lucene.index.IndexReader;
 import ca.ubc.cs.periscope.indexer.messages.BatchQueryResult;
 import ca.ubc.cs.periscope.indexer.messages.IndexerBatchQuery;
 import ca.ubc.cs.periscope.indexer.messages.IndexerMessageEnvelope;
-import ca.ubc.cs.periscope.indexer.messages.QueryResult;
 
 
 public class QueryPipeListener implements Runnable {
