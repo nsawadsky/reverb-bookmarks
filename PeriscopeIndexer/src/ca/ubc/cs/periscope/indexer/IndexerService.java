@@ -4,6 +4,9 @@ import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.spi.RootLogger;
+import org.apache.lucene.index.FieldInvertState;
+import org.apache.lucene.search.DefaultSimilarity;
+import org.apache.lucene.search.Similarity;
 
 public class IndexerService {
     private static Logger log = Logger.getLogger(IndexerService.class);
@@ -24,6 +27,21 @@ public class IndexerService {
 
         try {
             this.config = new IndexerConfig();
+            
+            Similarity.setDefault(new DefaultSimilarity() {
+                // Implementation based on Lucene 3.3.0 source code.
+                @Override
+                public float computeNorm(String field, FieldInvertState state) {
+                    final int numTerms;
+                    if (discountOverlaps)
+                        numTerms = state.getLength() - state.getNumOverlap();
+                    else
+                        numTerms = state.getLength();
+                    // Disable the length norm.
+                    return state.getBoost();
+                    //return state.getBoost() * ((float) (1.0 / Math.sqrt(numTerms)));
+                  }
+            });
             
             LocationsDatabase locationsDatabase = new LocationsDatabase(config);
             indexer = new WebPageIndexer(config, locationsDatabase);

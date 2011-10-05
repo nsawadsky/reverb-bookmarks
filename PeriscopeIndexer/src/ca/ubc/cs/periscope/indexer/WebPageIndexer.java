@@ -69,7 +69,7 @@ public class WebPageIndexer {
             org.jsoup.nodes.Document jsoupDoc = Jsoup.parse(info.html);
             
             Field titleField = new Field(TITLE_FIELD_NAME, jsoupDoc.title(), Field.Store.YES, Field.Index.ANALYZED);
-            titleField.setBoost(3.0f);
+            titleField.setBoost(3.0F);
             doc.add(titleField);
             
             Elements scripts = jsoupDoc.select("script");
