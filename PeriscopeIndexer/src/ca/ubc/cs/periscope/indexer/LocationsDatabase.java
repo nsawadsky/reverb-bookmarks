@@ -33,7 +33,7 @@ public class LocationsDatabase {
         try {
             connection = DriverManager.getConnection(JDBC_SQLITE + config.getLocationsDatabasePath());
         } catch (SQLException e) {
-            throw new IndexerException("Exception connecting to locations database: " + e);
+            throw new IndexerException("Exception connecting to locations database: " + e, e);
         }
         createLocationsTableIfNecessary();
     }
@@ -65,7 +65,7 @@ public class LocationsDatabase {
                 results.put(url, frecencyBoost);
             }
         } catch (SQLException e) {
-            throw new IndexerException("Error getting frecency boosts: " + e);
+            throw new IndexerException("Error getting frecency boosts: " + e, e);
         } 
         return results;
     }
@@ -112,7 +112,7 @@ public class LocationsDatabase {
             }
             return new Date(lastVisitTime);
         } catch (SQLException e) {
-            throw new IndexerException("Error updating location info: " + e);
+            throw new IndexerException("Error updating location info: " + e, e);
         } 
     }
     
@@ -149,7 +149,7 @@ public class LocationsDatabase {
                 }
             }
         } catch (SQLException e) {
-            throw new IndexerException("Error checking for/creating locations table: " + e);
+            throw new IndexerException("Error checking for/creating locations table: " + e, e);
         } 
     }
 }

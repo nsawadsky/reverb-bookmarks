@@ -20,7 +20,7 @@ public class QueryPipeListener implements Runnable {
     private IndexerConfig config;
     private WebPageIndexer indexer;
     private long listeningPipe = 0;
-    private IndexReader indexReader = null;
+    private SharedIndexReader indexReader = null;
     private LocationsDatabase locationsDatabase;
     
     public QueryPipeListener(IndexerConfig config, WebPageIndexer indexer, LocationsDatabase locationsDatabase) {
@@ -33,7 +33,7 @@ public class QueryPipeListener implements Runnable {
         try {
             try {
                 // IndexReader is thread-safe, share it for efficiency.
-                indexReader = IndexReader.open(indexer.getIndexWriter(), true);
+                indexReader = new SharedIndexReader(IndexReader.open(indexer.getIndexWriter(), true));
             } catch (Exception e) {
                 throw new IndexerException("Error creating IndexReader: " + e, e);
             }
@@ -52,7 +52,7 @@ public class QueryPipeListener implements Runnable {
         } catch (IndexerException e) {
             if (indexReader != null) {
                 try {
-                    indexReader.close();
+                    indexReader.get().close();
                 } catch (IOException ioExcept) {}
             }
             throw e;
@@ -76,7 +76,7 @@ public class QueryPipeListener implements Runnable {
         private WebPageSearcher searcher;
         private IndexerConfig config;
         
-        public QueryPipeConnection(IndexerConfig config, long pipeHandle, IndexReader reader, LocationsDatabase locationsDatabase) {
+        public QueryPipeConnection(IndexerConfig config, long pipeHandle, SharedIndexReader reader, LocationsDatabase locationsDatabase) {
             this.config = config;
             this.pipeHandle = pipeHandle;
             searcher = new WebPageSearcher(config, reader, locationsDatabase);
@@ -112,14 +112,7 @@ public class QueryPipeListener implements Runnable {
         }
         
         private void handleBatchQuery(IndexerBatchQuery query) throws IndexerException {
-            BatchQueryResult result = new BatchQueryResult();
-            for (String queryString: query.queryStrings) {
-                try {
-                    result.queryResults.add(new QueryResult(queryString, searcher.performSearch(queryString)));
-                } catch (IndexerException e) {
-                    log.error("Error while processing batch query", e);
-                }
-            }
+            BatchQueryResult result = searcher.performSearch(query.queryStrings);
             ObjectMapper mapper = new ObjectMapper();
             
             IndexerMessageEnvelope envelope = new IndexerMessageEnvelope(result);

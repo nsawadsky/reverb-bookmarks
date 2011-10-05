@@ -1,5 +1,6 @@
 package ca.ubc.cs.periscope.indexer;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -7,16 +8,19 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.lucene.document.Document;
-import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.FieldInvertState;
 import org.apache.lucene.queryParser.MultiFieldQueryParser;
 import org.apache.lucene.queryParser.QueryParser;
+import org.apache.lucene.search.DefaultSimilarity;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.util.Version;
 
+import ca.ubc.cs.periscope.indexer.messages.BatchQueryResult;
 import ca.ubc.cs.periscope.indexer.messages.Location;
+import ca.ubc.cs.periscope.indexer.messages.QueryResult;
 
 /**
  * WebPageSearcher instances are not shared across threads, since my understanding from the docs is that
@@ -26,11 +30,11 @@ public class WebPageSearcher {
     private final static int MAX_RESULTS = 3;
     
     private IndexerConfig config;
-    private IndexSearcher searcher;
+    private SharedIndexReader reader;
     private QueryParser parser;
     private LocationsDatabase locationsDatabase;
     
-    public WebPageSearcher(IndexerConfig config, IndexReader reader, LocationsDatabase locationsDatabase) {
+    public WebPageSearcher(IndexerConfig config, SharedIndexReader reader, LocationsDatabase locationsDatabase) {
         this.config = config;
         this.locationsDatabase = locationsDatabase;
         
@@ -38,14 +42,30 @@ public class WebPageSearcher {
                 new String[] {WebPageIndexer.TITLE_FIELD_NAME, WebPageIndexer.CONTENT_FIELD_NAME}, 
                 new WebPageAnalyzer());
 
-        this.searcher = new IndexSearcher(reader);
+        this.reader = reader;
     }
     
-    public List<Location> performSearch(String queryString) throws IndexerException {
+    public BatchQueryResult performSearch(List<String> queryStrings) throws IndexerException {
+        IndexSearcher indexSearcher = null;
+        
+        try {
+            // Must create new IndexSearcher if you are creating a new IndexReader 
+            // (through reopen).
+            indexSearcher = new IndexSearcher(reader.reopen());
+        } catch (IOException e) {
+            throw new IndexerException("Error reopening IndexReader: " + e, e);
+        }
+
+        BatchQueryResult result = new BatchQueryResult();
+        for (String queryString: queryStrings) {
+            result.queryResults.add(new QueryResult(queryString, performSearch(indexSearcher, queryString)));
+        }
+        return result;
+    }
+    
+    private List<Location> performSearch(IndexSearcher searcher, String queryString) throws IndexerException {
         try {
             Query query = parser.parse(queryString);
-            
-            searcher.getIndexReader().reopen();
             
             try {
                 List<Location> resultList = new ArrayList<Location>();
