@@ -21,6 +21,7 @@ public class LocationsDatabase {
     private static final float DECAY = (float)Math.log(0.5) / VISIT_HALF_LIFE_MSECS;
     
     private IndexerConfig config;
+    private Connection connection;
 
     public LocationsDatabase(IndexerConfig config) throws IndexerException {
         this.config = config;
@@ -29,18 +30,21 @@ public class LocationsDatabase {
         } catch (Exception e) {
             throw new IndexerException("Exception loading SQLite JDBC driver: " + e, e);
         }
+        try {
+            connection = DriverManager.getConnection(JDBC_SQLITE + config.getLocationsDatabasePath());
+        } catch (SQLException e) {
+            throw new IndexerException("Exception connecting to locations database: " + e);
+        }
         createLocationsTableIfNecessary();
     }
     
     public synchronized Map<String, Float> getFrecencyBoosts(List<String> urls) throws IndexerException {
-        Connection conn = null;
         Map<String, Float> results = new HashMap<String, Float>();
         if (urls.size() == 0) {
             return results;
         }
         try {
-            conn = DriverManager.getConnection(JDBC_SQLITE + config.getLocationsDatabasePath());
-            Statement stmt = conn.createStatement();
+            Statement stmt = connection.createStatement();
             
             StringBuilder query = new StringBuilder("SELECT url, frecency_boost FROM locations WHERE url IN ('");
             boolean isFirst = true;
@@ -62,21 +66,13 @@ public class LocationsDatabase {
             }
         } catch (SQLException e) {
             throw new IndexerException("Error getting frecency boosts: " + e);
-        } finally {
-            if (conn != null) { 
-                try { 
-                    conn.close(); 
-                } catch (SQLException e) {} 
-            }
-        }
+        } 
         return results;
     }
     
     public synchronized Date updateLocationInfo(String url) throws IndexerException { 
-        Connection conn = null;
         try {
-            conn = DriverManager.getConnection(JDBC_SQLITE + config.getLocationsDatabasePath());
-            Statement stmt = conn.createStatement();
+            Statement stmt = connection.createStatement();
     
             String query = "SELECT id, last_visit_time, visit_count, frecency_boost FROM locations WHERE url = '" + url + "'";
             ResultSet rs = stmt.executeQuery(query);
@@ -100,7 +96,7 @@ public class LocationsDatabase {
             StringBuilder update = new StringBuilder("INSERT OR REPLACE INTO locations (id, url, last_visit_time, visit_count, frecency_boost) VALUES " +
                     "(?, ?, ?, ?, ?)");
             
-            PreparedStatement prep = conn.prepareStatement(update.toString());
+            PreparedStatement prep = connection.prepareStatement(update.toString());
             if (id != -1) {
                 prep.setLong(1, id);
             } 
@@ -117,29 +113,21 @@ public class LocationsDatabase {
             return new Date(lastVisitTime);
         } catch (SQLException e) {
             throw new IndexerException("Error updating location info: " + e);
-        } finally {
-            if (conn != null) { 
-                try { 
-                    conn.close(); 
-                } catch (SQLException e) {} 
-            }
-        }
+        } 
     }
     
     private synchronized void createLocationsTableIfNecessary() throws IndexerException {
-        Connection conn = null;
         try {
-            conn = DriverManager.getConnection(JDBC_SQLITE + config.getLocationsDatabasePath());
-            Statement stmt = conn.createStatement();
+            Statement stmt = connection.createStatement();
             
             String query = "SELECT name FROM sqlite_master WHERE type='table' AND name='locations'";
             
             ResultSet rs = stmt.executeQuery(query);
             if (!rs.next()) {
-                conn.setAutoCommit(false);
+                connection.setAutoCommit(false);
                 
                 try {
-                    stmt = conn.createStatement();
+                    stmt = connection.createStatement();
                     
                     String update = "CREATE TABLE locations(id INTEGER PRIMARY KEY, url LONGVARCHAR NOT NULL, " +
                             "last_visit_time INTEGER NOT NULL, visit_count INTEGER NOT NULL, frecency_boost FLOAT NOT NULL)";
@@ -154,20 +142,14 @@ public class LocationsDatabase {
                     
                     stmt.executeUpdate(update);
                     
-                    conn.commit();
+                    connection.commit();
                 } catch (SQLException e) {
-                    conn.rollback();
+                    connection.rollback();
                     throw e;
                 }
             }
         } catch (SQLException e) {
             throw new IndexerException("Error checking for/creating locations table: " + e);
-        } finally {
-            if (conn != null) { 
-                try { 
-                    conn.close(); 
-                } catch (SQLException e) {} 
-            }
-        }
+        } 
     }
 }
