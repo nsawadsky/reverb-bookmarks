@@ -53,7 +53,7 @@ public class WebPageIndexer {
     
     public void indexPage(PageInfo info) throws IndexerException {
         try {
-            locationsDatabase.updateLocationInfo(info.url);
+            locationsDatabase.updateLocationInfo(info.url, info.visitTimes);
 
             // make a new, empty document
             Document doc = new Document();

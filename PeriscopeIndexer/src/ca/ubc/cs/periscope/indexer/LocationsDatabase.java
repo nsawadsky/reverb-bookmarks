@@ -6,6 +6,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -70,8 +71,13 @@ public class LocationsDatabase {
         return results;
     }
     
-    public synchronized Date updateLocationInfo(String url) throws IndexerException { 
+    public synchronized Date updateLocationInfo(String url, List<Long> visitTimes) throws IndexerException { 
         try {
+            long currentTime = new Date().getTime();
+            if (visitTimes == null || visitTimes.size() == 0) {
+                visitTimes = new ArrayList<Long>();
+                visitTimes.add(currentTime);
+            }
             Statement stmt = connection.createStatement();
     
             String query = "SELECT id, last_visit_time, visit_count, frecency_boost FROM locations WHERE url = '" + url + "'";
@@ -80,7 +86,6 @@ public class LocationsDatabase {
             int visitCount = 0;
             float frecencyBoost = 0.0F;
             long lastVisitTime = 0;
-            long currentTime = new Date().getTime();
             if (rs.next()) {
                 id = rs.getLong(1);
                 lastVisitTime = rs.getLong(2);
@@ -90,8 +95,10 @@ public class LocationsDatabase {
                 long timeDelta = currentTime - lastVisitTime;
                 frecencyBoost = frecencyBoost * (float)Math.exp(DECAY * timeDelta);
             }
-            visitCount += 1;
-            frecencyBoost += 1.0;
+            visitCount += visitTimes.size();
+            for (Long visitTime: visitTimes) {
+                frecencyBoost += (float)Math.exp(DECAY * (currentTime - visitTime));
+            }
             
             StringBuilder update = new StringBuilder("INSERT OR REPLACE INTO locations (id, url, last_visit_time, visit_count, frecency_boost) VALUES " +
                     "(?, ?, ?, ?, ?)");
