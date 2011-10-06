@@ -42,7 +42,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.spi.RootLogger;
 
-import ca.ubc.cs.hminer.indexer.messages.PageInfo;
+import ca.ubc.cs.periscope.indexer.messages.PageInfo;
 
 public class HistoryClassifier {
     private static Logger log = Logger.getLogger(HistoryClassifier.class);
@@ -112,15 +112,12 @@ public class HistoryClassifier {
     private int locationsToClassifyCount = 0;
     private WebBrowserType webBrowserType;
     private HttpClient httpClient = null;
-    private IndexerConnection indexerConnection = null;
+    private boolean indexMode = false;
     
     public HistoryClassifier(List<HistoryVisit> visitList, WebBrowserType webBrowserType, boolean indexMode) 
             throws HistoryMinerException {
+        this.indexMode = indexMode;
         init(visitList, webBrowserType);
-        
-        if (indexMode) {
-            indexerConnection = new IndexerConnection();
-        }
     }
     
     public HistoryClassifier(List<HistoryVisit> visitList, WebBrowserType webBrowserType) {
@@ -150,7 +147,7 @@ public class HistoryClassifier {
     public void testClassifier(String url) {
         Location location = new Location(0, url, "");
         httpClient = createHttpClient();
-        classifyLocation(location, true);
+        classifyLocation(new LocationAndVisits(location), true, null);
 
         switch (location.locationType) {
         case CODE_RELATED: {
@@ -169,7 +166,7 @@ public class HistoryClassifier {
         httpClient.getConnectionManager().shutdown();
     }
     
-    public void startClassifying() {
+    public void startClassifying() throws HistoryMinerException {
         this.initialVisitCount = visitList.size();
         
         // First filter out visits we are not interested in.
@@ -226,6 +223,7 @@ public class HistoryClassifier {
         
         httpClient = createHttpClient();
         for (int i = 0; i < POOL_SIZE; i++) {
+            final IndexerConnection indexerConnection = (indexMode ? new IndexerConnection() : null);
             Thread thread = new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -233,7 +231,7 @@ public class HistoryClassifier {
                     do {
                         next = getNextLocation();
                         if (next != null) {
-                            classifyLocation(next.location, false);
+                            classifyLocation(next, false, indexerConnection);
                             addClassifiedLocation(next);
                         }
                     } while (!isShutdown && next != null);
@@ -291,7 +289,8 @@ public class HistoryClassifier {
         }
     }
     
-    protected void classifyLocation(Location location, boolean dumpFile) {
+    protected void classifyLocation(LocationAndVisits locationAndVisits, boolean dumpFile, IndexerConnection indexerConnection) {
+        Location location = locationAndVisits.location;
         try {
             long startTimeMsecs = System.currentTimeMillis();
             
@@ -368,7 +367,11 @@ public class HistoryClassifier {
             
             try {
                 if (indexerConnection != null) {
-                    indexerConnection.indexPage(new PageInfo(location.url, doc.outerHtml()));
+                    PageInfo info = new PageInfo(location.url, doc.outerHtml());
+                    for (HistoryVisit visit: locationAndVisits.visits){
+                        info.visitTimes.add(visit.visitDate.getTime());
+                    }
+                    indexerConnection.indexPage(info);
                 }
             } catch (HistoryMinerException e) {
                 log.error("Error submitting page for indexing: " + location.url, e);
