@@ -21,10 +21,11 @@ import ca.ubc.cs.hminer.study.core.HistoryExtractor;
 import ca.ubc.cs.hminer.study.core.HistoryMinerData;
 import ca.ubc.cs.hminer.study.core.HistoryMinerException;
 import ca.ubc.cs.hminer.study.core.HistoryVisit;
-import ca.ubc.cs.hminer.study.core.Location;
+import ca.ubc.cs.hminer.study.core.LocationAndVisits;
 import ca.ubc.cs.hminer.study.core.LocationType;
 import ca.ubc.cs.hminer.study.core.FirefoxVisitType;
 import ca.ubc.cs.hminer.study.core.WebBrowserType;
+import ca.ubc.cs.hminer.study.core.IndexerConnection;
 import ca.ubc.cs.hminer.study.core.Util.RunnableWithResult;
 
 public class AnalyzeHistoryPage extends HistoryMinerWizardPage implements SelectionListener {
@@ -226,8 +227,8 @@ public class AnalyzeHistoryPage extends HistoryMinerWizardPage implements Select
     private HistoryClassifier getMockClassifier(List<HistoryVisit> visits) throws HistoryMinerException {
         return new HistoryClassifier(visits, WebBrowserType.MOZILLA_FIREFOX) {
             @Override 
-            protected void classifyLocation(Location location, boolean dumpFile) {
-                location.locationType = LocationType.CODE_RELATED;
+            protected void classifyLocation(LocationAndVisits locationAndVisits, boolean dumpFile, IndexerConnection conn) {
+                locationAndVisits.location.locationType = LocationType.CODE_RELATED;
             }
         };
     }
