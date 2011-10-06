@@ -72,6 +72,7 @@ public class RelatedPagesView extends ViewPart {
     private Action doubleClickAction;
     private ViewContentProvider contentProvider;
     private IndexerConnection indexerConnection;
+    private NavigationListener navigationListener;
 
     class ViewContentProvider implements IStructuredContentProvider, 
             ITreeContentProvider {
@@ -171,6 +172,11 @@ public class RelatedPagesView extends ViewPart {
 
         @Override
         public void selectionChanged(IWorkbenchPart part, ISelection selection) {
+            /*
+            if (part instanceof IEditorPart) {
+                updateLinks((IEditorPart)part);
+            }
+            */
         }
 
         @Override
@@ -207,6 +213,9 @@ public class RelatedPagesView extends ViewPart {
 
         try {
             indexerConnection = new IndexerConnection();
+            navigationListener = new NavigationListener();
+            getSite().getPage().addSelectionListener(navigationListener);
+            getSite().getPage().addPartListener(navigationListener);
         } catch (PluginException e) {
             throw new PartInitException("Error initializing Periscope view: " + e, e);
         }
@@ -232,6 +241,10 @@ public class RelatedPagesView extends ViewPart {
     
     @Override 
     public void dispose() {
+        if (navigationListener != null) {
+            getSite().getPage().removeSelectionListener(navigationListener);
+            getSite().getPage().removePartListener(navigationListener);
+        }
         if (indexerConnection != null) {
             indexerConnection.close();
             indexerConnection = null;
@@ -309,65 +322,63 @@ public class RelatedPagesView extends ViewPart {
         return new Status(IStatus.OK, PluginActivator.PLUGIN_ID, "Updated Periscope view successfully");
     }
     
+    private void updateLinks(IEditorPart editorPart) {
+        try {
+            if (editorPart != null) {
+                ITextOperationTarget target = (ITextOperationTarget)editorPart.getAdapter(ITextOperationTarget.class);
+                if (target == null) {
+                    throw new PluginException("Failed to get ITextOperationTarget adapter");
+                } 
+                if (!(target instanceof ITextViewer)) {
+                    throw new PluginException("ITextOperationTarget adapter is not instance of ITextViewer");
+                }
+                final ITextViewer textViewer = (ITextViewer)target;
+                if (!(editorPart instanceof AbstractTextEditor)) {
+                    throw new PluginException("Editor part is not instance of AbstractTextEditor");
+                } 
+                IEditorInput editorInput = editorPart.getEditorInput();
+                if (editorInput == null) {
+                    throw new PluginException("Editor input is null");
+                } 
+                final IJavaElement javaElement = JavaUI.getEditorInputJavaElement(editorInput);
+                if (javaElement == null) {
+                    throw new PluginException("Failed to get Java element from editor input");
+                } 
+                if (!(javaElement instanceof ICompilationUnit)) {
+                    throw new PluginException("Editor input Java element is not instance of ICompilationUnit");
+                } 
+                final int topLine = textViewer.getTopIndex();
+                final int bottomLine = textViewer.getBottomIndex();
+
+                Job updateViewJob = new Job("Update View") {
+
+                    @Override
+                    protected IStatus run(IProgressMonitor monitor) {
+                        IDocument doc = textViewer.getDocument();
+                        try {
+                            int topPosition = doc.getLineOffset(topLine);
+                            int bottomPosition = doc.getLineOffset(bottomLine) + doc.getLineLength(bottomLine) - 1;
+                            return buildAndExecuteQuery((ICompilationUnit)javaElement, 
+                                    topPosition, bottomPosition, monitor);
+                        } catch (Exception e) {
+                            String msg = "Error creating/executing query";
+                            getLogger().logError(msg, e);
+                            return new Status(IStatus.ERROR, PluginActivator.PLUGIN_ID, msg, e);
+                        }
+                    }
+                    
+                };
+                updateViewJob.schedule();
+            }
+        } catch (PluginException e) {
+            getLogger().logError(e.getMessage(), e);
+        }
+    }
+    
     private void makeActions() {
         action1 = new Action() {
             public void run() {
-                try {
-                    IEditorPart editorPart = getSite().getPage().getActiveEditor();
-                    if (editorPart != null) {
-                        ITextOperationTarget target = (ITextOperationTarget)editorPart.getAdapter(ITextOperationTarget.class);
-                        if (target == null) {
-                            throw new PluginException("Failed to get ITextOperationTarget adapter");
-                        } 
-                        if (!(target instanceof ITextViewer)) {
-                            throw new PluginException("ITextOperationTarget adapter is not instance of ITextViewer");
-                        }
-                        final ITextViewer textViewer = (ITextViewer)target;
-                        if (!(editorPart instanceof AbstractTextEditor)) {
-                            throw new PluginException("Editor part is not instance of AbstractTextEditor");
-                        } 
-                        IEditorInput editorInput = editorPart.getEditorInput();
-                        if (editorInput == null) {
-                            throw new PluginException("Editor input is null");
-                        } 
-                        final IJavaElement javaElement = JavaUI.getEditorInputJavaElement(editorInput);
-                        if (javaElement == null) {
-                            throw new PluginException("Failed to get Java element from editor input");
-                        } 
-                        if (!(javaElement instanceof ICompilationUnit)) {
-                            throw new PluginException("Editor input Java element is not instance of ICompilationUnit");
-                        } 
-                        final int topLine = textViewer.getTopIndex();
-                        final int bottomLine = textViewer.getBottomIndex();
-
-                        contentProvider.setMessage("Updating view ...");
-                        viewer.refresh();
-                        
-                        Job updateViewJob = new Job("Update View") {
-
-                            @Override
-                            protected IStatus run(IProgressMonitor monitor) {
-                                IDocument doc = textViewer.getDocument();
-                                try {
-                                    int topPosition = doc.getLineOffset(topLine);
-                                    int bottomPosition = doc.getLineOffset(bottomLine) + doc.getLineLength(bottomLine) - 1;
-                                    return buildAndExecuteQuery((ICompilationUnit)javaElement, 
-                                            topPosition, bottomPosition, monitor);
-                                } catch (Exception e) {
-                                    String msg = "Error creating/executing query";
-                                    getLogger().logError(msg, e);
-                                    return new Status(IStatus.ERROR, PluginActivator.PLUGIN_ID, msg, e);
-                                }
-                            }
-                            
-                        };
-                        updateViewJob.schedule();
-                    }
-                } catch (PluginException e) {
-                    getLogger().logError(e.getMessage(), e);
-                    contentProvider.setMessage(UPDATE_VIEW_ERROR_MSG);
-                    viewer.refresh();
-                }
+                updateLinks(getSite().getPage().getActiveEditor());
             }
         };
         action1.setText("Update View");
