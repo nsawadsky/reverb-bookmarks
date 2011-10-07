@@ -45,9 +45,10 @@ public class LocationsDatabase {
             return results;
         }
         try {
+            Date now = new Date();
             Statement stmt = connection.createStatement();
             
-            StringBuilder query = new StringBuilder("SELECT url, frecency_boost FROM locations WHERE url IN ('");
+            StringBuilder query = new StringBuilder("SELECT url, last_visit_time, frecency_boost FROM locations WHERE url IN ('");
             boolean isFirst = true;
             for (String url: urls) {
                 if (isFirst) {
@@ -62,7 +63,9 @@ public class LocationsDatabase {
             ResultSet rs = stmt.executeQuery(query.toString());
             while (rs.next()) {
                 String url = rs.getString(1);
-                Float frecencyBoost = rs.getFloat(2);
+                long lastVisitTime = rs.getLong(2);
+                Float frecencyBoost = rs.getFloat(3);
+                frecencyBoost = frecencyBoost * (float)Math.exp(DECAY * (now.getTime() - lastVisitTime));
                 results.put(url, frecencyBoost);
             }
         } catch (SQLException e) {
