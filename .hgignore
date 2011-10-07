@@ -1,0 +1,27 @@
+
+syntax: regexp
+/target$
+
+/Debug$
+
+syntax: glob
+*~
+*.ipch
+*.vcxproj.user
+*.sdf
+*.suo
+*.opensdf
+
+syntax: regexp
+HistoryMiner/fullpage\.html$
+HistoryMiner/page\.txt$
+HistoryMiner/release/HistoryAnalyzer$
+HistoryMiner/release/HistoryAnalyzer_64$
+HistoryMiner/release/HistoryAnalyzer_Linux$
+HistoryMiner/release/HistoryAnalyzer_Linux_64$
+HistoryMiner/release/HistoryAnalyzer_Mac$
+HistoryMiner/release/HistoryAnalyzer_Mac_64$
+
+syntax: glob
+HistoryMiner/release/*.zip
+
