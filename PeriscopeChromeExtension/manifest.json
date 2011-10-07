@@ -1,0 +1,16 @@
+{
+    "name": "Periscope",
+    "version": "1.0",
+    "description": "Indexes web pages for quick retrieval in the IDE.",
+    "background_page": "periscopeBackground.html",
+    "plugins": [
+    	{ "path": "components/npPeriscope.dll" }
+  	],
+    "content_scripts": [ 
+    	{
+    		"matches": ["<all_urls>"],
+    		"exclude_globs": ["*://www.google.*"],
+    		"js": ["periscopeContent.js"]
+    	}
+   	]
+}
