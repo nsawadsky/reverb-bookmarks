@@ -230,7 +230,7 @@ void handlePageContentMessage(MSG& msg, HANDLE pipe) {
         std::string output = writer.write(root);
 
         DWORD bytesWritten = 0;
-        BOOL result = WriteFile(pipe, output.c_str(), output.size(), &bytesWritten, NULL);
+        BOOL result = WriteFile(pipe, output.c_str(), output.length(), &bytesWritten, NULL);
         if (!result) {
             throw std::wstring(L"Error writing to pipe: ") + getWindowsErrorMessage(L"WriteFile");
         }
