@@ -13,7 +13,13 @@
 #include <sddl.h>
 #include <Rpc.h>
 #include <WinSock2.h>
+
 #include <string>
+#include <stdexcept>
+
+#include <boost/thread/tss.hpp>
+#include <boost/scoped_ptr.hpp>
+#include <boost/scoped_array.hpp>
 
 #include <json.h>
 

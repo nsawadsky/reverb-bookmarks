@@ -49,7 +49,10 @@ target_link_libraries(${PROJECT_NAME}
     ${PLUGIN_INTERNAL_DEPS}
     )
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../native/PeriscopeIndexerClient)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../native/PeriscopeIndexerClient/public)
+
+target_link_libraries(${PROJECT_NAME} debug ${CMAKE_CURRENT_SOURCE_DIR}/../../native/PeriscopeIndexerClient/xpnp/debug/XpNamedPipe.lib)
+target_link_libraries(${PROJECT_NAME} optimized ${CMAKE_CURRENT_SOURCE_DIR}/../../native/PeriscopeIndexerClient/xpnp/release/XpNamedPipe.lib)
 
 target_link_libraries(${PROJECT_NAME} debug ${CMAKE_CURRENT_SOURCE_DIR}/../../native/PeriscopeIndexerClient/jsoncpp/json_vc71_libmtd.lib)
 target_link_libraries(${PROJECT_NAME} optimized ${CMAKE_CURRENT_SOURCE_DIR}/../../native/PeriscopeIndexerClient/jsoncpp/json_vc71_libmt.lib)
