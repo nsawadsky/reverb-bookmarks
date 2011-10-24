@@ -1,5 +1,7 @@
 package ca.ubc.cs.periscope.indexer;
 
+import java.io.IOException;
+
 import org.codehaus.jackson.map.ObjectMapper;
 import xpnp.XpNamedPipe;
 
@@ -14,7 +16,7 @@ public class IndexPipeListener implements Runnable {
 
     private IndexerConfig config;
     private WebPageIndexer indexer;
-    private long listeningPipe = 0;
+    private XpNamedPipe listeningPipe;
     
     public IndexPipeListener(IndexerConfig config, WebPageIndexer indexer) {
         this.config = config;
@@ -22,38 +24,34 @@ public class IndexPipeListener implements Runnable {
     }
     
     public void start() throws IndexerException {
-        String indexPipeName = XpNamedPipe.makePipeName("historyminer-index", true); 
-        if (indexPipeName == null) {
-            throw new IndexerException("Failed to make index pipe name: " + XpNamedPipe.getErrorMessage());
-        }
-
-        listeningPipe = XpNamedPipe.createPipe(indexPipeName, true);
-        if (listeningPipe == 0) {
-            throw new IndexerException("Failed to create index pipe: " + XpNamedPipe.getErrorMessage());
+        try {
+            listeningPipe = XpNamedPipe.createNamedPipe("historyminer-index", true);
+        } catch (IOException e) {
+            throw new IndexerException("Failed to create index pipe: " + e, e);
         }
         new Thread(this).start();
     }
     
     public void run() {
         while (true) {
-            long newPipe = XpNamedPipe.acceptConnection(listeningPipe);
-            if (newPipe == 0) {
-                log.error("Error accepting connection on index pipe: " + XpNamedPipe.getErrorMessage());
-            } else {
+            try {
+                XpNamedPipe newPipe = listeningPipe.acceptConnection();
                 log.info("Accepted connection on index pipe");
                 new Thread(new IndexPipeConnection(config, newPipe, indexer)).start();
+            } catch (IOException e) {
+                log.error("Error accepting connection on query pipe", e);
             }
         }
     }
    
     private class IndexPipeConnection implements Runnable {
         private IndexerConfig config;
-        private long pipeHandle;
+        private XpNamedPipe pipe;
         private WebPageIndexer indexer;
         
-        public IndexPipeConnection(IndexerConfig config, long pipeHandle, WebPageIndexer indexer) {
+        public IndexPipeConnection(IndexerConfig config, XpNamedPipe pipe, WebPageIndexer indexer) {
             this.config = config;
-            this.pipeHandle = pipeHandle;
+            this.pipe = pipe;
             this.indexer = indexer;
         }
         
@@ -62,8 +60,8 @@ public class IndexPipeListener implements Runnable {
                 Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
                 
                 ObjectMapper mapper = new ObjectMapper();
-                byte[] data = null;
-                while ((data = XpNamedPipe.readPipe(pipeHandle)) != null) {
+                while (true) {
+                    byte[] data = pipe.readMessage();
                     PageInfo info = null;
                     try {
                         IndexerMessageEnvelope envelope = mapper.readValue(data, IndexerMessageEnvelope.class);
@@ -86,10 +84,10 @@ public class IndexPipeListener implements Runnable {
                         }
                     }
                 }
-                
-                log.info("Error reading index pipe: " + XpNamedPipe.getErrorMessage());
+            } catch (IOException e) {
+                log.info("Error reading index pipe", e);
             } finally {
-                XpNamedPipe.closePipe(pipeHandle);
+                pipe.close();
             }
         }
     }

@@ -1,5 +1,7 @@
 package ca.ubc.cs.periscope.eclipseplugin;
 
+import java.io.IOException;
+
 import org.codehaus.jackson.map.ObjectMapper;
 
 import ca.ubc.cs.periscope.indexer.messages.BatchQueryResult;
@@ -10,24 +12,13 @@ import ca.ubc.cs.periscope.indexer.messages.IndexerMessageEnvelope;
 import xpnp.XpNamedPipe;
 
 public class IndexerConnection {
-    private long pipeHandle = 0;
+    private XpNamedPipe pipe;
     
     public IndexerConnection() throws PluginException {
-        String pipeName = XpNamedPipe.makePipeName("historyminer-query", true);
-        if (pipeName == null) {
-            throw new PluginException("Failed to make pipe name: " + 
-                    XpNamedPipe.getErrorMessage());
-        }
-        pipeHandle = XpNamedPipe.openPipe(pipeName);
-        if (pipeHandle == 0) {
-            throw new PluginException("Failed to open pipe: " + XpNamedPipe.getErrorMessage());
-        }
-    }
-    
-    public void close() {
-        if (pipeHandle != 0) {
-            XpNamedPipe.closePipe(pipeHandle);
-            pipeHandle = 0;
+        try {
+            pipe = XpNamedPipe.createNamedPipe("historyminer-query", true);
+        } catch (IOException e) {
+            throw new PluginException("Failed to open pipe: " + e, e);
         }
     }
     
@@ -39,6 +30,13 @@ public class IndexerConnection {
         return (BatchQueryResult)response;
     }
     
+    public void close() {
+        if (pipe != null) {
+            pipe.close();
+            pipe = null;
+        }
+    }
+    
     private IndexerMessage sendMessage(IndexerMessage msg) throws PluginException {
         IndexerMessageEnvelope envelope = new IndexerMessageEnvelope(msg);
         ObjectMapper mapper = new ObjectMapper();
@@ -48,21 +46,24 @@ public class IndexerConnection {
         } catch (Exception e) {
             throw new PluginException("Error serializing message to JSON: " + e, e);
         }
-        if (!XpNamedPipe.writePipe(pipeHandle, jsonData)) {
-            // TODO: Close and reopen pipe?
-            throw new PluginException("Error writing data to pipe: " + XpNamedPipe.getErrorMessage());
+        try {
+            pipe.writeMessage(jsonData);
+        } catch (IOException e) {
+            throw new PluginException("Error writing data to pipe: " + e, e);
         }
         
-        byte[] responseData = XpNamedPipe.readPipe(pipeHandle);
-        if (responseData == null) {
+        byte [] responseData = null;
+        try {
+            responseData = pipe.readMessage();
+        } catch (IOException e) {
             // TODO: Close and reopen pipe?
-            throw new PluginException("Error reading response from pipe: " + XpNamedPipe.getErrorMessage());
-        } else {
-            try {
-                return mapper.readValue(responseData, IndexerMessageEnvelope.class).message;
-            } catch (Exception e) {
-                throw new PluginException("Error deserializing message: " + e, e);
-            }
+            throw new PluginException("Error reading response from pipe: " + e, e);
+        }
+        
+        try {
+            return mapper.readValue(responseData, IndexerMessageEnvelope.class).message;
+        } catch (Exception e) {
+            throw new PluginException("Error deserializing message: " + e, e);
         }
         
     }
