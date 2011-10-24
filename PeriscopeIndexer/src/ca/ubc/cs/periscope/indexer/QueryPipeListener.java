@@ -18,7 +18,7 @@ public class QueryPipeListener implements Runnable {
 
     private IndexerConfig config;
     private WebPageIndexer indexer;
-    private long listeningPipe = 0;
+    private XpNamedPipe listeningPipe;
     private SharedIndexReader indexReader = null;
     private LocationsDatabase locationsDatabase;
     
@@ -37,14 +37,10 @@ public class QueryPipeListener implements Runnable {
                 throw new IndexerException("Error creating IndexReader: " + e, e);
             }
             
-            String queryPipeName = XpNamedPipe.makePipeName("historyminer-query", true);
-            if (queryPipeName == null) {
-                throw new IndexerException("Failed to make query pipe name: " + XpNamedPipe.getErrorMessage());
-            }
-    
-            listeningPipe = XpNamedPipe.createPipe(queryPipeName, true);
-            if (listeningPipe == 0) {
-                throw new IndexerException("Failed to create query pipe: " + XpNamedPipe.getErrorMessage());
+            try {
+                listeningPipe = XpNamedPipe.createNamedPipe("historyminer-query", true);
+            } catch (IOException e) {
+                throw new IndexerException("Error creating query pipe: " + e, e);
             }
 
             new Thread(this).start();
@@ -60,24 +56,24 @@ public class QueryPipeListener implements Runnable {
     
     public void run() {
         while (true) {
-            long newPipe = XpNamedPipe.acceptConnection(listeningPipe);
-            if (newPipe == 0) {
-                log.error("Error accepting connection on index pipe: " + XpNamedPipe.getErrorMessage());
-            } else {
+            try {
+                XpNamedPipe newPipe = listeningPipe.acceptConnection();
                 log.info("Accepted connection on query pipe");
                 new Thread(new QueryPipeConnection(config, newPipe, indexReader, locationsDatabase)).start();
+            } catch (IOException e) {
+                log.error("Error accepting connection on query pipe", e);
             }
         }
     }
    
     private class QueryPipeConnection implements Runnable {
-        private long pipeHandle = 0;
+        private XpNamedPipe pipe;
         private WebPageSearcher searcher;
         private IndexerConfig config;
         
-        public QueryPipeConnection(IndexerConfig config, long pipeHandle, SharedIndexReader reader, LocationsDatabase locationsDatabase) {
+        public QueryPipeConnection(IndexerConfig config, XpNamedPipe pipe, SharedIndexReader reader, LocationsDatabase locationsDatabase) {
             this.config = config;
-            this.pipeHandle = pipeHandle;
+            this.pipe = pipe;
             searcher = new WebPageSearcher(config, reader, locationsDatabase);
         }
         
@@ -86,8 +82,8 @@ public class QueryPipeListener implements Runnable {
                 Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
                 
                 ObjectMapper mapper = new ObjectMapper();
-                byte[] data = null;
-                while ((data = XpNamedPipe.readPipe(pipeHandle)) != null) {
+                while (true) {
+                    byte[] data = pipe.readMessage();
                     try {
                         IndexerMessageEnvelope envelope = mapper.readValue(data, IndexerMessageEnvelope.class);
                         if (envelope.message == null) {
@@ -103,10 +99,10 @@ public class QueryPipeListener implements Runnable {
                         log.error("Exception handling message from query pipe", e);
                     }
                 }
-                
-                log.info("Error reading query pipe: " + XpNamedPipe.getErrorMessage());
+            } catch (IOException e) {
+                log.info("Error reading query pipe", e);
             } finally {
-                XpNamedPipe.closePipe(pipeHandle);
+                pipe.close();
             }
         }
         
@@ -121,10 +117,11 @@ public class QueryPipeListener implements Runnable {
             } catch (Exception e) {
                 throw new IndexerException("Error serializing message to JSON: " + e, e);
             }
-            if (!XpNamedPipe.writePipe(pipeHandle, jsonData)) {
-                throw new IndexerException("Error writing data to pipe: " + XpNamedPipe.getErrorMessage());
+            try {
+                pipe.writeMessage(jsonData);
+            } catch (IOException e) {
+                throw new IndexerException("Error writing data to pipe: " + e, e);
             }
-    
         }
     }
 }
