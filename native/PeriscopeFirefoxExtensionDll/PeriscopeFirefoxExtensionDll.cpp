@@ -13,7 +13,7 @@ int PFD_stopBackgroundThread() {
     return PICL_stopBackgroundThread();
 }
 
-int PFD_sendPage(char* url, char* pageContent) {
+int PFD_sendPage(const char* url, char* pageContent) {
     return PICL_sendPage(url, pageContent);
 }
 
