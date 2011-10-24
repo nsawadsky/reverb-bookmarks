@@ -82,7 +82,12 @@ static DWORD WINAPI handleMessages(LPVOID param) {
             throwWindowsError("SetThreadPriority");
         }
 
-        indexPipe = XPNP_openPipe("historyminer-index", true);
+        char pipeName[1024] = "";
+        if (!XPNP_makePipeName("historyminer-index", true, pipeName, sizeof(pipeName))) {
+            throwXpnpError();
+        }
+
+        indexPipe = XPNP_openPipe(pipeName, true);
         if (indexPipe == NULL) {
             throwXpnpError();
         }

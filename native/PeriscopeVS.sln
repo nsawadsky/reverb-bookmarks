@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PeriscopeIndexerClient", "PeriscopeIndexerClient\PeriscopeIndexerClient.vcxproj", "{6B6BAD41-CDF6-47EA-B397-A6C789916683}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PeriscopeFirefoxExtensionDll", "PeriscopeFirefoxExtensionDll\PeriscopeFirefoxExtensionDll.vcxproj", "{FADD6056-755D-4363-AB77-1F2FD2FCBAE4}"
+	ProjectSection(ProjectDependencies) = postProject
+		{6B6BAD41-CDF6-47EA-B397-A6C789916683} = {6B6BAD41-CDF6-47EA-B397-A6C789916683}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

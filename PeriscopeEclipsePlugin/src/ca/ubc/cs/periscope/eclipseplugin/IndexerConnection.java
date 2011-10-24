@@ -16,7 +16,7 @@ public class IndexerConnection {
     
     public IndexerConnection() throws PluginException {
         try {
-            pipe = XpNamedPipe.createNamedPipe("historyminer-query", true);
+            pipe = XpNamedPipe.openNamedPipe("historyminer-query", true);
         } catch (IOException e) {
             throw new PluginException("Failed to open pipe: " + e, e);
         }
