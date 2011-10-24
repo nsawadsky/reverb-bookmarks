@@ -1,18 +1,18 @@
 #include "stdafx.h"
 #include "PeriscopeIndexerClient.h"
 
+#include "XpNamedPipe.h"
+#include "util.hpp"
+using namespace util;
+
 const UINT MSG_PAGE_CONTENT = WM_USER;
 const UINT MSG_SHUTDOWN_THREAD = MSG_PAGE_CONTENT + 1;
 
-const wchar_t* PIPE_PREFIX = L"\\\\.\\pipe\\";
-const int PIPE_BUF_SIZE = 10 * 1024;
-
-const int BUF_LEN = 1024;
-static DWORD GBL_errorMessageTlsIndex = TlsAlloc();
+static boost::thread_specific_ptr<std::string> GBL_errorMessage;
 
 static CRITICAL_SECTION GBL_backgroundThreadStartupCS;
 static CRITICAL_SECTION GBL_backgroundThreadStatusCS;
-static wchar_t GBL_backgroundThreadStatus[BUF_LEN] = L"Thread not started";
+static std::string GBL_backgroundThreadStatus = "Thread not started";
 
 static DWORD GBL_backgroundThreadId = 0;
 static HANDLE GBL_backgroundThread = NULL;
@@ -28,268 +28,70 @@ static bool initializeGlobals() {
 
 static bool GBL_globalsInitialized = initializeGlobals();
 
-// Local function declarations
-static bool setErrorMessage(const wchar_t* errorMessage);
-static std::wstring getWindowsErrorMessage(wchar_t* funcName);
-static void setBackgroundThreadStatus(const wchar_t* status);
-
-static char* toUtf8(const wchar_t* utf16) throw (std::wstring);
-
-static std::string toUtf8String(const wchar_t* utf16) throw (std::wstring);
-
-static std::wstring getUserSid() throw (std::wstring);
-
-static std::wstring makePipeName(const wchar_t* shortName, bool userLocal) throw (std::wstring);
-
-static void handlePageContentMessage(MSG& msg, HANDLE pipe);
-
-static DWORD WINAPI handleMessages(LPVOID param);
-
 // Local function definitions
 
-bool setErrorMessage(const wchar_t* errorMessage) {
-    wchar_t* currMessage = (wchar_t*)TlsGetValue(GBL_errorMessageTlsIndex);
-    if (currMessage != NULL) {
-        if (TlsSetValue(GBL_errorMessageTlsIndex, NULL)) {
-            delete [] currMessage;
-        } else {
-            return false;
-        }
-    }
-    if (errorMessage == NULL) {
-        return true;
-    } else {
-        int bufSize = (int)wcslen(errorMessage) + 1;
-        wchar_t* newMessage = new wchar_t[bufSize];
-        if (newMessage == NULL) {
-            return false;
-        } else {
-            wcscpy_s(newMessage, bufSize, errorMessage);
-            if (TlsSetValue(GBL_errorMessageTlsIndex, newMessage)) {
-                return true;
-            } else {
-                delete [] newMessage;
-                return false;
-            }
-        }
-    }
+static void setErrorMessage(const std::string& errorMessage) {
+    GBL_errorMessage.reset(new std::string(errorMessage));
 }
 
-std::wstring getWindowsErrorMessage(wchar_t* funcName) {
-    DWORD error = GetLastError();
-    wchar_t msg[BUF_LEN] = L"";
-    wchar_t buffer[BUF_LEN] = L"";
-    if (FormatMessage(
-            FORMAT_MESSAGE_FROM_SYSTEM |
-            FORMAT_MESSAGE_IGNORE_INSERTS,
-            NULL,
-            error,
-            0,
-            buffer, BUF_LEN, NULL) == 0) {
-        swprintf_s(msg, L"Failed to retrieve Windows error message");       
-    } else {
-        swprintf_s(msg, L"%s failed with %lu: %s", funcName, error, buffer);
-    }
-    return std::wstring(msg);
+static void throwXpnpError() {
+    char buffer[1024] = "";
+    XPNP_getErrorMessage(buffer, sizeof(buffer));
+    throw std::runtime_error(buffer);
 }
 
-char* toUtf8(const wchar_t* utf16) throw (std::wstring) {
-    char* result = NULL;
-    std::wstring errorMsg;
-    bool error = false;
-    try {
-        int utf8BufLen = WideCharToMultiByte(CP_UTF8, 0, utf16, -1, NULL, 0, NULL, NULL);
-        if (utf8BufLen == 0) {
-            throw std::wstring(L"Error converting string to UTF-8: ") + getWindowsErrorMessage(L"WideCharToMultiByte");
-        }
-        result = new char[utf8BufLen];
-        if (result == NULL) {
-            throw std::wstring(L"Out of memory");
-        }
-        int conversionResult = WideCharToMultiByte(CP_UTF8, 0, utf16, -1, result, utf8BufLen, NULL, NULL);
-        if (conversionResult == 0) {
-            throw std::wstring(L"Error converting string to UTF-8: ") + getWindowsErrorMessage(L"WideCharToMultiByte");
-        }
-    } catch (std::wstring& tempErrorMsg) {
-        errorMsg = tempErrorMsg;
-        error = true;
-        if (result != NULL) {
-            delete [] result;
-            result = NULL;
-        }
-    }
-    if (error) {
-        throw errorMsg;
-    }
-    return result;
-}
-
-std::string toUtf8String(const wchar_t* utf16) throw (std::wstring) {
-    char* utf8 = toUtf8(utf16);
-    std::string result = utf8;
-    delete [] utf8;
-    return result;
-}
-
-void setBackgroundThreadStatus(const wchar_t* status) {
+static void setBackgroundThreadStatus(const std::string& status) {
     EnterCriticalSection(&GBL_backgroundThreadStatusCS);
-    wcscpy_s(GBL_backgroundThreadStatus, status);
+    GBL_backgroundThreadStatus = status;
     LeaveCriticalSection(&GBL_backgroundThreadStatusCS);
 }
 
-std::wstring getUserSid() throw (std::wstring) {
-    bool error = false;
-    std::wstring errorMsg;
-    HANDLE tokenHandle = NULL;
-    PTOKEN_USER pUserInfo = NULL;
-    wchar_t* pSidString = NULL;
-    std::wstring sid;
-    try {
-        if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &tokenHandle)) {
-            throw getWindowsErrorMessage(L"OpenThreadToken");
-        }
-        DWORD userInfoSize = 0;
-        GetTokenInformation(tokenHandle, TokenUser, NULL, 0, &userInfoSize);
-        if (GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
-            throw getWindowsErrorMessage(L"GetTokenInformation");
-        }
-        pUserInfo = (PTOKEN_USER)malloc(userInfoSize);
-        if (pUserInfo == NULL) {
-            throw std::wstring(L"Out of memory");
-        }
-        if (!GetTokenInformation(tokenHandle, TokenUser, pUserInfo, userInfoSize, &userInfoSize)) {
-            throw getWindowsErrorMessage(L"GetTokenInformation");
-        }
-        if (!ConvertSidToStringSid(pUserInfo->User.Sid, &pSidString)) {
-            throw getWindowsErrorMessage(L"ConvertSidToStringSid");
-        }
-        sid = pSidString;
-            
-    } catch (std::wstring& tempErrorMsg) {
-        error = true;
-        errorMsg = tempErrorMsg;
-    }
-    if (tokenHandle != NULL) {
-        CloseHandle(tokenHandle);
-    }
-    if (pUserInfo != NULL) {
-        free(pUserInfo);
-    }
-    if (pSidString != NULL) {
-        LocalFree(pSidString);
-    }
-    if (error) {
-        throw errorMsg;
-    }
-    return sid;
+static void writeMessage(XPNP_PipeHandle pipe, const char* msg, int msgLen) {
+    int msgLenNetwork = htonl(msgLen);
+    XPNP_writePipe(pipe, (const char*)&msgLenNetwork, sizeof(msgLenNetwork));
+    XPNP_writePipe(pipe, msg, msgLen);
 }
 
-std::wstring makePipeName(const wchar_t* shortName, bool userLocal) throw (std::wstring) {
-    std::wstring pipeName;
-    bool error = false;
-    std::wstring errorMsg;
-    try {
-        wchar_t pipeNameBuffer[256] = L"";
-        if (userLocal) {
-            std::wstring userSid = getUserSid();
+static void handlePageContentMessage(MSG& msg, XPNP_PipeHandle pipe) {
+    boost::scoped_ptr<std::string> url((std::string*)msg.wParam);
+    boost::scoped_ptr<std::string> pageData((std::string*)msg.lParam);
 
-            HRESULT hr = swprintf_s(pipeNameBuffer, L"%s%s\\%s", PIPE_PREFIX, userSid.c_str(), shortName);
-            if (FAILED(hr)) {
-                throw std::wstring(L"When combined with user name and prefix, pipe name is too long");
-            }
-        } else {
-            HRESULT hr = swprintf_s(pipeNameBuffer, L"%s%s", PIPE_PREFIX, shortName);
-            if (FAILED(hr)) {
-                throw std::wstring(L"When combined with prefix, pipe name is too long");
-            }
-        }
-        pipeName = pipeNameBuffer;
-    } catch (std::wstring tempErrorMsg) {
-        error = true;
-        errorMsg = tempErrorMsg;
-    }
-    if (error) {
-        throw errorMsg;
-    }
-    return pipeName;
+    Json::Value root;
+    Json::Value& pageInfo = root["message"]["pageInfo"];
+    pageInfo["url"] = *url;
+    pageInfo["html"] = *pageData;
+
+    Json::FastWriter writer;
+    std::string output = writer.write(root);
+
+    writeMessage(pipe, output.c_str(), output.length());
 }
 
-void handlePageContentMessage(MSG& msg, HANDLE pipe) {
-    bool error = false;
-    std::wstring errorMsg;
-
-    char* url = (char*)msg.wParam;
-    char* pageData = (char*)msg.lParam;
-    try {
-        Json::Value root;
-        Json::Value& pageInfo = root["message"]["pageInfo"];
-        pageInfo["url"] = url;
-        pageInfo["html"] = pageData;
-
-        Json::FastWriter writer;
-        std::string output = writer.write(root);
-
-        DWORD bytesWritten = 0;
-        BOOL result = WriteFile(pipe, output.c_str(), output.length(), &bytesWritten, NULL);
-        if (!result) {
-            throw std::wstring(L"Error writing to pipe: ") + getWindowsErrorMessage(L"WriteFile");
-        }
-    } catch (std::wstring& tempErrorMsg) {
-        error = true;
-        errorMsg = tempErrorMsg;
-    }
-
-    if (url != NULL) { delete [] url; }
-    if (pageData != NULL) { delete [] pageData; }
-
-    if (error) {
-        throw errorMsg;
-    }
-}
-
-DWORD WINAPI handleMessages(LPVOID param) {
-    HANDLE indexPipe = INVALID_HANDLE_VALUE;
+static DWORD WINAPI handleMessages(LPVOID param) {
+    XPNP_PipeHandle indexPipe = NULL;
     try {
         // Create message queue
         MSG msg;
         PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE);
 
         if (!SetEvent(GBL_backgroundThreadStarted)) {
-            throw std::wstring(L"Failed to set GBL_backgroundThreadStarted event") + getWindowsErrorMessage(L"SetEvent");
+            throwWindowsError("Failed to set GBL_backgroundThreadStarted event", "SetEvent");
         }
 
         if (!SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST)) {
-            throw getWindowsErrorMessage(L"SetThreadPriority");
+            throwWindowsError("SetThreadPriority");
         }
 
-        std::wstring pipeName = makePipeName(L"historyminer-index", true);
-
-        int tries = 0;
-        DWORD createError = 0;
-        do {
-            indexPipe = CreateFile(pipeName.c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
-            tries++;
-            if (indexPipe == INVALID_HANDLE_VALUE && tries < 5) {
-                createError = GetLastError();
-                if (createError == ERROR_PIPE_BUSY) {
-                    Sleep(100);
-                }
-            }
-        } while (indexPipe == INVALID_HANDLE_VALUE && tries < 5 && createError == ERROR_PIPE_BUSY);
-
-        if (indexPipe == INVALID_HANDLE_VALUE) {
-            throw std::wstring(L"Failed to open pipe '") + pipeName + L"': " + getWindowsErrorMessage(L"CreateFile");
+        indexPipe = XPNP_openPipe("historyminer-index", true);
+        if (indexPipe == NULL) {
+            throwXpnpError();
         }
-
-        DWORD mode = PIPE_READMODE_MESSAGE;
-        if (! SetNamedPipeHandleState(indexPipe, &mode, NULL, NULL)) {
-            throw std::wstring(L"Failed to set pipe to PIPE_READMODE_MESSAGE: ") + getWindowsErrorMessage(L"SetNamedPipeHandleState");
-        }
-
-        setBackgroundThreadStatus(L"Thread running");
-        while (true) {
+            
+        setBackgroundThreadStatus("Thread running");
+        bool done = false;
+        while (!done) {
             if (!GetMessage(&msg, NULL, 0, 0)) {
-                throw getWindowsErrorMessage(L"GetMessage");
+                throwWindowsError("GetMessage");
             } else {
                 switch (msg.message) {
                 case MSG_PAGE_CONTENT: 
@@ -299,7 +101,9 @@ DWORD WINAPI handleMessages(LPVOID param) {
                     }
                 case MSG_SHUTDOWN_THREAD: 
                     {
-                        throw std::wstring(L"Thread received shutdown message");
+                        setBackgroundThreadStatus("Thread received shutdown message");
+                        done = true;
+                        break;
                     }
                 default: 
                     {
@@ -308,12 +112,12 @@ DWORD WINAPI handleMessages(LPVOID param) {
                 }
             }
         }
-    } catch (std::wstring& tempErrorMsg) {
-        setBackgroundThreadStatus(tempErrorMsg.c_str());
+    } catch (std::exception& except) {
+        setBackgroundThreadStatus(except.what());
     }
 
-    if (indexPipe != INVALID_HANDLE_VALUE) {
-        CloseHandle(indexPipe);
+    if (indexPipe != NULL) {
+        XPNP_closePipe(indexPipe);
     }
 
     GBL_backgroundThreadExited = true;
@@ -322,120 +126,96 @@ DWORD WINAPI handleMessages(LPVOID param) {
 
 // Exported function definitions
 
-bool PICL_startBackgroundThread() {
-    bool success = false;
+int PICL_startBackgroundThread() {
+    int success = 0;
     EnterCriticalSection(&GBL_backgroundThreadStartupCS);
     try {
         if (GBL_backgroundThread != NULL) {
-            success = true;
-            throw 1;
+            success = 1;
+        } else {
+            GBL_backgroundThreadStarted = CreateEvent(NULL, TRUE, FALSE, NULL);
+            if (GBL_backgroundThreadStarted == NULL) {
+                throwWindowsError("CreateEvent");
+            }
+            GBL_backgroundThread = CreateThread(NULL, 0, handleMessages, NULL, 0, &GBL_backgroundThreadId);
+            if (GBL_backgroundThread == NULL) {
+                throwWindowsError("CreateThread");
+            }
+            DWORD waitResult = WaitForSingleObject(GBL_backgroundThreadStarted, 5000);
+            if (waitResult == WAIT_TIMEOUT) {
+                throw std::runtime_error("Timed out waiting for background thread to start");
+            } else if (waitResult == WAIT_FAILED) {
+                throwWindowsError("WaitForSingleObject");
+            } 
+            success = 1;
         }
-        GBL_backgroundThreadStarted = CreateEvent(NULL, TRUE, FALSE, NULL);
-        if (GBL_backgroundThreadStarted == NULL) {
-            throw getWindowsErrorMessage(L"CreateEvent");
-        }
-        GBL_backgroundThread = CreateThread(NULL, 0, handleMessages, NULL, 0, &GBL_backgroundThreadId);
-        if (GBL_backgroundThread == NULL) {
-            throw getWindowsErrorMessage(L"CreateThread");
-        }
-        DWORD waitResult = WaitForSingleObject(GBL_backgroundThreadStarted, 5000);
-        if (waitResult != WAIT_OBJECT_0) {
-            throw getWindowsErrorMessage(L"WaitForSingleObject");
-        } 
-        success = true;
-    } catch (std::wstring& errorMsg) {
-        setErrorMessage(errorMsg.c_str());
-    } catch (...) {}
+    } catch (std::exception& except) {
+        setErrorMessage(except.what());
+    } 
     LeaveCriticalSection(&GBL_backgroundThreadStartupCS);
     return success;
 }
 
-bool PICL_stopBackgroundThread() {
+int PICL_stopBackgroundThread() {
     if (GBL_backgroundThreadExited) {
-        return true;
+        return 1;
     }
     if (!PostThreadMessage(GBL_backgroundThreadId, MSG_SHUTDOWN_THREAD, NULL, NULL)) {
-        setErrorMessage(getWindowsErrorMessage(L"PostThreadMessage").c_str());
-        return false;
+        setErrorMessage(getWindowsErrorMessage("PostThreadMessage"));
+        return 0;
     }
     if (WaitForSingleObject(GBL_backgroundThread, INFINITE) != WAIT_OBJECT_0) {
-        setErrorMessage(getWindowsErrorMessage(L"WaitForSingleObject").c_str());
-        return false;
+        setErrorMessage(getWindowsErrorMessage("WaitForSingleObject"));
+        return 0;
     }
-    return true;
+    return 1;
 }
 
-bool PICL_sendPage(const char* url, const char* pageContent) {
-    bool success = false;
-    char* urlBuffer = NULL;
-    char* pageBuffer = NULL;
+int PICL_sendPage(const char* url, const char* pageContent) {
+    int success = 0;
+    std::string* urlString = NULL;
+    std::string* pageContentString = NULL;
     try {
         if (GBL_backgroundThreadExited) {
-            throw std::wstring(L"Background thread exited");
+            throw std::runtime_error("Background thread exited");
         }
-        int urlLen = strlen(url) + 1;
-        urlBuffer = new char[urlLen];
-        if (urlBuffer == NULL) {
-            throw std::wstring(L"Out of memory");
-        }
-        strcpy_s(urlBuffer, urlLen, url);
+        urlString = new std::string(url);
+        pageContentString = new std::string(pageContent);
 
-        int pageLen = strlen(pageContent) + 1;
-        char* pageBuffer = new char[pageLen];
-        if (pageBuffer == NULL) {
-            throw std::wstring(L"Out of memory");
+        if (!PostThreadMessage(GBL_backgroundThreadId, MSG_PAGE_CONTENT, (WPARAM)urlString, (LPARAM)pageContentString)) {
+            throwWindowsError("PostThreadMessage");
         }
-        strcpy_s(pageBuffer, pageLen, pageContent);
-
-        if (!PostThreadMessage(GBL_backgroundThreadId, MSG_PAGE_CONTENT, (WPARAM)urlBuffer, (LPARAM)pageBuffer)) {
-            throw getWindowsErrorMessage(L"PostThreadMessage");
+        success = 1;
+    } catch (std::exception& except) {
+        setErrorMessage(except.what());
+        if (urlString != NULL) {
+            delete urlString;
         }
-        success = true;
-    } catch (std::wstring& errorMsg) {
-        setErrorMessage(errorMsg.c_str());
-        if (urlBuffer != NULL) {
-            delete [] urlBuffer;
-        }
-        if (pageBuffer != NULL) {
-            delete [] pageBuffer;
+        if (pageContentString != NULL) {
+            delete pageContentString;
         }
     }
 
     return success;
 }
 
-std::string PICL_getErrorMessage() {
-    std::wstring errorMessageStr;
-    wchar_t* errorMessage = (wchar_t*)TlsGetValue(GBL_errorMessageTlsIndex);
-    if (errorMessage == NULL) {
-        if (GetLastError() != ERROR_SUCCESS) {
-            errorMessageStr = L"Failed to retrieve error message: ";
-            errorMessageStr += getWindowsErrorMessage(L"TlsGetValue");
-        }
-    } else {
-        errorMessageStr = errorMessage;
+void PICL_getErrorMessage(char* buffer, int bufLen) {
+    std::string* pErrorMsg = GBL_errorMessage.get();
+    const char* errorMsg = "";
+    if (pErrorMsg != NULL) {
+        errorMsg = pErrorMsg->c_str();
     }
-    std::string result;
-    try {
-        result = toUtf8String(errorMessageStr.c_str());
-    } catch (std::wstring) {
-        result = "Failed to convert error message to UTF-8";
+    if (strcpy_s(buffer, bufLen, errorMsg) != 0) {
+        strcpy_s(buffer, bufLen, "Buffer too small");
     }
-    return result;
 }
 
-std::string PICL_getBackgroundThreadStatus() {
-    std::wstring backgroundThreadStatus;
+void PICL_getBackgroundThreadStatus(char* buffer, int bufLen) {
     EnterCriticalSection(&GBL_backgroundThreadStatusCS);
-    backgroundThreadStatus = GBL_backgroundThreadStatus;
-    LeaveCriticalSection(&GBL_backgroundThreadStatusCS);
-    std::string result;
-    try {
-        result = toUtf8String(backgroundThreadStatus.c_str());
-    } catch (std::wstring) {
-        result = "Failed to convert background thread status to UTF-8";
+    if (strcpy_s(buffer, bufLen, GBL_backgroundThreadStatus.c_str()) != 0) {
+        strcpy_s(buffer, bufLen, "Buffer too small");
     }
-    return result;
+    LeaveCriticalSection(&GBL_backgroundThreadStatusCS);
 }
 
 

@@ -27,9 +27,9 @@ var ca_ubc_cs_periscope = {
     finishInit: function(extensionLibPath) {
       this.extensionLib = ctypes.open(extensionLibPath);
       if (this.extensionLib != null) {
-        this.startBackgroundThread = this.extensionLib.declare("PFD_startBackgroundThread", ctypes.default_abi, ctypes.bool);
-        this.stopBackgroundThread = this.extensionLib.declare("PFD_stopBackgroundThread", ctypes.default_abi, ctypes.bool);
-        this.sendPage = this.extensionLib.declare("PFD_sendPage", ctypes.default_abi, ctypes.bool, ctypes.char.ptr, ctypes.char.ptr);
+        this.startBackgroundThread = this.extensionLib.declare("PFD_startBackgroundThread", ctypes.default_abi, ctypes.int32_t);
+        this.stopBackgroundThread = this.extensionLib.declare("PFD_stopBackgroundThread", ctypes.default_abi, ctypes.int32_t);
+        this.sendPage = this.extensionLib.declare("PFD_sendPage", ctypes.default_abi, ctypes.int32_t, ctypes.char.ptr, ctypes.char.ptr);
         this.getErrorMessage = this.extensionLib.declare("PFD_getErrorMessage", ctypes.default_abi, ctypes.void_t, ctypes.char.array(), ctypes.int32_t);
         this.getBackgroundThreadStatus = this.extensionLib.declare("PFD_getBackgroundThreadStatus", ctypes.default_abi, ctypes.void_t, ctypes.char.array(), ctypes.int32_t);
 

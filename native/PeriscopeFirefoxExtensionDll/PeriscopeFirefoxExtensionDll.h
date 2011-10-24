@@ -5,11 +5,11 @@ extern "C" {
 #endif
 
 // Exported function declarations
-__declspec(dllexport) bool PFD_startBackgroundThread();
+__declspec(dllexport) int PFD_startBackgroundThread();
 
-__declspec(dllexport) bool PFD_stopBackgroundThread();
+__declspec(dllexport) int PFD_stopBackgroundThread();
 
-__declspec(dllexport) bool PFD_sendPage(char* url, char* pageContent);
+__declspec(dllexport) int PFD_sendPage(char* url, char* pageContent);
 
 __declspec(dllexport) void PFD_getErrorMessage(char* buffer, int bufLenChars);
 

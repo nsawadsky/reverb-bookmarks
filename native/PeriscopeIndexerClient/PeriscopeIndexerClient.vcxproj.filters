@@ -16,6 +16,9 @@
     <Filter Include="jsoncpp">
       <UniqueIdentifier>{fdebb608-cac9-4a2b-bc6f-8632ddda7ff5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="xpnp">
+      <UniqueIdentifier>{a0c285c4-ed5a-4b52-ab79-16685c1a99b6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="ReadMe.txt" />
@@ -25,9 +28,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="targetver.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PeriscopeIndexerClient.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="jsoncpp\assertions.h">
@@ -56,6 +56,15 @@
     </ClInclude>
     <ClInclude Include="jsoncpp\writer.h">
       <Filter>jsoncpp</Filter>
+    </ClInclude>
+    <ClInclude Include="util.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="public\PeriscopeIndexerClient.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="xpnp\XpNamedPipe.h">
+      <Filter>xpnp</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

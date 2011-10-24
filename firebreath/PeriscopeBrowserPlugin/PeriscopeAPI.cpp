@@ -107,23 +107,27 @@ void PeriscopeAPI::testEvent(const FB::variant& var)
 // Public Periscope methods
 
 bool PeriscopeAPI::startBackgroundThread() {
-    return PICL_startBackgroundThread();
+    return PICL_startBackgroundThread() != 0;
 }
 
 bool PeriscopeAPI::stopBackgroundThread() {
-    return PICL_stopBackgroundThread();
+    return PICL_stopBackgroundThread() != 0;
 }
 
 bool PeriscopeAPI::sendPage(const std::string& url, const std::string& pageContent) {
-    return PICL_sendPage(url.c_str(), pageContent.c_str());
+    return PICL_sendPage(url.c_str(), pageContent.c_str()) != 0;
 }
 
 std::string PeriscopeAPI::getErrorMessage() {
-    return PICL_getErrorMessage();
+    char buffer[1024] = "";
+    PICL_getErrorMessage(buffer, sizeof(buffer));
+    return std::string(buffer);
 }
 
 std::string PeriscopeAPI::getBackgroundThreadStatus() {
-    return PICL_getBackgroundThreadStatus();
+    char buffer[1024] = "";
+    PICL_getBackgroundThreadStatus(buffer, sizeof(buffer));
+    return std::string(buffer);
 }
 
 

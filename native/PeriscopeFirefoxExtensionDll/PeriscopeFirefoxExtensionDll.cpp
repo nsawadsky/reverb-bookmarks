@@ -5,26 +5,24 @@
 #include "PeriscopeFirefoxExtensionDll.h"
 #include "PeriscopeIndexerClient.h"
 
-bool PFD_startBackgroundThread() {
+int PFD_startBackgroundThread() {
     return PICL_startBackgroundThread();
 }
 
-bool PFD_stopBackgroundThread() {
+int PFD_stopBackgroundThread() {
     return PICL_stopBackgroundThread();
 }
 
-bool PFD_sendPage(char* url, char* pageContent) {
+int PFD_sendPage(char* url, char* pageContent) {
     return PICL_sendPage(url, pageContent);
 }
 
 void PFD_getErrorMessage(char* buffer, int bufLenChars) {
-    std::string msg = PICL_getErrorMessage();
-    strcpy_s(buffer, bufLenChars, msg.c_str());
+    PICL_getErrorMessage(buffer, bufLenChars);
 }
 
 void PFD_getBackgroundThreadStatus(char* buffer, int bufLenChars) {
-    std::string msg = PICL_getBackgroundThreadStatus();
-    strcpy_s(buffer, bufLenChars, msg.c_str());
+    PICL_getBackgroundThreadStatus(buffer, bufLenChars);
 }
 
 
