@@ -16,8 +16,12 @@
 
 #include <string>
 #include <stdexcept>
+#include <queue>
 
 #include <boost/thread/tss.hpp>
+#include <boost/thread/locks.hpp>
+#include <boost/thread/recursive_mutex.hpp>
+#include <boost/thread/condition_variable.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/scoped_array.hpp>
 
