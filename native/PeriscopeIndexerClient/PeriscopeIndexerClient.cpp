@@ -5,108 +5,114 @@
 #include "util.hpp"
 using namespace util;
 
-const UINT MSG_PAGE_CONTENT = WM_USER;
-const UINT MSG_SHUTDOWN_THREAD = MSG_PAGE_CONTENT + 1;
+// Local class declarations
 
-static boost::thread_specific_ptr<std::string> GBL_errorMessage;
+enum MessageType {
+    PageContent,
+    ShutdownThread
+};
 
-static CRITICAL_SECTION GBL_backgroundThreadStartupCS;
-static CRITICAL_SECTION GBL_backgroundThreadStatusCS;
-static std::string GBL_backgroundThreadStatus = "Thread not started";
+class BackgroundThreadMessage {
+public:
+    BackgroundThreadMessage(MessageType type) {
+        this->msgType = type;
+    }
 
-static DWORD GBL_backgroundThreadId = 0;
-static HANDLE GBL_backgroundThread = NULL;
-static HANDLE GBL_backgroundThreadStarted = NULL;
+    MessageType getType() {
+        return msgType;
+    }
 
-static volatile bool GBL_backgroundThreadExited = false;
+private:
+    MessageType msgType;
+};
 
-static bool initializeGlobals() {
-    InitializeCriticalSection(&GBL_backgroundThreadStartupCS);
-    InitializeCriticalSection(&GBL_backgroundThreadStatusCS);
-    return true;
-}
+class PageContentMessage : public BackgroundThreadMessage {
+public:
+    PageContentMessage(boost::shared_ptr<std::string> url, boost::shared_ptr<std::string> content) : BackgroundThreadMessage(PageContent) {
+        this->url = url;
+        this->content = content;
+    }
 
-static bool GBL_globalsInitialized = initializeGlobals();
+    const std::string& getUrl() { return *url; }
+    const std::string& getPageContent() { return *content; }
 
-// Local function definitions
+private:
+    boost::shared_ptr<std::string> url;
+    boost::shared_ptr<std::string> content;
+};
 
-static void setErrorMessage(const std::string& errorMessage) {
-    GBL_errorMessage.reset(new std::string(errorMessage));
-}
-
-static void throwXpnpError() {
-    char buffer[1024] = "";
-    XPNP_getErrorMessage(buffer, sizeof(buffer));
-    throw std::runtime_error(buffer);
-}
-
-static void setBackgroundThreadStatus(const std::string& status) {
-    EnterCriticalSection(&GBL_backgroundThreadStatusCS);
-    GBL_backgroundThreadStatus = status;
-    LeaveCriticalSection(&GBL_backgroundThreadStatusCS);
-}
-
-static void writeMessage(XPNP_PipeHandle pipe, const char* msg, int msgLen) {
-    int msgLenNetwork = htonl(msgLen);
-    XPNP_writePipe(pipe, (const char*)&msgLenNetwork, sizeof(msgLenNetwork));
-    XPNP_writePipe(pipe, msg, msgLen);
-}
-
-static void handlePageContentMessage(MSG& msg, XPNP_PipeHandle pipe) {
-    boost::scoped_ptr<std::string> url((std::string*)msg.wParam);
-    boost::scoped_ptr<std::string> pageData((std::string*)msg.lParam);
-
-    Json::Value root;
-    Json::Value& pageInfo = root["message"]["pageInfo"];
-    pageInfo["url"] = *url;
-    pageInfo["html"] = *pageData;
-
-    Json::FastWriter writer;
-    std::string output = writer.write(root);
-
-    writeMessage(pipe, output.c_str(), output.length());
-}
-
-static DWORD WINAPI handleMessages(LPVOID param) {
-    XPNP_PipeHandle indexPipe = NULL;
-    try {
-        // Create message queue
-        MSG msg;
-        PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE);
-
-        if (!SetEvent(GBL_backgroundThreadStarted)) {
-            throwWindowsError("Failed to set GBL_backgroundThreadStarted event", "SetEvent");
+class BackgroundThread {
+public:
+    BackgroundThread() : status("Thread not started") {
+    }
+        
+    void start() {
+        boost::lock_guard<boost::mutex> guard(startupMutex);
+        if (threadStarted) {
+            return;
         }
+        backgroundThread = boost::thread(boost::ref(*this));
+        threadStarted = true;
+    }
 
-        if (!SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST)) {
-            throwWindowsError("SetThreadPriority");
+    void stop() {
+        boost::lock_guard<boost::mutex> guard(startupMutex);
+        if (!threadStarted) {
+            return;
         }
+        putMessage(boost::shared_ptr<BackgroundThreadMessage>(new BackgroundThreadMessage(ShutdownThread)));
+        backgroundThread.join();
+        threadStarted = false;
+    }
 
-        char pipeName[1024] = "";
-        if (!XPNP_makePipeName("historyminer-index", true, pipeName, sizeof(pipeName))) {
-            throwXpnpError();
+    void putMessage(boost::shared_ptr<BackgroundThreadMessage> msg) {
+        if (!threadStarted) {
+            throw std::runtime_error("Background thread not started");
         }
+        boost::lock_guard<boost::mutex> guard(queueMutex);
+        bool wasEmpty = msgQueue.empty();
+        msgQueue.push(msg);
+        if (wasEmpty) {
+            queueHasData.notify_one();
+        }
+    }
 
-        indexPipe = XPNP_openPipe(pipeName, true);
-        if (indexPipe == NULL) {
-            throwXpnpError();
-        }
+    std::string getStatus() {
+        boost::lock_guard<boost::mutex> guard(statusMutex);
+        return this->status;
+    }
+
+    void operator () () {
+        XPNP_PipeHandle indexPipe = NULL;
+        try {
+            char pipeName[1024] = "";
+            if (!XPNP_makePipeName("historyminer-index", true, pipeName, sizeof(pipeName))) {
+                throwXpnpError();
+            }
+
+            indexPipe = XPNP_openPipe(pipeName, true);
+            if (indexPipe == NULL) {
+                throwXpnpError();
+            }
             
-        setBackgroundThreadStatus("Thread running");
-        bool done = false;
-        while (!done) {
-            if (!GetMessage(&msg, NULL, 0, 0)) {
-                throwWindowsError("GetMessage");
-            } else {
-                switch (msg.message) {
-                case MSG_PAGE_CONTENT: 
+            if (!SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST)) {
+                throwWindowsError("SetThreadPriority");
+            }
+
+            setStatus("Thread running");
+
+            bool done = false;
+            while (!done) {
+                boost::shared_ptr<BackgroundThreadMessage> msg = getNextMessage();
+                switch (msg->getType()) {
+                case PageContent: 
                     {
-                        handlePageContentMessage(msg, indexPipe);
+                        handlePageContentMessage(boost::static_pointer_cast<PageContentMessage>(msg), indexPipe);
                         break;
                     }
-                case MSG_SHUTDOWN_THREAD: 
-                    {
-                        setBackgroundThreadStatus("Thread received shutdown message");
+                case ShutdownThread: 
+                    { 
+                        setStatus("Thread received shutdown message");
                         done = true;
                         break;
                     }
@@ -115,92 +121,112 @@ static DWORD WINAPI handleMessages(LPVOID param) {
                         break;
                     }
                 }
+
             }
+        } catch (std::exception& except) {
+            setStatus(except.what());
         }
-    } catch (std::exception& except) {
-        setBackgroundThreadStatus(except.what());
+        if (indexPipe != NULL) {
+            XPNP_closePipe(indexPipe);
+        }
+        threadStarted = false;
     }
 
-    if (indexPipe != NULL) {
-        XPNP_closePipe(indexPipe);
+private:
+    void handlePageContentMessage(boost::shared_ptr<PageContentMessage> msg, XPNP_PipeHandle pipe) {
+        Json::Value root;
+        Json::Value& pageInfo = root["message"]["pageInfo"];
+        pageInfo["url"] = msg->getUrl();
+        pageInfo["html"] = msg->getPageContent();
+
+        Json::FastWriter writer;
+        std::string output = writer.write(root);
+
+        int msgLength = output.length();
+        msgLength = htonl(msgLength);
+        XPNP_writePipe(pipe, (const char*)&msgLength, sizeof(msgLength));
+        XPNP_writePipe(pipe, output.c_str(), output.length());
     }
 
-    GBL_backgroundThreadExited = true;
-    return 0;
+    boost::shared_ptr<BackgroundThreadMessage> getNextMessage() {
+        boost::unique_lock<boost::mutex> guard(queueMutex);
+        while (msgQueue.empty()) {
+            queueHasData.wait(guard);
+        }
+        boost::shared_ptr<BackgroundThreadMessage> result = msgQueue.front();
+        msgQueue.pop();
+        return result;
+    }
+
+    void setStatus(const std::string& status) {
+        boost::lock_guard<boost::mutex> guard(statusMutex);
+        this->status = status;
+    }
+
+    void throwXpnpError() {
+        char buffer[1024] = "";
+        XPNP_getErrorMessage(buffer, sizeof(buffer));
+        throw std::runtime_error(buffer);
+    }
+
+    boost::mutex queueMutex;
+    boost::condition_variable queueHasData;
+    std::queue<boost::shared_ptr<BackgroundThreadMessage>> msgQueue;
+
+    boost::mutex startupMutex;
+    volatile bool threadStarted;
+    boost::thread backgroundThread;
+    
+    boost::mutex statusMutex;
+    std::string status;
+};
+
+// Static instances
+static BackgroundThread GBL_backgroundThread;
+
+static boost::thread_specific_ptr<std::string> GBL_errorMessage;
+
+// Local function definitions
+
+static void setErrorMessage(const std::string& errorMessage) {
+    GBL_errorMessage.reset(new std::string(errorMessage));
 }
 
 // Exported function definitions
 
 int PICL_startBackgroundThread() {
     int success = 0;
-    EnterCriticalSection(&GBL_backgroundThreadStartupCS);
     try {
-        if (GBL_backgroundThread != NULL) {
-            success = 1;
-        } else {
-            GBL_backgroundThreadStarted = CreateEvent(NULL, TRUE, FALSE, NULL);
-            if (GBL_backgroundThreadStarted == NULL) {
-                throwWindowsError("CreateEvent");
-            }
-            GBL_backgroundThread = CreateThread(NULL, 0, handleMessages, NULL, 0, &GBL_backgroundThreadId);
-            if (GBL_backgroundThread == NULL) {
-                throwWindowsError("CreateThread");
-            }
-            DWORD waitResult = WaitForSingleObject(GBL_backgroundThreadStarted, 5000);
-            if (waitResult == WAIT_TIMEOUT) {
-                throw std::runtime_error("Timed out waiting for background thread to start");
-            } else if (waitResult == WAIT_FAILED) {
-                throwWindowsError("WaitForSingleObject");
-            } 
-            success = 1;
-        }
+        GBL_backgroundThread.start();
+        success = 1;
     } catch (std::exception& except) {
         setErrorMessage(except.what());
     } 
-    LeaveCriticalSection(&GBL_backgroundThreadStartupCS);
     return success;
 }
 
 int PICL_stopBackgroundThread() {
-    if (GBL_backgroundThreadExited) {
-        return 1;
-    }
-    if (!PostThreadMessage(GBL_backgroundThreadId, MSG_SHUTDOWN_THREAD, NULL, NULL)) {
-        setErrorMessage(getWindowsErrorMessage("PostThreadMessage"));
-        return 0;
-    }
-    if (WaitForSingleObject(GBL_backgroundThread, INFINITE) != WAIT_OBJECT_0) {
-        setErrorMessage(getWindowsErrorMessage("WaitForSingleObject"));
-        return 0;
-    }
-    return 1;
+    int success = 0;
+    try {
+        GBL_backgroundThread.stop();
+        success = 1;
+    } catch (std::exception& except) {
+        setErrorMessage(except.what());
+    } 
+    return success;
 }
 
 int PICL_sendPage(const char* url, const char* pageContent) {
     int success = 0;
-    std::string* urlString = NULL;
-    std::string* pageContentString = NULL;
     try {
-        if (GBL_backgroundThreadExited) {
-            throw std::runtime_error("Background thread exited");
-        }
-        urlString = new std::string(url);
-        pageContentString = new std::string(pageContent);
-
-        if (!PostThreadMessage(GBL_backgroundThreadId, MSG_PAGE_CONTENT, (WPARAM)urlString, (LPARAM)pageContentString)) {
-            throwWindowsError("PostThreadMessage");
-        }
+        boost::shared_ptr<std::string> urlString(new std::string(url));
+        boost::shared_ptr<std::string> pageContentString(new std::string(pageContent));
+        boost::shared_ptr<BackgroundThreadMessage> msg(new PageContentMessage(urlString, pageContentString));
+        GBL_backgroundThread.putMessage(msg);
         success = 1;
     } catch (std::exception& except) {
         setErrorMessage(except.what());
-        if (urlString != NULL) {
-            delete urlString;
-        }
-        if (pageContentString != NULL) {
-            delete pageContentString;
-        }
-    }
-
+    } 
     return success;
 }
 
@@ -216,11 +242,10 @@ void PICL_getErrorMessage(char* buffer, int bufLen) {
 }
 
 void PICL_getBackgroundThreadStatus(char* buffer, int bufLen) {
-    EnterCriticalSection(&GBL_backgroundThreadStatusCS);
-    if (strcpy_s(buffer, bufLen, GBL_backgroundThreadStatus.c_str()) != 0) {
+    std::string status = GBL_backgroundThread.getStatus();
+    if (strcpy_s(buffer, bufLen, status.c_str()) != 0) {
         strcpy_s(buffer, bufLen, "Buffer too small");
     }
-    LeaveCriticalSection(&GBL_backgroundThreadStatusCS);
 }
 
 
