@@ -18,6 +18,8 @@ public:
         this->msgType = type;
     }
 
+    virtual ~BackgroundThreadMessage() {} 
+
     MessageType getType() {
         return msgType;
     }
