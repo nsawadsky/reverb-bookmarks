@@ -44,6 +44,7 @@ private:
 class BackgroundThread {
 public:
     BackgroundThread() : status("Thread not started") {
+        threadStarted = false;
     }
         
     void start() {
