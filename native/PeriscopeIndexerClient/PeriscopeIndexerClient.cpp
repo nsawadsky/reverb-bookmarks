@@ -130,7 +130,6 @@ public:
         if (indexPipe != NULL) {
             XPNP_closePipe(indexPipe);
         }
-        threadStarted = false;
     }
 
 private:
