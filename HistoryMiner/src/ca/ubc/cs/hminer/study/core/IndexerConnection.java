@@ -2,9 +2,9 @@ package ca.ubc.cs.hminer.study.core;
 
 import org.codehaus.jackson.map.ObjectMapper;
 
-import ca.ubc.cs.periscope.indexer.messages.IndexerMessage;
-import ca.ubc.cs.periscope.indexer.messages.IndexerMessageEnvelope;
-import ca.ubc.cs.periscope.indexer.messages.PageInfo;
+import ca.ubc.cs.reverb.indexer.messages.IndexerMessage;
+import ca.ubc.cs.reverb.indexer.messages.IndexerMessageEnvelope;
+import ca.ubc.cs.reverb.indexer.messages.PageInfo;
 
 import xpnp.XpNamedPipe;
 

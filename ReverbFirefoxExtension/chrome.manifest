@@ -1,0 +1,7 @@
+content reverb chrome/content/
+overlay chrome://browser/content/browser.xul chrome://reverb/content/overlay.xul
+
+locale reverb en-US chrome/locale/en-US/
+
+skin reverb classic/1.0 chrome/skin/
+style chrome://global/content/customizeToolbar.xul chrome://reverb/skin/overlay.css
