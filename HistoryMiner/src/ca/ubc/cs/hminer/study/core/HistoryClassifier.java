@@ -44,7 +44,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.spi.RootLogger;
 
-import ca.ubc.cs.periscope.indexer.messages.PageInfo;
+import ca.ubc.cs.reverb.indexer.messages.PageInfo;
 
 public class HistoryClassifier {
     private static Logger log = Logger.getLogger(HistoryClassifier.class);
