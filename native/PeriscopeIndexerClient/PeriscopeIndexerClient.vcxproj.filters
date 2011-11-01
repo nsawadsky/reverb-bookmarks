@@ -60,18 +60,18 @@
     <ClInclude Include="util.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="public\PeriscopeIndexerClient.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="xpnp\XpNamedPipe.h">
       <Filter>xpnp</Filter>
+    </ClInclude>
+    <ClInclude Include="public\ReverbIndexerClient.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PeriscopeIndexerClient.cpp">
+    <ClCompile Include="ReverbIndexerClient.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

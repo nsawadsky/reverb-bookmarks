@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "PeriscopeIndexerClient.h"
+#include "ReverbIndexerClient.h"
 
 #include "XpNamedPipe.h"
 #include "util.hpp"
@@ -196,7 +196,7 @@ static void setErrorMessage(const std::string& errorMessage) {
 
 // Exported function definitions
 
-int PICL_startBackgroundThread() {
+int RICL_startBackgroundThread() {
     int success = 0;
     try {
         GBL_backgroundThread.start();
@@ -207,7 +207,7 @@ int PICL_startBackgroundThread() {
     return success;
 }
 
-int PICL_stopBackgroundThread() {
+int RICL_stopBackgroundThread() {
     int success = 0;
     try {
         GBL_backgroundThread.stop();
@@ -218,7 +218,7 @@ int PICL_stopBackgroundThread() {
     return success;
 }
 
-int PICL_sendPage(const char* url, const char* pageContent) {
+int RICL_sendPage(const char* url, const char* pageContent) {
     int success = 0;
     try {
         boost::shared_ptr<std::string> urlString(new std::string(url));
@@ -232,7 +232,7 @@ int PICL_sendPage(const char* url, const char* pageContent) {
     return success;
 }
 
-void PICL_getErrorMessage(char* buffer, int bufLen) {
+void RICL_getErrorMessage(char* buffer, int bufLen) {
     std::string* pErrorMsg = GBL_errorMessage.get();
     const char* errorMsg = "";
     if (pErrorMsg != NULL) {
@@ -243,7 +243,7 @@ void PICL_getErrorMessage(char* buffer, int bufLen) {
     }
 }
 
-void PICL_getBackgroundThreadStatus(char* buffer, int bufLen) {
+void RICL_getBackgroundThreadStatus(char* buffer, int bufLen) {
     std::string status = GBL_backgroundThread.getStatus();
     if (strcpy_s(buffer, bufLen, status.c_str()) != 0) {
         strcpy_s(buffer, bufLen, "Buffer too small");
