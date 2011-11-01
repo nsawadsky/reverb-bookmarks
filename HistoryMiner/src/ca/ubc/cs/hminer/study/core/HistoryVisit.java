@@ -12,6 +12,7 @@ public class HistoryVisit {
     public Date visitDate;
     public int visitType;
     public boolean isGoogleSearch = false;
+    public boolean isJavadoc = false;
     
     /**
      * These attributes cannot be trusted.  The Firefox database frequently has a null

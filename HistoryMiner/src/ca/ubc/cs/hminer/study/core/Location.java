@@ -6,6 +6,7 @@ public class Location {
     public transient String url;
     public transient String title;
     public LocationType locationType = LocationType.UNKNOWN;
+    public boolean isJavadoc = false;
     
     public Location() {}
     

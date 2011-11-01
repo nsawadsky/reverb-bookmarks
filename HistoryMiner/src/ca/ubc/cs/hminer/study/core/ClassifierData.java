@@ -6,7 +6,7 @@ public class ClassifierData {
     public ClassifierData(int initialVisitCount, int redirectVisitCount,
             double overallRevisitRate, int googleVisitCount,
             int locationsToClassifyCount, int locationsClassifiedCount,
-            int codeRelatedLocationCount, int nonCodeRelatedLocationCount, int unknownLocationCount,
+            int codeRelatedLocationCount, int javadocLocationCount, int nonCodeRelatedLocationCount, int unknownLocationCount,
             List<LocationAndVisits> codeRelatedLocations, 
             List<Location> locationsClassified, 
             List<HistoryVisit> visitList) {
@@ -17,6 +17,7 @@ public class ClassifierData {
         this.locationsToClassifyCount = locationsToClassifyCount;
         this.locationsClassifiedCount = locationsClassifiedCount;
         this.codeRelatedLocationCount = codeRelatedLocationCount;
+        this.javadocLocationCount = javadocLocationCount;
         this.nonCodeRelatedLocationCount = nonCodeRelatedLocationCount;
         this.unknownLocationCount = unknownLocationCount;
         this.codeRelatedLocations = codeRelatedLocations;
@@ -31,6 +32,7 @@ public class ClassifierData {
     public int locationsToClassifyCount = 0;
     public int locationsClassifiedCount = 0;
     public int codeRelatedLocationCount;
+    public int javadocLocationCount;
     public int nonCodeRelatedLocationCount;
     public int unknownLocationCount;
     public List<LocationAndVisits> codeRelatedLocations;
