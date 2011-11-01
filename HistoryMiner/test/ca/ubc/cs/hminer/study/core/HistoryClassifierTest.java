@@ -20,6 +20,23 @@ public class HistoryClassifierTest {
         HistoryClassifier classifier = new HistoryClassifier(
                 new ArrayList<HistoryVisit>(), WebBrowserType.MOZILLA_FIREFOX);
         
+        assertFalse(classifier.isGoogleSearch("https://docs.google.com/#home", "Google Docs - Home"));
+        
+        assertFalse(classifier.isGoogleSearch("http://www.google.ca/#sclient=psy-ab&hl=en&site=&source=hp&q=testing&pbx=1&oq=testing&aq=f&aqi=g4&aql=1&gs_sm=e&gs_upl=1786l2098l0l2168l7l3l0l0l0l0l75l134l2l2l0&bav=on.2,or.r_gc.r_pw.,cf.osb&fp=606454708746acf6&biw=1104&bih=600",
+                "Non-matching title"));
+
+        assertTrue(classifier.isGoogleSearch("http://www.google.ca/#sclient=psy-ab&hl=en&site=&source=hp&q=testing&pbx=1&oq=testing&aq=f&aqi=g4&aql=1&gs_sm=e&gs_upl=1786l2098l0l2168l7l3l0l0l0l0l75l134l2l2l0&bav=on.2,or.r_gc.r_pw.,cf.osb&fp=606454708746acf6&biw=1104&bih=600",
+                "testing - Google Search"));
+
+        assertTrue(classifier.isGoogleSearch("https://www.google.ca/#sclient=psy-ab&hl=en&site=&source=hp&q=testing&pbx=1&oq=testing&aq=f&aqi=g4&aql=1&gs_sm=e&gs_upl=1786l2098l0l2168l7l3l0l0l0l0l75l134l2l2l0&bav=on.2,or.r_gc.r_pw.,cf.osb&fp=606454708746acf6&biw=1104&bih=600",
+                "testing - Google Search"));
+
+        assertTrue(classifier.isGoogleSearch("http://www.google.ca/search?q=testing&ie=utf-8&oe=utf-8&aq=t&rls=org.mozilla:en-US:official&client=firefox-a",
+                "Non-matching title"));
+        
+        assertTrue(classifier.isGoogleSearch("https://www.google.ca/search?q=testing&ie=utf-8&oe=utf-8&aq=t&rls=org.mozilla:en-US:official&client=firefox-a",
+                "Non-matching title"));
+
         // No text
         Document doc = Jsoup.parse("<html><body></body></html>");
         assertEquals(LocationType.NON_CODE_RELATED, classifier.classifyDocument(doc, false));

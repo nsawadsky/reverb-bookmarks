@@ -38,9 +38,11 @@ import ca.ubc.cs.hminer.study.core.HistoryMinerData;
 import ca.ubc.cs.hminer.study.core.HistoryMinerException;
 import ca.ubc.cs.hminer.study.core.HistoryReport;
 import ca.ubc.cs.hminer.study.core.HistoryVisit;
+import ca.ubc.cs.hminer.study.core.LocationAndVisits;
 import ca.ubc.cs.hminer.study.core.LocationListStats;
 import ca.ubc.cs.hminer.study.core.StatsCalculator;
 import ca.ubc.cs.hminer.study.core.SummaryData;
+import ca.ubc.cs.hminer.study.core.Util;
 
 public class HistoryMinerWizard extends Wizard implements IPageChangingListener, IPageChangedListener {
     private final static String UPLOAD_URL = "https://www.cs.ubc.ca/~nicks/dbha/uploader.php";
@@ -243,11 +245,31 @@ public class HistoryMinerWizard extends Wizard implements IPageChangingListener,
         ClassifierData classifierData = historyMinerData.classifierData;
         LocationListStats codeRelatedStats = StatsCalculator.calculateStats(
                 classifierData.codeRelatedLocations, historyMinerData.participantPrimaryWebBrowser);
+        LocationListStats javadocStats = StatsCalculator.calculateStats(
+                Util.filter(classifierData.codeRelatedLocations, 
+                        new Util.Predicate<LocationAndVisits>() {
+
+                            @Override
+                            public boolean check(LocationAndVisits instance) {
+                                return instance.location.isJavadoc;
+                            }
+                    
+                }), historyMinerData.participantPrimaryWebBrowser);
+        LocationListStats nonJavadocStats = StatsCalculator.calculateStats(
+                Util.filter(classifierData.codeRelatedLocations, 
+                        new Util.Predicate<LocationAndVisits>() {
+
+                            @Override
+                            public boolean check(LocationAndVisits instance) {
+                                return !instance.location.isJavadoc;
+                            }
+                    
+                }), historyMinerData.participantPrimaryWebBrowser);
         
         HistoryReport historyReport = new HistoryReport(historyMinerData.participantOccupation, 
                 historyMinerData.participantPrimaryProgrammingLanguage, HistoryExtractor.getOSType(), historyMinerData.participantPrimaryWebBrowser, new Date(), historyMinerData.historyStartDate, historyMinerData.historyEndDate,
                 historyMinerData.participantId, new SummaryData(classifierData, historyMinerData.classifierAccuracy), codeRelatedStats, 
-                historyMinerData.locationsManuallyClassified, classifierData.locationsClassified, classifierData.visitList);
+                javadocStats, nonJavadocStats, historyMinerData.locationsManuallyClassified, classifierData.locationsClassified, classifierData.visitList);
         
         StringWriter writer = new StringWriter();
         ObjectMapper mapper = new ObjectMapper();

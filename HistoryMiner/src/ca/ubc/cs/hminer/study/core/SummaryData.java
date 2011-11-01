@@ -11,6 +11,7 @@ public class SummaryData {
         this.locationsToClassifyCount = classifierData.locationsToClassifyCount;
         this.locationsClassifiedCount = classifierData.locationsClassifiedCount;
         this.codeRelatedLocationCount = classifierData.codeRelatedLocationCount;
+        this.javadocLocationCount = classifierData.javadocLocationCount;
         this.nonCodeRelatedLocationCount = classifierData.nonCodeRelatedLocationCount;
         this.unknownLocationCount = classifierData.unknownLocationCount;
         this.classifierAccuracy = classifierAccuracy;
@@ -23,6 +24,7 @@ public class SummaryData {
     public int locationsToClassifyCount = 0;
     public int locationsClassifiedCount = 0;
     public int codeRelatedLocationCount;
+    public int javadocLocationCount;
     public int nonCodeRelatedLocationCount;
     public int unknownLocationCount;
     public double classifierAccuracy = 0.0;

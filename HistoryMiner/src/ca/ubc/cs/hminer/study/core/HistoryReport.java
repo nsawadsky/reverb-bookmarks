@@ -10,6 +10,7 @@ public class HistoryReport {
     public HistoryReport(String participantOccupation, String participantPrimaryProgrammingLanguage, OSType osType, WebBrowserType participantPrimaryWebBrowser,
             Date collectionDate, Date historyStartDate, Date historyEndDate, 
             UUID participantId, SummaryData summaryData, LocationListStats codeRelatedStats,
+            LocationListStats javadocStats, LocationListStats nonJavadocStats,
             List<LocationAndClassification> locationsManuallyClassified, List<Location> locationsClassified, 
             List<HistoryVisit> visitList) {
         this.participantOccupation = participantOccupation;
@@ -21,6 +22,8 @@ public class HistoryReport {
         this.historyEndDate = historyEndDate;
         this.summaryData = summaryData;
         this.codeRelatedStats = codeRelatedStats;
+        this.javadocStats = javadocStats;
+        this.nonJavadocStats = nonJavadocStats;
         this.locationsManuallyClassified = locationsManuallyClassified;
         this.locationsClassified = locationsClassified;
         this.visitList = visitList;
@@ -39,6 +42,8 @@ public class HistoryReport {
 
     public SummaryData summaryData;
     public LocationListStats codeRelatedStats;
+    public LocationListStats javadocStats;
+    public LocationListStats nonJavadocStats;
     public List<LocationAndClassification> locationsManuallyClassified;
     public List<Location> locationsClassified;
     public List<HistoryVisit> visitList;
