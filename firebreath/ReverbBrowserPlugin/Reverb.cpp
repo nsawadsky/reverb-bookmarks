@@ -1,55 +1,55 @@
 /**********************************************************\
 
-  Auto-generated Periscope.cpp
+  Auto-generated Reverb.cpp
 
   This file contains the auto-generated main plugin object
-  implementation for the Periscope project
+  implementation for the Reverb project
 
 \**********************************************************/
 
-#include "PeriscopeAPI.h"
+#include "ReverbAPI.h"
 
-#include "Periscope.h"
+#include "Reverb.h"
 
 ///////////////////////////////////////////////////////////////////////////////
-/// @fn Periscope::StaticInitialize()
+/// @fn Reverb::StaticInitialize()
 ///
 /// @brief  Called from PluginFactory::globalPluginInitialize()
 ///
 /// @see FB::FactoryBase::globalPluginInitialize
 ///////////////////////////////////////////////////////////////////////////////
-void Periscope::StaticInitialize()
+void Reverb::StaticInitialize()
 {
     // Place one-time initialization stuff here; As of FireBreath 1.4 this should only
     // be called once per process
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-/// @fn Periscope::StaticInitialize()
+/// @fn Reverb::StaticInitialize()
 ///
 /// @brief  Called from PluginFactory::globalPluginDeinitialize()
 ///
 /// @see FB::FactoryBase::globalPluginDeinitialize
 ///////////////////////////////////////////////////////////////////////////////
-void Periscope::StaticDeinitialize()
+void Reverb::StaticDeinitialize()
 {
     // Place one-time deinitialization stuff here. As of FireBreath 1.4 this should
     // always be called just before the plugin library is unloaded
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-/// @brief  Periscope constructor.  Note that your API is not available
+/// @brief  Reverb constructor.  Note that your API is not available
 ///         at this point, nor the window.  For best results wait to use
 ///         the JSAPI object until the onPluginReady method is called
 ///////////////////////////////////////////////////////////////////////////////
-Periscope::Periscope()
+Reverb::Reverb()
 {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-/// @brief  Periscope destructor.
+/// @brief  Reverb destructor.
 ///////////////////////////////////////////////////////////////////////////////
-Periscope::~Periscope()
+Reverb::~Reverb()
 {
     // This is optional, but if you reset m_api (the shared_ptr to your JSAPI
     // root object) and tell the host to free the retained JSAPI objects then
@@ -59,7 +59,7 @@ Periscope::~Periscope()
     m_host->freeRetainedObjects();
 }
 
-void Periscope::onPluginReady()
+void Reverb::onPluginReady()
 {
     // When this is called, the BrowserHost is attached, the JSAPI object is
     // created, and we are ready to interact with the page and such.  The
@@ -67,7 +67,7 @@ void Periscope::onPluginReady()
     // this point.
 }
 
-void Periscope::shutdown()
+void Reverb::shutdown()
 {
     // This will be called when it is time for the plugin to shut down;
     // any threads or anything else that may hold a shared_ptr to this
@@ -82,41 +82,41 @@ void Periscope::shutdown()
 ///
 /// Note that m_host is your BrowserHost and shared_ptr returns a
 /// FB::PluginCorePtr, which can be used to provide a
-/// boost::weak_ptr<Periscope> for your JSAPI class.
+/// boost::weak_ptr<Reverb> for your JSAPI class.
 ///
 /// Be very careful where you hold a shared_ptr to your plugin class from,
 /// as it could prevent your plugin class from getting destroyed properly.
 ///////////////////////////////////////////////////////////////////////////////
-FB::JSAPIPtr Periscope::createJSAPI()
+FB::JSAPIPtr Reverb::createJSAPI()
 {
     // m_host is the BrowserHost
-    return boost::make_shared<PeriscopeAPI>(FB::ptr_cast<Periscope>(shared_from_this()), m_host);
+    return boost::make_shared<ReverbAPI>(FB::ptr_cast<Reverb>(shared_from_this()), m_host);
 }
 
-bool Periscope::onMouseDown(FB::MouseDownEvent *evt, FB::PluginWindow *)
+bool Reverb::onMouseDown(FB::MouseDownEvent *evt, FB::PluginWindow *)
 {
     //printf("Mouse down at: %d, %d\n", evt->m_x, evt->m_y);
     return false;
 }
 
-bool Periscope::onMouseUp(FB::MouseUpEvent *evt, FB::PluginWindow *)
+bool Reverb::onMouseUp(FB::MouseUpEvent *evt, FB::PluginWindow *)
 {
     //printf("Mouse up at: %d, %d\n", evt->m_x, evt->m_y);
     return false;
 }
 
-bool Periscope::onMouseMove(FB::MouseMoveEvent *evt, FB::PluginWindow *)
+bool Reverb::onMouseMove(FB::MouseMoveEvent *evt, FB::PluginWindow *)
 {
     //printf("Mouse move at: %d, %d\n", evt->m_x, evt->m_y);
     return false;
 }
-bool Periscope::onWindowAttached(FB::AttachedEvent *evt, FB::PluginWindow *)
+bool Reverb::onWindowAttached(FB::AttachedEvent *evt, FB::PluginWindow *)
 {
     // The window is attached; act appropriately
     return false;
 }
 
-bool Periscope::onWindowDetached(FB::DetachedEvent *evt, FB::PluginWindow *)
+bool Reverb::onWindowDetached(FB::DetachedEvent *evt, FB::PluginWindow *)
 {
     // The window is about to be detached; act appropriately
     return false;

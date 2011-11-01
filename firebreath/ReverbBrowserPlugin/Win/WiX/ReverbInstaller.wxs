@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-    <Product Id="*" Name="${FBSTRING_PluginName}" Language="1033" Version="${FBSTRING_PLUGIN_VERSION}" Manufacturer="${FBSTRING_CompanyName}" UpgradeCode="{de98a90f-bc49-5e59-8780-f42f5b7cd3c1}">
+    <Product Id="*" Name="${FBSTRING_PluginName}" Language="1033" Version="${FBSTRING_PLUGIN_VERSION}" Manufacturer="${FBSTRING_CompanyName}" UpgradeCode="{014613b4-69b4-5bd9-a5f4-5b0cd3b00386}">
         <Package InstallerVersion="200" Compressed="yes" Description="Installer for the ${PLUGIN_NAME} plugin" InstallScope="perUser" />
-        <Upgrade Id="{de98a90f-bc49-5e59-8780-f42f5b7cd3c1}">
+        <Upgrade Id="{014613b4-69b4-5bd9-a5f4-5b0cd3b00386}">
             <UpgradeVersion
                 Property="OLD_VERSION_FOUND"
                 Minimum="0.0.1" IncludeMinimum="yes"

@@ -3,12 +3,12 @@
  Auto-generated Factory.cpp
  
  This file contains the auto-generated factory methods 
- for the Periscope project
+ for the Reverb project
  
 \**********************************************************/
 
 #include "FactoryBase.h"
-#include "Periscope.h"
+#include "Reverb.h"
 #include <boost/make_shared.hpp>
 
 class PluginFactory : public FB::FactoryBase
@@ -22,7 +22,7 @@ public:
     ///////////////////////////////////////////////////////////////////////////////
     FB::PluginCorePtr createPlugin(const std::string& mimetype)
     {
-        return boost::make_shared<Periscope>();
+        return boost::make_shared<Reverb>();
     }
     
     ///////////////////////////////////////////////////////////////////////////////
@@ -30,7 +30,7 @@ public:
     ///////////////////////////////////////////////////////////////////////////////
     void globalPluginInitialize()
     {
-        Periscope::StaticInitialize();
+        Reverb::StaticInitialize();
     }
     
     ///////////////////////////////////////////////////////////////////////////////
@@ -38,7 +38,7 @@ public:
     ///////////////////////////////////////////////////////////////////////////////
     void globalPluginDeinitialize()
     {
-        Periscope::StaticDeinitialize();
+        Reverb::StaticDeinitialize();
     }
 };
 

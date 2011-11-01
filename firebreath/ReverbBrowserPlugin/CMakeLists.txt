@@ -1,6 +1,6 @@
 #/**********************************************************\ 
 # 
-# Auto-generated CMakeLists.txt for the Periscope project
+# Auto-generated CMakeLists.txt for the Reverb project
 #
 #\**********************************************************/
 
@@ -16,7 +16,7 @@ file (GLOB GENERAL RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
     [^.]*.cmake
     )
 
-include_directories(${PLUGIN_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/jsoncpp)
+include_directories(${PLUGIN_INCLUDE_DIRS})
 
 # Generated files are stored in ${GENERATED} by the project configuration
 SET_SOURCE_FILES_PROPERTIES(

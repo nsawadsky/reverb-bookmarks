@@ -1,13 +1,13 @@
 /**********************************************************\
 
-  Auto-generated Periscope.h
+  Auto-generated Reverb.h
 
   This file contains the auto-generated main plugin object
-  implementation for the Periscope project
+  implementation for the Reverb project
 
 \**********************************************************/
-#ifndef H_PeriscopePLUGIN
-#define H_PeriscopePLUGIN
+#ifndef H_ReverbPLUGIN
+#define H_ReverbPLUGIN
 
 #include "PluginWindow.h"
 #include "PluginEvents/MouseEvents.h"
@@ -16,16 +16,16 @@
 #include "PluginCore.h"
 
 
-FB_FORWARD_PTR(Periscope)
-class Periscope : public FB::PluginCore
+FB_FORWARD_PTR(Reverb)
+class Reverb : public FB::PluginCore
 {
 public:
     static void StaticInitialize();
     static void StaticDeinitialize();
 
 public:
-    Periscope();
-    virtual ~Periscope();
+    Reverb();
+    virtual ~Reverb();
 
 public:
     void onPluginReady();
