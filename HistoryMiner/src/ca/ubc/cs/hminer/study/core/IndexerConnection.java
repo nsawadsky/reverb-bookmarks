@@ -17,7 +17,7 @@ public class IndexerConnection {
     private long pipeHandle = 0;
     
     public IndexerConnection() throws HistoryMinerException {
-        String pipeName = XpNamedPipe.makePipeName("historyminer-index", true);
+        String pipeName = XpNamedPipe.makePipeName("reverb-index", true);
         if (pipeName == null) {
             throw new HistoryMinerException("Failed to make pipe name: " + 
                     XpNamedPipe.getErrorMessage());

@@ -89,7 +89,7 @@ public:
         XPNP_PipeHandle indexPipe = NULL;
         try {
             char pipeName[1024] = "";
-            if (!XPNP_makePipeName("historyminer-index", true, pipeName, sizeof(pipeName))) {
+            if (!XPNP_makePipeName("reverb-index", true, pipeName, sizeof(pipeName))) {
                 throwXpnpError();
             }
 

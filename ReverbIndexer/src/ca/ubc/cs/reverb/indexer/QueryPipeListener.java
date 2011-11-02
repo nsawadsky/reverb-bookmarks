@@ -38,7 +38,7 @@ public class QueryPipeListener implements Runnable {
             }
             
             try {
-                listeningPipe = XpNamedPipe.createNamedPipe("historyminer-query", true);
+                listeningPipe = XpNamedPipe.createNamedPipe(config.getQueryPipeName(), true);
             } catch (IOException e) {
                 throw new IndexerException("Error creating query pipe: " + e, e);
             }
