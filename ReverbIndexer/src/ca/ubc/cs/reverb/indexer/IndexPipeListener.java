@@ -25,7 +25,7 @@ public class IndexPipeListener implements Runnable {
     
     public void start() throws IndexerException {
         try {
-            listeningPipe = XpNamedPipe.createNamedPipe("historyminer-index", true);
+            listeningPipe = XpNamedPipe.createNamedPipe(config.getIndexerPipeName(), true);
         } catch (IOException e) {
             throw new IndexerException("Failed to create index pipe: " + e, e);
         }

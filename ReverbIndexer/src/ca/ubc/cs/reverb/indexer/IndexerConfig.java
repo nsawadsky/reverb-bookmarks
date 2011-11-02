@@ -14,22 +14,23 @@ public class IndexerConfig {
         if (localAppDataPath == null) {
             throw new IndexerException("APPDATA environment variable not found");
         }
-        indexPath = localAppDataPath + File.separator + "Reverb" + File.separator + "data" + File.separator + "index";
+        String basePath = localAppDataPath + File.separator + "Reverb" + File.separator + "data";
+        indexPath = basePath + File.separator + "index";
         File dir = new File(indexPath);
         if (!dir.exists()) {
             if (!dir.mkdirs()) {
                 throw new IndexerException("Could not create directory '" + indexPath + "'");
             }
         }
-        locationsDatabasePath = localAppDataPath + File.separator + "Reverb" + File.separator + "data" + File.separator + "locations.sqlite";
+        locationsDatabasePath = basePath + File.separator + "locations.sqlite";
     }
     
     public String getIndexerPipeName() {
-        return "historyminer-index";
+        return "reverb-index";
     }
     
     public String getQueryPipeName() {
-        return "historyminer-query";
+        return "reverb-query";
     }
     
     public String getIndexPath() {
