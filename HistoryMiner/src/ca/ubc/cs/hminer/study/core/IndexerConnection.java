@@ -1,5 +1,7 @@
 package ca.ubc.cs.hminer.study.core;
 
+import java.io.IOException;
+
 import org.codehaus.jackson.map.ObjectMapper;
 
 import ca.ubc.cs.reverb.indexer.messages.IndexerMessage;
@@ -14,24 +16,20 @@ import xpnp.XpNamedPipe;
 // would add complexity to the deployment process, when we really only need the indexing functionality
 // for testing purposes.
 public class IndexerConnection {
-    private long pipeHandle = 0;
+    private XpNamedPipe pipe;
     
     public IndexerConnection() throws HistoryMinerException {
-        String pipeName = XpNamedPipe.makePipeName("reverb-index", true);
-        if (pipeName == null) {
-            throw new HistoryMinerException("Failed to make pipe name: " + 
-                    XpNamedPipe.getErrorMessage());
-        }
-        pipeHandle = XpNamedPipe.openPipe(pipeName);
-        if (pipeHandle == 0) {
-            throw new HistoryMinerException("Failed to open pipe: " + XpNamedPipe.getErrorMessage());
+        try {
+            pipe = XpNamedPipe.openNamedPipe("reverb-index", true);
+        } catch (IOException e) {
+            throw new HistoryMinerException("Failed to open pipe: " + e, e);
         }
     }
     
     public void close() {
-        if (pipeHandle != 0) {
-            XpNamedPipe.closePipe(pipeHandle);
-            pipeHandle = 0;
+        if (pipe != null) {
+            pipe.close();
+            pipe = null;
         }
     }
     
@@ -48,9 +46,10 @@ public class IndexerConnection {
         } catch (Exception e) {
             throw new HistoryMinerException("Error serializing message to JSON: " + e, e);
         }
-        if (!XpNamedPipe.writePipe(pipeHandle, jsonData)) {
-            // TODO: Close and reopen pipe?
-            throw new HistoryMinerException("Error writing data to pipe: " + XpNamedPipe.getErrorMessage());
+        try {
+            pipe.writeMessage(jsonData);
+        } catch (IOException e) {
+            throw new HistoryMinerException("Error writing data to pipe: " + e, e);
         }
     }
     

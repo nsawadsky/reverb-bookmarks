@@ -41,6 +41,11 @@ public class IndexerService {
                     return state.getBoost();
                     //return state.getBoost() * ((float) (1.0 / Math.sqrt(numTerms)));
                   }
+                
+                @Override
+                public float coord(int overlap, int maxOverlap) {
+                    return 1.0F;
+                }
             });
             
             LocationsDatabase locationsDatabase = new LocationsDatabase(config);
@@ -53,7 +58,8 @@ public class IndexerService {
             indexPipeListener.start();
             queryPipeListener.start();
             
-            log.info("Indexer service started");
+            Runtime runtime = Runtime.getRuntime();
+            log.info("Indexer service started, max memory = " + runtime.maxMemory()/(1024*1024) + " MB");
         } catch (IndexerException e) {
             log.error("Exception starting service", e);
         }
