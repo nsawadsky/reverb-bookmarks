@@ -126,14 +126,17 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
         } else if (node instanceof SimpleType) {
             return getTypeKeyword((SimpleType)node);
         } 
-        return "";
+        return null;
     }
     
     private String getTypeKeyword(QualifiedType node) {
-        StringBuilder result = new StringBuilder(getTypeKeyword(node.getQualifier()));
-        result.append('.');
-        result.append(node.getName().getIdentifier());
-        return result.toString();
+        Type qualifier = node.getQualifier();
+        String qualifierKeyword = getTypeKeyword(qualifier);
+        String identifier = node.getName().getIdentifier();
+        if (qualifierKeyword != null) {
+            return qualifierKeyword + " AND " + identifier;
+        }
+        return identifier;
     }
     
     private String getTypeKeyword(ParameterizedType node) {
@@ -147,7 +150,7 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
     private String getTypeKeyword(SimpleType node) {
         SimpleName simpleName = simpleNameFromName(node.getName());
         if (simpleName == null) {
-            return "";
+            return null;
         }
         return simpleName.getIdentifier();
     }
@@ -162,7 +165,7 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
     }
     
     private void addToQueryStrings(String query) {
-        if (! queryStrings.contains(query)) {
+        if (query != null && ! queryStrings.contains(query)) {
             queryStrings.add(query);
         }
     }
