@@ -1,6 +1,7 @@
 package ca.ubc.cs.reverb.eclipseplugin.views;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -23,6 +24,9 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
     private List<String> queryStrings = new ArrayList<String>();
     private int startPosition;
     private int endPosition;
+    
+    private static List<String> STOP_WORDS = Arrays.asList(
+            "String", "byte", "short", "int", "long", "float", "double", "boolean", "char");
     
     public QueryBuilderASTVisitor(int startPosition, int endPosition) {
         this.startPosition = startPosition;

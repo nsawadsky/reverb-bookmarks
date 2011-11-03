@@ -2,6 +2,7 @@ package ca.ubc.cs.reverb.eclipseplugin.views;
 
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.eclipse.swt.widgets.Composite;
@@ -307,7 +308,12 @@ public class RelatedPagesView extends ViewPart {
         QueryBuilderASTVisitor visitor = new QueryBuilderASTVisitor(topPosition, bottomPosition);
         compileUnit.accept(visitor);
         
-        final BatchQueryResult result = indexerConnection.runQuery(new IndexerBatchQuery(visitor.getQueryStrings()));
+        StringBuilder query = new StringBuilder();
+        for (String keyword: visitor.getQueryStrings()) {
+            query.append(keyword);
+            query.append(" ");
+        }
+        final BatchQueryResult result = indexerConnection.runQuery(new IndexerBatchQuery(Arrays.asList(query.toString())));
         
         getSite().getShell().getDisplay().asyncExec(new Runnable() {
 

@@ -74,30 +74,37 @@ public class LocationsDatabase {
         return results;
     }
     
-    public synchronized Date updateLocationInfo(String url, List<Long> visitTimes) throws IndexerException { 
+    public synchronized void updateLocationInfo(String url, List<Long> visitTimes) throws IndexerException { 
         try {
             long currentTime = new Date().getTime();
+            boolean includePreviousVisits = false;
             if (visitTimes == null || visitTimes.size() == 0) {
+                includePreviousVisits = true;
                 visitTimes = new ArrayList<Long>();
                 visitTimes.add(currentTime);
             }
+
+            int visitCount = 0;
+            float frecencyBoost = 0.0F;
+            long id = -1;
+            
             Statement stmt = connection.createStatement();
     
             String query = "SELECT id, last_visit_time, visit_count, frecency_boost FROM locations WHERE url = '" + url + "'";
             ResultSet rs = stmt.executeQuery(query);
-            long id = -1;
-            int visitCount = 0;
-            float frecencyBoost = 0.0F;
-            long lastVisitTime = 0;
             if (rs.next()) {
                 id = rs.getLong(1);
-                lastVisitTime = rs.getLong(2);
-                visitCount = rs.getInt(3);
-                frecencyBoost = rs.getFloat(4);
                 
-                long timeDelta = currentTime - lastVisitTime;
-                frecencyBoost = frecencyBoost * (float)Math.exp(DECAY * timeDelta);
+                if (includePreviousVisits) {
+                    long lastVisitTime = rs.getLong(2);
+                    visitCount = rs.getInt(3);
+                    frecencyBoost = rs.getFloat(4);
+                    
+                    long timeDelta = currentTime - lastVisitTime;
+                    frecencyBoost = frecencyBoost * (float)Math.exp(DECAY * timeDelta);
+                }
             }
+
             visitCount += visitTimes.size();
             for (Long visitTime: visitTimes) {
                 frecencyBoost += (float)Math.exp(DECAY * (currentTime - visitTime));
@@ -117,10 +124,6 @@ public class LocationsDatabase {
             
             prep.execute();
             
-            if (lastVisitTime == 0) {
-                return null;
-            }
-            return new Date(lastVisitTime);
         } catch (SQLException e) {
             throw new IndexerException("Error updating location info: " + e, e);
         } 

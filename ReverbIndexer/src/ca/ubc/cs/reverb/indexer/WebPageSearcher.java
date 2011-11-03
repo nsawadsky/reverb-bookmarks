@@ -25,7 +25,7 @@ import ca.ubc.cs.reverb.indexer.messages.QueryResult;
  * MultiFieldQueryParser is not thread-safe.
  */
 public class WebPageSearcher {
-    private final static int MAX_RESULTS = 3;
+    private final static int MAX_RESULTS = 10;
     
     private IndexerConfig config;
     private SharedIndexReader reader;
@@ -67,7 +67,7 @@ public class WebPageSearcher {
             
             try {
                 List<Location> resultList = new ArrayList<Location>();
-                TopDocs topDocs = searcher.search(query, 10);
+                TopDocs topDocs = searcher.search(query, 50);
                 
                 List<String> urls = new ArrayList<String>();
                 for (ScoreDoc scoreDoc: topDocs.scoreDocs) {
