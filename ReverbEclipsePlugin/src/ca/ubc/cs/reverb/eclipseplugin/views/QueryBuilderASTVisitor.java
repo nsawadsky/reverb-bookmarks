@@ -3,6 +3,8 @@ package ca.ubc.cs.reverb.eclipseplugin.views;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
@@ -24,13 +26,28 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
     private List<String> queryStrings = new ArrayList<String>();
     private int startPosition;
     private int endPosition;
+    private Pattern selectiveIdentifier;
     
-    private static List<String> STOP_WORDS = Arrays.asList(
+    /**
+     * Starts with lower-case and contains at least one upper-case 
+     *   OR
+     * Starts with upper-case and contains at least one lower-case, followed by at least one upper-case
+     *   OR
+     * Starts with two or more upper-case and contains at least one lower-case
+     *   OR
+     * Starts with letter, contains letters, decimal digits, and at least one underscore.
+     */
+    private final static String IDENTIFIER_PATTERN = 
+        "(?x) \\b (?: [a-z] \\w*? [A-Z] \\w* | [A-Z] \\w*? [a-z] \\w*? [A-Z] \\w* | [A-Z]{2,} \\w*? [a-z] \\w* |" + 
+                "[a-zA-Z] \\w*? _ [a-zA-Z0-9] \\w* )";
+    
+    private static List<String> PRIMITIVES = Arrays.asList(
             "String", "byte", "short", "int", "long", "float", "double", "boolean", "char");
     
     public QueryBuilderASTVisitor(int startPosition, int endPosition) {
         this.startPosition = startPosition;
         this.endPosition = endPosition;
+        selectiveIdentifier = Pattern.compile(IDENTIFIER_PATTERN);
     }
     
     public List<String> getQueryStrings() {
@@ -83,7 +100,7 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
     @Override
     public boolean visit(SimpleType node) {
         if (nodeOverlaps(node)) {
-            addToQueryStrings(getTypeKeyword(node));
+            addToQueryStrings(getTypeKeywords(node));
             return true;
         }
         return false;
@@ -92,7 +109,7 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
     @Override
     public boolean visit(QualifiedType node) {
         if (nodeOverlaps(node)) {
-            addToQueryStrings(getTypeKeyword(node));
+            addToQueryStrings(getTypeKeywords(node));
             return true;
         }
         return false;
@@ -101,7 +118,7 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
     @Override
     public boolean visit(ArrayType node) {
         if (nodeOverlaps(node)) {
-            addToQueryStrings(getTypeKeyword(node));
+            addToQueryStrings(getTypeKeywords(node));
             return true;
         }
         return false;
@@ -110,49 +127,49 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
     @Override
     public boolean visit(ParameterizedType node) {
         if (nodeOverlaps(node)) {
-            addToQueryStrings(getTypeKeyword(node));
+            addToQueryStrings(getTypeKeywords(node));
             return true;
         }
         return false;
     }
 
-    private String getTypeKeyword(Type node) {
+    private List<String> getTypeKeywords(Type node) {
         if (node instanceof QualifiedType) {
-            return getTypeKeyword((QualifiedType)node);
+            return getTypeKeywords((QualifiedType)node);
         } else if (node instanceof ParameterizedType) {
-            return getTypeKeyword((ParameterizedType)node);
+            return getTypeKeywords((ParameterizedType)node);
         } else if (node instanceof ArrayType) {
-            return getTypeKeyword((ArrayType)node); 
+            return getTypeKeywords((ArrayType)node); 
         } else if (node instanceof SimpleType) {
-            return getTypeKeyword((SimpleType)node);
+            return getTypeKeywords((SimpleType)node);
         } 
         return null;
     }
     
-    private String getTypeKeyword(QualifiedType node) {
+    private List<String> getTypeKeywords(QualifiedType node) {
         Type qualifier = node.getQualifier();
-        String qualifierKeyword = getTypeKeyword(qualifier);
+        List<String> qualifierKeywords = getTypeKeywords(qualifier);
         String identifier = node.getName().getIdentifier();
-        if (qualifierKeyword != null) {
-            return qualifierKeyword + " AND " + identifier;
+        if (qualifierKeywords != null && qualifierKeywords.size() > 0) {
+            return Arrays.asList(qualifierKeywords.get(qualifierKeywords.size()-1), identifier);
         }
-        return identifier;
+        return Arrays.asList(identifier);
     }
     
-    private String getTypeKeyword(ParameterizedType node) {
-        return getTypeKeyword(node.getType());
+    private List<String> getTypeKeywords(ParameterizedType node) {
+        return getTypeKeywords(node.getType());
     }
     
-    private String getTypeKeyword(ArrayType node) {
-        return getTypeKeyword(node.getElementType());
+    private List<String> getTypeKeywords(ArrayType node) {
+        return getTypeKeywords(node.getElementType());
     }
     
-    private String getTypeKeyword(SimpleType node) {
+    private List<String> getTypeKeywords(SimpleType node) {
         SimpleName simpleName = simpleNameFromName(node.getName());
         if (simpleName == null) {
             return null;
         }
-        return simpleName.getIdentifier();
+        return Arrays.asList(simpleName.getIdentifier());
     }
     
     private SimpleName simpleNameFromName(Name name) {
@@ -164,9 +181,18 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
         return null;
     }
     
-    private void addToQueryStrings(String query) {
-        if (query != null && ! queryStrings.contains(query)) {
-            queryStrings.add(query);
+    private void addToQueryStrings(String keyword) {
+        if (keyword != null && ! queryStrings.contains(keyword)) {
+            Matcher matcher = selectiveIdentifier.matcher(keyword);
+            if (matcher.find()) {
+                queryStrings.add(keyword);
+            }
+        }
+    }
+    
+    private void addToQueryStrings(List<String> keywords) {
+        for (String keyword: keywords) {
+            addToQueryStrings(keyword);
         }
     }
     
@@ -175,4 +201,5 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
         int nodeEndPosition = nodeStartPosition + node.getLength();
         return (nodeStartPosition < this.endPosition && nodeEndPosition > this.startPosition);
     }
+    
 }

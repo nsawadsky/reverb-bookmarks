@@ -48,7 +48,7 @@ public class LocationsDatabase {
             Date now = new Date();
             Statement stmt = connection.createStatement();
             
-            StringBuilder query = new StringBuilder("SELECT url, last_visit_time, frecency_boost FROM locations WHERE url IN ('");
+            StringBuilder query = new StringBuilder("SELECT url, last_visit_time, visit_count, frecency_boost FROM locations WHERE url IN ('");
             boolean isFirst = true;
             for (String url: urls) {
                 if (isFirst) {
@@ -64,9 +64,12 @@ public class LocationsDatabase {
             while (rs.next()) {
                 String url = rs.getString(1);
                 long lastVisitTime = rs.getLong(2);
-                Float frecencyBoost = rs.getFloat(3);
+                int visitCount = rs.getInt(3);
+                
+                Float frecencyBoost = rs.getFloat(4);
                 frecencyBoost = frecencyBoost * (float)Math.exp(DECAY * (now.getTime() - lastVisitTime));
-                results.put(url, frecencyBoost);
+                
+                results.put(url, (float)Math.min(visitCount, 10.0));
             }
         } catch (SQLException e) {
             throw new IndexerException("Error getting frecency boosts: " + e, e);

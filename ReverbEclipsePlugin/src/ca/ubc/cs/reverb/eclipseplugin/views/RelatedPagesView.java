@@ -2,7 +2,6 @@ package ca.ubc.cs.reverb.eclipseplugin.views;
 
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import org.eclipse.swt.widgets.Composite;
@@ -152,7 +151,15 @@ public class RelatedPagesView extends ViewPart {
 
         public String getText(Object obj) {
             if (obj instanceof QueryResult) {
-                return ((QueryResult)obj).query;
+                QueryResult result = (QueryResult)obj;
+                StringBuilder display = new StringBuilder();
+                for (int i = 0; i < result.queries.size(); i++) {
+                    if (i > 0) {
+                        display.append(" ");
+                    }
+                    display.append(result.queries.get(i));
+                }
+                return display.toString();
             } else if (obj instanceof Location) {
                 Location loc = (Location)obj;
                 return String.format("%s (%.1f,%.1f,%.1f)", loc.title, loc.luceneScore, loc.frecencyBoost, loc.overallScore);
@@ -308,12 +315,7 @@ public class RelatedPagesView extends ViewPart {
         QueryBuilderASTVisitor visitor = new QueryBuilderASTVisitor(topPosition, bottomPosition);
         compileUnit.accept(visitor);
         
-        StringBuilder query = new StringBuilder();
-        for (String keyword: visitor.getQueryStrings()) {
-            query.append(keyword);
-            query.append(" ");
-        }
-        final BatchQueryResult result = indexerConnection.runQuery(new IndexerBatchQuery(Arrays.asList(query.toString())));
+        final BatchQueryResult result = indexerConnection.runQuery(new IndexerBatchQuery(visitor.getQueryStrings()));
         
         getSite().getShell().getDisplay().asyncExec(new Runnable() {
 

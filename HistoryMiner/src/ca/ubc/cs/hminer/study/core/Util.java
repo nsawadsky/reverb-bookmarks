@@ -53,7 +53,7 @@ public class Util {
 
     public static <T> List<T> truncate(List<T> list, int maxLength) {
         if (list.size() > maxLength) {
-            return list.subList(0, maxLength);
+            return new ArrayList<T>(list.subList(0, maxLength));
         }
         return list;
     }
