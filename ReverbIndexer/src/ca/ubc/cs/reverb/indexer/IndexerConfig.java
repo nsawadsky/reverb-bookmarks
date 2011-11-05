@@ -14,7 +14,7 @@ public class IndexerConfig {
         if (localAppDataPath == null) {
             throw new IndexerException("APPDATA environment variable not found");
         }
-        String basePath = localAppDataPath + File.separator + "Reverb" + File.separator + "data";
+        String basePath = localAppDataPath + File.separator + "cs.ubc.ca" + File.separator + "Reverb" + File.separator + "data";
         indexPath = basePath + File.separator + "index";
         File dir = new File(indexPath);
         if (!dir.exists()) {
