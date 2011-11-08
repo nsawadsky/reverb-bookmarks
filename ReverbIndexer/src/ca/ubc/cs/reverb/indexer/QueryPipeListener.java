@@ -107,7 +107,7 @@ public class QueryPipeListener implements Runnable {
         }
         
         private void handleBatchQuery(IndexerBatchQuery query) throws IndexerException {
-            BatchQueryResult result = searcher.performSearch(query.queryStrings);
+            BatchQueryResult result = searcher.performSearch(query.queries);
             ObjectMapper mapper = new ObjectMapper();
             
             IndexerMessageEnvelope envelope = new IndexerMessageEnvelope(result);

@@ -7,10 +7,10 @@ public class IndexerBatchQuery implements IndexerMessage {
         
     }
     
-    public IndexerBatchQuery(List<String> queryStrings) {
-        this.queryStrings = queryStrings;
+    public IndexerBatchQuery(List<IndexerQuery> queries) {
+        this.queries = queries;
     }
     
-    public List<String> queryStrings;
+    public List<IndexerQuery> queries;
 }    
 

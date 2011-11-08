@@ -10,7 +10,7 @@ import org.apache.lucene.search.Similarity;
 
 public class IndexerService {
     private static Logger log = Logger.getLogger(IndexerService.class);
-    
+
     private IndexerConfig config;
     private IndexPipeListener indexPipeListener;
     private QueryPipeListener queryPipeListener;
@@ -20,7 +20,7 @@ public class IndexerService {
         IndexerService service = new IndexerService();
         service.start();
     }
-    
+
     public void start() {
         BasicConfigurator.configure();
         RootLogger.getRootLogger().setLevel(Level.INFO);
@@ -41,6 +41,11 @@ public class IndexerService {
                     return state.getBoost();
                     //return state.getBoost() * ((float) (1.0 / Math.sqrt(numTerms)));
                   }
+                
+                @Override 
+                public float coord(int overlap, int maxOverlap) {
+                    return 1.0F;
+                }
 
             });
             
