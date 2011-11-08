@@ -390,7 +390,12 @@ public class HistoryClassifier {
             
             try {
                 if (indexerConnection != null) {
-                    PageInfo info = new PageInfo(location.url, doc.outerHtml());
+                    String normalized = location.url;
+                    int fragmentIndex = normalized.lastIndexOf('#');
+                    if (fragmentIndex != -1) {
+                        normalized = normalized.substring(0, fragmentIndex);
+                    }
+                    PageInfo info = new PageInfo(normalized, doc.outerHtml());
                     for (HistoryVisit visit: locationAndVisits.visits){
                         info.visitTimes.add(visit.visitDate.getTime());
                     }

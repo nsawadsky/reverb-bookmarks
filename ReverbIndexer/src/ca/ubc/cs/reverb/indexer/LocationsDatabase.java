@@ -80,9 +80,7 @@ public class LocationsDatabase {
     public synchronized void updateLocationInfo(String url, List<Long> visitTimes) throws IndexerException { 
         try {
             long currentTime = new Date().getTime();
-            boolean includePreviousVisits = false;
             if (visitTimes == null || visitTimes.size() == 0) {
-                includePreviousVisits = true;
                 visitTimes = new ArrayList<Long>();
                 visitTimes.add(currentTime);
             }
@@ -98,14 +96,12 @@ public class LocationsDatabase {
             if (rs.next()) {
                 id = rs.getLong(1);
                 
-                if (includePreviousVisits) {
-                    long lastVisitTime = rs.getLong(2);
-                    visitCount = rs.getInt(3);
-                    frecencyBoost = rs.getFloat(4);
-                    
-                    long timeDelta = currentTime - lastVisitTime;
-                    frecencyBoost = frecencyBoost * (float)Math.exp(DECAY * timeDelta);
-                }
+                long lastVisitTime = rs.getLong(2);
+                visitCount = rs.getInt(3);
+                frecencyBoost = rs.getFloat(4);
+                
+                long timeDelta = currentTime - lastVisitTime;
+                frecencyBoost = frecencyBoost * (float)Math.exp(DECAY * timeDelta);
             }
 
             visitCount += visitTimes.size();

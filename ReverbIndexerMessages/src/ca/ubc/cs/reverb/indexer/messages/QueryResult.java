@@ -7,11 +7,11 @@ public class QueryResult {
     public QueryResult() {
     }
     
-    public QueryResult(List<String> queries, List<Location> locations) {
-        this.queries = queries;
+    public QueryResult(List<IndexerQuery> indexerQueries, List<Location> locations) {
+        this.indexerQueries = indexerQueries;
         this.locations = locations;
     }
     
-    public List<String> queries = new ArrayList<String>();
+    public List<IndexerQuery> indexerQueries = new ArrayList<IndexerQuery>();
     public List<Location> locations = new ArrayList<Location>();
 }

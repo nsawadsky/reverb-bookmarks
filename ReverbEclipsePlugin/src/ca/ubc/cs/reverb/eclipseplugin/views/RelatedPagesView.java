@@ -153,11 +153,11 @@ public class RelatedPagesView extends ViewPart {
             if (obj instanceof QueryResult) {
                 QueryResult result = (QueryResult)obj;
                 StringBuilder display = new StringBuilder();
-                for (int i = 0; i < result.queries.size(); i++) {
+                for (int i = 0; i < result.indexerQueries.size(); i++) {
                     if (i > 0) {
                         display.append(" ");
                     }
-                    display.append(result.queries.get(i));
+                    display.append(result.indexerQueries.get(i).queryClientInfo);
                 }
                 return display.toString();
             } else if (obj instanceof Location) {
@@ -311,11 +311,13 @@ public class RelatedPagesView extends ViewPart {
             int topPosition, int bottomPosition, IProgressMonitor monitor) throws PluginException, InterruptedException {
         ASTParser parser = ASTParser.newParser(AST.JLS3);
         parser.setSource(compilationUnit);
+        parser.setResolveBindings(true);
+        parser.setBindingsRecovery(true);
         CompilationUnit compileUnit = (CompilationUnit)parser.createAST(null);
         QueryBuilderASTVisitor visitor = new QueryBuilderASTVisitor(topPosition, bottomPosition);
         compileUnit.accept(visitor);
         
-        final BatchQueryResult result = indexerConnection.runQuery(new IndexerBatchQuery(visitor.getQueryStrings()));
+        final BatchQueryResult result = indexerConnection.runQuery(new IndexerBatchQuery(visitor.getQueries()));
         
         getSite().getShell().getDisplay().asyncExec(new Runnable() {
 
