@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -65,7 +66,9 @@ public class HistoryClassifier {
     public final static String GOOGLE_PREFIX = "http://www.google.";
     public final static String GOOGLE_HTTPS_PREFIX = "https://www.google.";
     public final static String GOOGLE_SEARCH_TITLE = "Google Search";
-    public final static String GOOGLE_SEARCH_PATTERN = "https?://www\\.google\\.\\S+/search";
+    public final static String GOOGLE_SEARCH_PATTERN = "^https?://www\\.google\\.\\S+/search";
+    
+    public final static String ECLIPSE_HELP_PATTERN = "^https?://help.eclipse.org/[^/]+/index.jsp\\?topic=.*";
     
     /**
      * Comment inserted in auto-generated Javadoc.
@@ -390,12 +393,7 @@ public class HistoryClassifier {
             
             try {
                 if (indexerConnection != null) {
-                    String normalized = location.url;
-                    int fragmentIndex = normalized.lastIndexOf('#');
-                    if (fragmentIndex != -1) {
-                        normalized = normalized.substring(0, fragmentIndex);
-                    }
-                    PageInfo info = new PageInfo(normalized, doc.outerHtml());
+                    PageInfo info = new PageInfo(normalizeUrl(location.url), doc.outerHtml());
                     for (HistoryVisit visit: locationAndVisits.visits){
                         info.visitTimes.add(visit.visitDate.getTime());
                     }
@@ -506,6 +504,34 @@ public class HistoryClassifier {
         }
     }
 
+    private String normalizeUrl(String inputUrl) {
+        if (Pattern.matches(ECLIPSE_HELP_PATTERN, inputUrl)) {
+            try {
+                // Hack to make sure help.eclipse.org topics get indexed.
+                URI uri = new URI(inputUrl);
+                String query = uri.getQuery();
+                Pattern pattern = Pattern.compile("^topic=([^\\&]+)");
+                Matcher matcher = pattern.matcher(query);
+                if (matcher.find()) {
+                    String topic = matcher.group(1);
+                    String oldPath = uri.getPath();
+                    String path = oldPath.substring(0, oldPath.lastIndexOf('/'));
+                    path += "/topic" + topic;
+                    URI normalized = new URI(uri.getScheme(), uri.getHost(), path, null);
+                    String result = normalized.toString();
+                    return result;
+                }
+            } catch (URISyntaxException e) {}
+        } else {
+            int fragmentIndex = inputUrl.lastIndexOf('#');
+            if (fragmentIndex != -1) {
+                String result = inputUrl.substring(0, fragmentIndex);
+                return result;
+            }
+        }
+        return inputUrl;
+    }
+    
     private List<HistoryVisit> filterRedirects(List<HistoryVisit> visitList) {
         if (webBrowserType == WebBrowserType.MOZILLA_FIREFOX) {
             return filterRedirectsFirefox(visitList);

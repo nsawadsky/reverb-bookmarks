@@ -63,17 +63,17 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
         List<IndexerQuery> queries = new ArrayList<IndexerQuery>();
         for (QueryElement element: queryElements) {
             StringBuilder queryBuilder = new StringBuilder("+");
-            queryBuilder.append(element.typeQuery);
+            queryBuilder.append(element.requiredQuery);
             
-            for (String memberQuery: element.memberQueries) {
+            for (String optionalQuery: element.optionalQueries) {
                 queryBuilder.append(" ");
-                queryBuilder.append(memberQuery);
+                queryBuilder.append(optionalQuery);
             }
             
-            StringBuilder queryToDisplay = new StringBuilder(element.simpleTypeName);
-            for (String memberQuery: element.memberQueries) {
+            StringBuilder queryToDisplay = new StringBuilder(element.simpleRequiredQuery);
+            for (String optionalQuery: element.optionalQueries) {
                 queryToDisplay.append(" ");
-                queryToDisplay.append(memberQuery);
+                queryToDisplay.append(optionalQuery);
             }
             queries.add(new IndexerQuery(queryBuilder.toString(), queryToDisplay.toString()));
         }
@@ -88,60 +88,69 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
 
     @Override
     public boolean visit(FieldAccess node) {
-        if (nodeOverlaps(node)) {
-            ITypeBinding typeBinding = node.resolveTypeBinding();
-            if (typeBinding != null) {
-                IVariableBinding varBinding = node.resolveFieldBinding();
-                if (varBinding != null) {
-                    int modifiers = varBinding.getModifiers();
-                    // TODO: Verify this picks up enum constants.
-                    if (Modifier.isFinal(modifiers) && Modifier.isStatic(modifiers)) {
-                        QueryElement element = getBindingQueryElement(typeBinding);
-                        if (element != null) {
-                            element.memberQueries.add(node.getName().getIdentifier());
-                            addToQueryElements(element);
-                        }
-                    }
-                }
+        if (!nodeOverlaps(node)) {
+            return false;
+        }
+        
+        ITypeBinding typeBinding = node.resolveTypeBinding();
+        if (typeBinding == null) {
+            return true;
+        }
+        IVariableBinding varBinding = node.resolveFieldBinding();
+        if (varBinding == null) {
+            return true;
+        }
+        
+        int modifiers = varBinding.getModifiers();
+        // TODO: Verify this picks up enum constants.
+        if (Modifier.isFinal(modifiers) && Modifier.isStatic(modifiers)) {
+            QueryElement element = getBindingQueryElement(typeBinding);
+            if (element != null) {
+                element.optionalQueries.add(node.getName().getIdentifier());
+                addToQueryElements(element);
             }
         }
-        return super.visit(node);
+        return true;
     }
     
     @Override
     public boolean visit(MethodDeclaration node) {
-        if (nodeOverlaps(node)) {
-            if (! node.isConstructor()) {
-                IMethodBinding methodBinding = node.resolveBinding();
-                if (methodBinding != null) {
-                    ITypeBinding typeBinding = methodBinding.getDeclaringClass();
-                    if (typeBinding != null) {
-                        ITypeBinding superClass = typeBinding.getSuperclass();
-                        if (superClass != null && ! superClass.equals(getWellKnownObjectBinding(node.getAST())) &&
-                                bindingHasMethod(superClass, methodBinding)) {
-                            QueryElement element = getBindingQueryElement(superClass);
-                            if (element != null) {
-                                element.memberQueries.add(node.getName().getIdentifier());
-                                addToQueryElements(element);
-                            }
-                        } else {
-                            for (ITypeBinding itfc: typeBinding.getInterfaces()) {
-                                if (bindingHasMethod(itfc, methodBinding)) {
-                                    QueryElement element = getBindingQueryElement(itfc);
-                                    if (element != null) {
-                                        element.memberQueries.add(node.getName().getIdentifier());
-                                        addToQueryElements(element);
-                                    }
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+        if (!nodeOverlaps(node)) {
+            return false;
+        }
+        if (node.isConstructor()) {
             return true;
         }
-        return false;
+        IMethodBinding methodBinding = node.resolveBinding();
+        if (methodBinding == null) {
+            return true;
+        }
+        ITypeBinding typeBinding = methodBinding.getDeclaringClass();
+        if (typeBinding == null) {
+            return true;
+        }
+    
+        ITypeBinding superClass = typeBinding.getSuperclass();
+        if (superClass != null && ! superClass.equals(getWellKnownObjectBinding(node.getAST())) &&
+                typeBindingHasMethod(superClass, methodBinding)) {
+            QueryElement element = getBindingQueryElement(superClass);
+            if (element != null) {
+                element.optionalQueries.add(node.getName().getIdentifier());
+                addToQueryElements(element);
+            }
+        } else {
+            for (ITypeBinding itfc: typeBinding.getInterfaces()) {
+                if (typeBindingHasMethod(itfc, methodBinding)) {
+                    QueryElement element = getBindingQueryElement(itfc);
+                    if (element != null) {
+                        element.optionalQueries.add(node.getName().getIdentifier());
+                        addToQueryElements(element);
+                    }
+                    break;
+                }
+            }
+        }
+        return true;
     }
     
     @Override
@@ -154,7 +163,7 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
                     addToQueryElements(new QueryElement(identifier, identifier));
                 }
             } else {
-                typeElement.memberQueries.add(node.getName().getIdentifier());
+                typeElement.optionalQueries.add(node.getName().getIdentifier());
                 addToQueryElements(typeElement);
             }
             return true;
@@ -203,8 +212,8 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
     public boolean visit(QualifiedType node) {
         if (nodeOverlaps(node)) {
             addToQueryElements(getTypeQueryElement(node));
-            return true;
         }
+        // We never visit the child nodes for a qualified type.
         return false;
     }
 
@@ -312,7 +321,7 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
         if (element != null) {
             QueryElement existing = null;
             for (QueryElement curr: queryElements) {
-                if (curr.typeQuery.equals(element.typeQuery)) {
+                if (curr.requiredQuery.equals(element.requiredQuery)) {
                     existing = curr;
                     break;
                 }
@@ -320,9 +329,9 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
             if (existing == null) {
                 queryElements.add(element);
             } else {
-                for (String memberQuery: element.memberQueries) {
-                    if (!existing.memberQueries.contains(memberQuery)) {
-                        existing.memberQueries.add(memberQuery);
+                for (String optionalQuery: element.optionalQueries) {
+                    if (!existing.optionalQueries.contains(optionalQuery)) {
+                        existing.optionalQueries.add(optionalQuery);
                     }
                 }
             }
@@ -335,7 +344,7 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
         return (nodeStartPosition < this.endPosition && nodeEndPosition > this.startPosition);
     }
  
-    private boolean bindingHasMethod(ITypeBinding typeBinding, IMethodBinding methodBinding) {
+    private boolean typeBindingHasMethod(ITypeBinding typeBinding, IMethodBinding methodBinding) {
         for (IMethodBinding method: typeBinding.getDeclaredMethods()) {
             if (method.getName().equals(methodBinding.getName())) {
                 return true;
@@ -352,13 +361,13 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
     }
     
     private class QueryElement {
-        public String typeQuery;
-        public String simpleTypeName;
-        public List<String> memberQueries = new ArrayList<String>();
+        public String requiredQuery;
+        public String simpleRequiredQuery;
+        public List<String> optionalQueries = new ArrayList<String>();
         
-        public QueryElement(String typeQuery, String simpleTypeName) {
-            this.typeQuery = typeQuery;
-            this.simpleTypeName = simpleTypeName;
+        public QueryElement(String requiredQuery, String simpleRequiredQuery) {
+            this.requiredQuery = requiredQuery;
+            this.simpleRequiredQuery = simpleRequiredQuery;
         }
     }
 }
