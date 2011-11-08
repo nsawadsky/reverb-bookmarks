@@ -18,7 +18,7 @@ import java.util.Map;
  */
 public class LocationsDatabase {
     private static final String JDBC_SQLITE = "jdbc:sqlite:";
-    private static final long VISIT_HALF_LIFE_MSECS = 3 * 30 * 24 * 60 * 60 * 1000L;
+    private static final long VISIT_HALF_LIFE_MSECS = 6 * 30 * 24 * 60 * 60 * 1000L;
     private static final float DECAY = (float)Math.log(0.5) / VISIT_HALF_LIFE_MSECS;
     
     private IndexerConfig config;
