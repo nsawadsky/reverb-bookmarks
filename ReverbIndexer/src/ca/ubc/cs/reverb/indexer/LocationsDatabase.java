@@ -159,6 +159,9 @@ public class LocationsDatabase {
                     connection.rollback();
                     throw e;
                 }
+                finally {
+                    connection.setAutoCommit(true);
+                }
             }
         } catch (SQLException e) {
             throw new IndexerException("Error checking for/creating locations table: " + e, e);
