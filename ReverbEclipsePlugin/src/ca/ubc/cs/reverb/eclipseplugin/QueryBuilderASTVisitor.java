@@ -1,4 +1,4 @@
-package ca.ubc.cs.reverb.eclipseplugin.views;
+package ca.ubc.cs.reverb.eclipseplugin;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -12,7 +12,7 @@ import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.ArrayType;
 import org.eclipse.jdt.core.dom.EnumDeclaration;
-import org.eclipse.jdt.core.dom.FieldAccess;
+import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.IPackageBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
@@ -86,33 +86,62 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
         return super.visit(node);
     }
 
-    @Override
-    public boolean visit(FieldAccess node) {
+    @Override 
+    public boolean visit(QualifiedName node) {
         if (!nodeOverlaps(node)) {
             return false;
         }
         
-        ITypeBinding typeBinding = node.resolveTypeBinding();
-        if (typeBinding == null) {
-            return true;
-        }
-        IVariableBinding varBinding = node.resolveFieldBinding();
-        if (varBinding == null) {
-            return true;
-        }
-        
-        int modifiers = varBinding.getModifiers();
-        // TODO: Verify this picks up enum constants.
-        if (Modifier.isFinal(modifiers) && Modifier.isStatic(modifiers)) {
-            QueryElement element = getBindingQueryElement(typeBinding);
-            if (element != null) {
-                element.optionalQueries.add(node.getName().getIdentifier());
-                addToQueryElements(element);
+        IBinding binding = node.resolveBinding();
+        if (binding instanceof IVariableBinding) {
+            IVariableBinding varBinding = (IVariableBinding)binding;
+
+            int modifiers = varBinding.getModifiers();
+            // TODO: Verify this picks up enum constants.
+            if (Modifier.isFinal(modifiers) && Modifier.isStatic(modifiers)) {
+                String qualifierName = simpleIdentifierFromName(node.getQualifier());
+                QueryElement element = null;
+                if (nameNeedsResolution(qualifierName)) {
+                    element = getBindingQueryElement(varBinding.getDeclaringClass());
+                } else {
+                    element = new QueryElement(qualifierName, qualifierName);
+                }
+                if (element != null) {
+                    element.optionalQueries.add(node.getName().getIdentifier());
+                    addToQueryElements(element);
+                }
             }
+            
         }
-        return true;
+        // Do not need to visit children of top-level QualifiedName.
+        return false;
     }
     
+    @Override 
+    public boolean visit(SimpleName node) {
+        if (!nodeOverlaps(node)) {
+            return false;
+        }
+        
+        IBinding binding = node.resolveBinding();
+        if (binding instanceof IVariableBinding) {
+            IVariableBinding varBinding = (IVariableBinding)binding;
+
+            int modifiers = varBinding.getModifiers();
+            // TODO: Verify this picks up enum constants.
+            if (Modifier.isFinal(modifiers) && Modifier.isStatic(modifiers)) {
+                QueryElement element = getBindingQueryElement(varBinding.getDeclaringClass());
+                if (element != null) {
+                    element.optionalQueries.add(node.getIdentifier());
+                    addToQueryElements(element);
+                }
+            }
+            
+        }
+        // No need to visit children of SimpleName.
+        return false;
+    }
+
     @Override
     public boolean visit(MethodDeclaration node) {
         if (!nodeOverlaps(node)) {
@@ -203,8 +232,8 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
     public boolean visit(SimpleType node) {
         if (nodeOverlaps(node)) {
             addToQueryElements(getTypeQueryElement(node));
-            return true;
         }
+        // No need to visit child nodes for SimpleType.
         return false;
     }
 
@@ -213,7 +242,7 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
         if (nodeOverlaps(node)) {
             addToQueryElements(getTypeQueryElement(node));
         }
-        // We never visit the child nodes for a qualified type.
+        // We never visit the child nodes for QualifiedType.
         return false;
     }
 
@@ -249,11 +278,8 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
             return null;
         }
         SimpleType simpleQualifier = (SimpleType)qualifier;
-        SimpleName qualifierName = simpleNameFromName(simpleQualifier.getName());
-        if (qualifierName == null) {
-            return null;
-        }
-        String name = qualifierName.getIdentifier() + "." + node.getName().getIdentifier();
+        String qualifierIdentifier = simpleIdentifierFromName(simpleQualifier.getName());
+        String name = qualifierIdentifier + "." + node.getName().getIdentifier();
         if (nameNeedsResolution(name)) {
             return getBindingQueryElement(node.resolveBinding());
         }
@@ -261,11 +287,7 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
     }
     
     private QueryElement getTypeQueryElement(SimpleType node) {
-        SimpleName simpleName = simpleNameFromName(node.getName());
-        if (simpleName == null) {
-            return null;
-        }
-        String identifier = simpleName.getIdentifier();
+        String identifier = simpleIdentifierFromName(node.getName());
         if (PRIMITIVES.contains(identifier)) {
             return null;
         }
@@ -275,18 +297,23 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
         return new QueryElement(identifier, identifier);
     }
     
-    private SimpleName simpleNameFromName(Name name) {
+    private String simpleIdentifierFromName(Name name) {
         if (name.isSimpleName()) {
-            return (SimpleName)name; 
+            return ((SimpleName)name).getIdentifier(); 
         } else if (name.isQualifiedName()) {
-            return ((QualifiedName)name).getName();
+            return ((QualifiedName)name).getName().getIdentifier();
         } 
-        return null;
+        // Should never reach this line.
+        return name.getFullyQualifiedName();
     }
     
     private QueryElement getBindingQueryElement(ITypeBinding binding) {
         if (binding == null) {
             return null;
+        }
+        // TODO: Add flag saying whether this check can be skipped.
+        if (!nameNeedsResolution(binding.getName())) {
+            return new QueryElement(binding.getName(), binding.getName());
         }
         IPackageBinding pkg = binding.getPackage();
         if (pkg == null) {
@@ -368,6 +395,10 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
         public QueryElement(String requiredQuery, String simpleRequiredQuery) {
             this.requiredQuery = requiredQuery;
             this.simpleRequiredQuery = simpleRequiredQuery;
+        }
+
+        private QueryBuilderASTVisitor getOuterType() {
+            return QueryBuilderASTVisitor.this;
         }
     }
 }
