@@ -32,8 +32,10 @@ import ca.ubc.cs.reverb.eclipseplugin.IndexerConnection;
 import ca.ubc.cs.reverb.eclipseplugin.PluginActivator;
 import ca.ubc.cs.reverb.eclipseplugin.PluginException;
 import ca.ubc.cs.reverb.eclipseplugin.PluginLogger;
+import ca.ubc.cs.reverb.eclipseplugin.QueryBuilderASTVisitor;
 import ca.ubc.cs.reverb.indexer.messages.BatchQueryResult;
 import ca.ubc.cs.reverb.indexer.messages.IndexerBatchQuery;
+import ca.ubc.cs.reverb.indexer.messages.IndexerQuery;
 import ca.ubc.cs.reverb.indexer.messages.Location;
 import ca.ubc.cs.reverb.indexer.messages.QueryResult;
 
@@ -313,9 +315,13 @@ public class RelatedPagesView extends ViewPart {
         parser.setSource(compilationUnit);
         parser.setResolveBindings(true);
         parser.setBindingsRecovery(true);
+        parser.setStatementsRecovery(true);
         CompilationUnit compileUnit = (CompilationUnit)parser.createAST(null);
         QueryBuilderASTVisitor visitor = new QueryBuilderASTVisitor(topPosition, bottomPosition);
         compileUnit.accept(visitor);
+        
+        List<IndexerQuery> queries = visitor.getQueries();
+        //logQueries(queries);
         
         final BatchQueryResult result = indexerConnection.runQuery(new IndexerBatchQuery(visitor.getQueries()));
         
@@ -330,6 +336,13 @@ public class RelatedPagesView extends ViewPart {
         });
         
         return new Status(IStatus.OK, PluginActivator.PLUGIN_ID, "Updated Reverb view successfully");
+    }
+    
+    private void logQueries(List<IndexerQuery> queries) {
+        PluginLogger log = getLogger();
+        for (IndexerQuery query: queries) {
+            log.logInfo("Query display = " + query.queryClientInfo + ", query detail = " + query.queryString, null);
+        }
     }
     
     private void updateLinks(IEditorPart editorPart) {

@@ -49,6 +49,14 @@ public class HistoryClassifierTest {
         doc = Jsoup.parse("<html><body>myMethod(int myArg) myMethod(int myArg)</body></html>");
         assertEquals(LocationType.CODE_RELATED, classifier.classifyDocument(doc, false).type);
 
+        // Two method declarations, each with an argument (different identifier form)
+        doc = Jsoup.parse("<html><body>MyMethod(int MyArg) MyMethod(int MyArg)</body></html>");
+        assertEquals(LocationType.CODE_RELATED, classifier.classifyDocument(doc, false).type);
+
+        // Two method declarations, each with an argument (third identifier form)
+        doc = Jsoup.parse("<html><body>MYMethod(int MYArg) MYMethod(int MYArg)</body></html>");
+        assertEquals(LocationType.CODE_RELATED, classifier.classifyDocument(doc, false).type);
+
         // Two C++-style method declarations, each with an argument
         doc = Jsoup.parse("<html><body>my_method(int my_arg) my_method(int my_arg)</body></html>");
         assertEquals(LocationType.CODE_RELATED, classifier.classifyDocument(doc, false).type);
