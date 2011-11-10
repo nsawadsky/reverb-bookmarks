@@ -64,12 +64,12 @@ public class LocationsDatabase {
             while (rs.next()) {
                 String url = rs.getString(1);
                 long lastVisitTime = rs.getLong(2);
-                int visitCount = rs.getInt(3);
+                //int visitCount = rs.getInt(3);
                 
                 Float frecencyBoost = rs.getFloat(4);
                 frecencyBoost = frecencyBoost * (float)Math.exp(DECAY * (now.getTime() - lastVisitTime));
                 
-                results.put(url, (float)Math.min(visitCount, 10.0));
+                results.put(url, (float)Math.min(frecencyBoost, 5.0));
             }
         } catch (SQLException e) {
             throw new IndexerException("Error getting frecency boosts: " + e, e);
