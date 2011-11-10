@@ -154,12 +154,23 @@ public class RelatedPagesView extends ViewPart {
         public String getText(Object obj) {
             if (obj instanceof QueryResult) {
                 QueryResult result = (QueryResult)obj;
+                List<String> keywords = new ArrayList<String>();
+                for (IndexerQuery query: result.indexerQueries) {
+                    String[] words = query.queryClientInfo.split(" ");
+                    if (words != null) {
+                        for (String word: words) {
+                            if (!keywords.contains(word)) {
+                                keywords.add(word);
+                            }
+                        }
+                    }
+                }
                 StringBuilder display = new StringBuilder();
-                for (int i = 0; i < result.indexerQueries.size(); i++) {
+                for (int i = 0; i < keywords.size(); i++) {
                     if (i > 0) {
                         display.append(" ");
                     }
-                    display.append(result.indexerQueries.get(i).queryClientInfo);
+                    display.append(keywords.get(i));
                 }
                 return display.toString();
             } else if (obj instanceof Location) {
