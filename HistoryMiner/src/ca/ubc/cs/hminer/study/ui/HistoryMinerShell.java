@@ -25,7 +25,7 @@ public class HistoryMinerShell extends Shell {
         boolean testMode = false;
         boolean indexMode = false;
         Map<String, String> parsedArgs = Util.parseArgs(args);
-        String mode = parsedArgs.get("mode");
+        String mode = parsedArgs.get("-mode");
         if (mode != null) {
             if (mode.equals("test")) {
                 testMode = true;
