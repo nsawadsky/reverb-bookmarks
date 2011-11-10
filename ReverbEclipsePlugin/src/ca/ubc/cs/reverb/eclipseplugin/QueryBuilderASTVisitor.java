@@ -214,20 +214,15 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
     @Override
     public boolean visit(SimpleType node) {
         if (nodeOverlaps(node)) {
-            addToQueryElements(getSimpleTypeQueryElement(node));
+            String identifier = simpleIdentifierFromName(node.getName());
+            if (!PRIMITIVES.contains(identifier)) {
+                addToQueryElements(getBindingQueryElement(identifier, node.resolveBinding()));
+            }
         }
         // No need to visit child nodes for SimpleType.
         return false;
     }
 
-    private QueryElement getSimpleTypeQueryElement(SimpleType node) {
-        String identifier = simpleIdentifierFromName(node.getName());
-        if (PRIMITIVES.contains(identifier)) {
-            return null;
-        }
-        return getBindingQueryElement(identifier, node.resolveBinding());
-    }
-    
     private String simpleIdentifierFromName(Name name) {
         if (name.isSimpleName()) {
             return ((SimpleName)name).getIdentifier(); 
