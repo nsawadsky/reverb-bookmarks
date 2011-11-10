@@ -1,0 +1,121 @@
+{
+    "testFilterGroupAndReorder":
+    {
+      "batchQueryResult" : {
+        "queryResults" : [ {
+          "indexerQueries" : [ {
+            "queryString" : "Query2",
+            "queryClientInfo" : "Query2"
+          } ],
+          "locations" : [ {
+            "url" : "Url2_2",
+            "title" : "Url2_2",
+            "luceneScore" : 3.0,
+            "frecencyBoost" : 0.0,
+            "overallScore" : 3.0
+          }, {
+            "url" : "Url2_1",
+            "title" : "Url2_1",
+            "luceneScore" : 1.0,
+            "frecencyBoost" : 0.0,
+            "overallScore" : 1.0
+          } ]
+        }, {
+          "indexerQueries" : [ {
+            "queryString" : "Query1",
+            "queryClientInfo" : "Query1"
+          } ],
+          "locations" : [ {
+            "url" : "Url1_1",
+            "title" : "Url1_1",
+            "luceneScore" : 2.0,
+            "frecencyBoost" : 0.0,
+            "overallScore" : 2.0
+          } ]
+        } ]
+      }
+    },
+    
+    "testFrecencyBoost":
+    {
+      "batchQueryResult" : {
+        "queryResults" : [ {
+          "indexerQueries" : [ {
+            "queryString" : "Query2",
+            "queryClientInfo" : "Query2"
+          } ],
+          "locations" : [ {
+            "url" : "Url2_1",
+            "title" : "Url2_1",
+            "luceneScore" : 2.0,
+            "frecencyBoost" : 2.0,
+            "overallScore" : 4.0
+          } ]
+        }, {
+          "indexerQueries" : [ {
+            "queryString" : "Query1",
+            "queryClientInfo" : "Query1"
+          } ],
+          "locations" : [ {
+            "url" : "Url1_1",
+            "title" : "Url1_1",
+            "luceneScore" : 3.0,
+            "frecencyBoost" : 1.0,
+            "overallScore" : 3.0
+          } ]
+        } ]
+      }
+    },
+    
+    "testMerge":
+    {
+      "batchQueryResult" : {
+        "queryResults" : [ {
+          "indexerQueries" : [ {
+            "queryString" : "Query1",
+            "queryClientInfo" : "Query1"
+          }, {
+            "queryString" : "Query2",
+            "queryClientInfo" : "Query2"
+          } ],
+          "locations" : [ {
+            "url" : "Url1_1",
+            "title" : "Url1_1",
+            "luceneScore" : 4.0,
+            "frecencyBoost" : 0.0,
+            "overallScore" : 4.0
+          }, {
+            "url" : "Url2_1",
+            "title" : "Url2_1",
+            "luceneScore" : 3.0,
+            "frecencyBoost" : 0.0,
+            "overallScore" : 3.0
+          }, {
+            "url" : "Url2_2",
+            "title" : "Url2_2",
+            "luceneScore" : 3.0,
+            "frecencyBoost" : 0.0,
+            "overallScore" : 3.0
+          } ]
+        }, {
+          "indexerQueries" : [ {
+            "queryString" : "Query3",
+            "queryClientInfo" : "Query3"
+          } ],
+          "locations" : [ {
+            "url" : "Url3_1",
+            "title" : "Url3_1",
+            "luceneScore" : 1.0,
+            "frecencyBoost" : 0.0,
+            "overallScore" : 1.0
+          }, {
+            "url" : "Url3_2",
+            "title" : "Url3_2",
+            "luceneScore" : 1.0,
+            "frecencyBoost" : 0.0,
+            "overallScore" : 1.0
+          } ]
+        } ]
+      }
+    }
+}
