@@ -78,8 +78,14 @@
     }, {
       "queryString" : "+MethoddeclNores methoddeclNoresMethod",
       "queryClientInfo" : "MethoddeclNores methoddeclNoresMethod"
-    } ],
-    
+    }, {
+      "queryString" : "+UnknownType",
+      "queryClientInfo" : "UnknownType"
+    }, {
+      "queryString" : "+methoddeclNores",
+      "queryClientInfo" : "methoddeclNores"
+    } ],    
+
     "src/testpackage/PrimitiveRefs.java":
     [ {
       "queryString" : "+PrimitiveRefs",
