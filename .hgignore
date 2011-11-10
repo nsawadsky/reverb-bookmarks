@@ -4,6 +4,10 @@ syntax: regexp
 
 /Debug$
 
+/bin$
+
+/Release$
+
 syntax: glob
 *~
 *.ipch
