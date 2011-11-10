@@ -66,7 +66,7 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
                 queryBuilder.append(optionalQuery);
             }
             
-            StringBuilder queryToDisplay = new StringBuilder(element.simpleRequiredQuery);
+            StringBuilder queryToDisplay = new StringBuilder(element.requiredQueryDisplayText);
             for (String optionalQuery: element.optionalQueries) {
                 queryToDisplay.append(" ");
                 queryToDisplay.append(optionalQuery);
@@ -328,16 +328,12 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
     
     private class QueryElement {
         public String requiredQuery;
-        public String simpleRequiredQuery;
+        public String requiredQueryDisplayText;
         public List<String> optionalQueries = new ArrayList<String>();
         
-        public QueryElement(String requiredQuery, String simpleRequiredQuery) {
+        public QueryElement(String requiredQuery, String requiredQueryDisplayText) {
             this.requiredQuery = requiredQuery;
-            this.simpleRequiredQuery = simpleRequiredQuery;
-        }
-
-        private QueryBuilderASTVisitor getOuterType() {
-            return QueryBuilderASTVisitor.this;
+            this.requiredQueryDisplayText = requiredQueryDisplayText;
         }
     }
 }

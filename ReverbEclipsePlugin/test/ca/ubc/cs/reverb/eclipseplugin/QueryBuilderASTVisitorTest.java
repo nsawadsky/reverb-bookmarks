@@ -60,7 +60,7 @@ public class QueryBuilderASTVisitorTest {
     
     @Before
     public void setup() throws JsonParseException, IOException {
-        InputStream testDataStream = QueryBuilderASTVisitorTest.class.getResourceAsStream("TestData.json");
+        InputStream testDataStream = QueryBuilderASTVisitorTest.class.getResourceAsStream("QueryBuilderASTVistorTestData.json");
 
         JsonFactory factory = new JsonFactory();
         JsonParser parser = factory.createJsonParser(testDataStream);

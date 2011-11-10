@@ -37,6 +37,9 @@ public class WebPageSearcher {
     private QueryParser parser;
     private LocationsDatabase locationsDatabase;
     
+    // For testing
+    WebPageSearcher() { }
+    
     public WebPageSearcher(IndexerConfig config, SharedIndexReader reader, LocationsDatabase locationsDatabase) {
         this.config = config;
         this.locationsDatabase = locationsDatabase;
@@ -49,15 +52,7 @@ public class WebPageSearcher {
     }
     
     public BatchQueryResult performSearch(List<IndexerQuery> inputQueries) throws IndexerException {
-        IndexSearcher indexSearcher = null;
-        
-        try {
-            // Must create new IndexSearcher if you are creating a new IndexReader 
-            // (through reopen).
-            indexSearcher = new IndexSearcher(reader.reopen());
-        } catch (IOException e) {
-            throw new IndexerException("Error reopening IndexReader: " + e, e);
-        }
+        IndexSearcher indexSearcher = getNewIndexSearcher();
         
         // First, ensure query strings are unique.
         List<IndexerQuery> queries = new ArrayList<IndexerQuery>();
@@ -163,16 +158,17 @@ public class WebPageSearcher {
         return result;
     }
     
-    private List<Location> getLocationList(List<HitInfo> hits) {
-        List<Location> result = new ArrayList<Location>();
-        for (HitInfo hitInfo: hits) {
-            result.add(new Location(hitInfo.hit.url, hitInfo.hit.title, hitInfo.combinedScore, 
-                    hitInfo.frecencyBoost, hitInfo.getOverallScore()));
+    protected IndexSearcher getNewIndexSearcher() throws IndexerException {
+        try {
+            // Must create new IndexSearcher if you are creating a new IndexReader 
+            // (through reopen).
+            return new IndexSearcher(reader.reopen());
+        } catch (IOException e) {
+            throw new IndexerException("Error reopening IndexReader: " + e, e);
         }
-        return result;
     }
     
-    private List<Hit> performSearch(IndexSearcher searcher, String queryString, int maxResults) throws IndexerException {
+    protected List<Hit> performSearch(IndexSearcher searcher, String queryString, int maxResults) throws IndexerException {
         try {
             Query query = parser.parse(queryString);
             
@@ -204,7 +200,16 @@ public class WebPageSearcher {
         }
     }
     
-    private class MergedQueryResult {
+    private List<Location> getLocationList(List<HitInfo> hits) {
+        List<Location> result = new ArrayList<Location>();
+        for (HitInfo hitInfo: hits) {
+            result.add(new Location(hitInfo.hit.url, hitInfo.hit.title, hitInfo.combinedScore, 
+                    hitInfo.frecencyBoost, hitInfo.getOverallScore()));
+        }
+        return result;
+    }
+    
+    protected class MergedQueryResult {
         public MergedQueryResult(IndexerQuery query, HitInfo info) {
             queries.add(query);
             hits.add(info);
@@ -230,7 +235,7 @@ public class WebPageSearcher {
         public List<HitInfo> hits = new ArrayList<HitInfo>();
     }
     
-    private class Hit {
+    protected class Hit {
         public Hit(String url, String title, float luceneScore) {
             this.url = url;
             this.title = title;
@@ -243,7 +248,7 @@ public class WebPageSearcher {
         public float frecencyBoost;
     }
         
-    private class HitInfo {
+    protected class HitInfo {
         public HitInfo(Hit hit, IndexerQuery query, float score) {
             this.hit = hit;
             this.frecencyBoost = hit.frecencyBoost;
