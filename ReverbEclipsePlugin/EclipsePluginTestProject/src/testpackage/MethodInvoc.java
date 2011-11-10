@@ -5,6 +5,8 @@ public class MethodInvoc {
         Methoddecl methoddecl = new Methoddecl();
         methoddecl.methoddeclMethod();
         
+        methoddecl.superclassdeclMethod();
+        
         MethoddeclNores methoddeclNores = new MethoddeclNores();
         methoddeclNores.methoddeclNoresMethod();
         
