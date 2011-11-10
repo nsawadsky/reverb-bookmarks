@@ -76,6 +76,8 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
         return queries;
     }
     
+    // TODO: Add support for annotations.
+    
     @Override 
     public boolean visit(QualifiedName node) {
         if (!nodeOverlaps(node)) {
@@ -170,8 +172,13 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
         if (!nodeOverlaps(node)) {
             return false;
         }
+
         IMethodBinding methodBinding = node.resolveMethodBinding();
         if (methodBinding == null) {
+            String identifier = node.getName().getIdentifier();
+            if (!nameNeedsResolution(identifier)) {
+                addToQueryElements(new QueryElement(identifier, identifier));
+            }
             return true;
         }
         ITypeBinding typeBinding = methodBinding.getDeclaringClass();
@@ -179,12 +186,7 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
             return true;
         }
         QueryElement typeElement = getBindingQueryElement(null, typeBinding);
-        if (typeElement == null) {
-            String identifier = node.getName().getIdentifier();
-            if (!nameNeedsResolution(identifier)) {
-                addToQueryElements(new QueryElement(identifier, identifier));
-            }
-        } else {
+        if (typeElement != null) {
             typeElement.optionalQueries.add(node.getName().getIdentifier());
             addToQueryElements(typeElement);
         }

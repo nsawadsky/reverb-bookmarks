@@ -7,5 +7,8 @@ public class MethodInvoc {
         
         MethoddeclNores methoddeclNores = new MethoddeclNores();
         methoddeclNores.methoddeclNoresMethod();
+        
+        UnknownType a = new UnknownType();
+        a.methoddeclNores();
     }
 }
