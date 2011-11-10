@@ -268,7 +268,9 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
         if (fullyQualifiedName.isEmpty()) {
             return null;
         }
-        return new QueryElement("((" + fullyQualifiedName + " OR " + pkgName + ".\\*) AND " + name + ")", 
+        // Note that our tokenizer will remove the trailing ".*" from package imports, so 
+        // pkgName alone will match such imports.
+        return new QueryElement("((" + fullyQualifiedName + " OR " + pkgName + ") AND " + name + ")", 
                 name);
     }
     
