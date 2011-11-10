@@ -68,8 +68,6 @@ public class HistoryClassifier {
     public final static String GOOGLE_SEARCH_TITLE = "Google Search";
     public final static String GOOGLE_SEARCH_PATTERN = "^https?://www\\.google\\.\\S+/search";
     
-    public final static String ECLIPSE_HELP_PATTERN = "^https?://help.eclipse.org/[^/]+/index.jsp\\?topic=.*";
-    
     /**
      * Comment inserted in auto-generated Javadoc.
      */
@@ -328,7 +326,7 @@ public class HistoryClassifier {
                 } else {
                     httpGet = new HttpGet(location.url);
                     httpGet.setHeader("User-Agent", FIREFOX_USER_AGENT);
-    
+                    
                     HttpResponse response = httpClient.execute(httpGet);
                     responseEntity = response.getEntity();
                     inputStream = responseEntity.getContent();
@@ -505,29 +503,10 @@ public class HistoryClassifier {
     }
 
     private String normalizeUrl(String inputUrl) {
-        if (Pattern.matches(ECLIPSE_HELP_PATTERN, inputUrl)) {
-            try {
-                // Hack to make sure help.eclipse.org topics get indexed.
-                URI uri = new URI(inputUrl);
-                String query = uri.getQuery();
-                Pattern pattern = Pattern.compile("^topic=([^\\&]+)");
-                Matcher matcher = pattern.matcher(query);
-                if (matcher.find()) {
-                    String topic = matcher.group(1);
-                    String oldPath = uri.getPath();
-                    String path = oldPath.substring(0, oldPath.lastIndexOf('/'));
-                    path += "/topic" + topic;
-                    URI normalized = new URI(uri.getScheme(), uri.getHost(), path, null);
-                    String result = normalized.toString();
-                    return result;
-                }
-            } catch (URISyntaxException e) {}
-        } else {
-            int fragmentIndex = inputUrl.lastIndexOf('#');
-            if (fragmentIndex != -1) {
-                String result = inputUrl.substring(0, fragmentIndex);
-                return result;
-            }
+        int fragmentIndex = inputUrl.lastIndexOf('#');
+        if (fragmentIndex != -1) {
+            String result = inputUrl.substring(0, fragmentIndex);
+            return result;
         }
         return inputUrl;
     }
