@@ -43,6 +43,7 @@ public class QueryBuilderASTVisitorTest {
     public static Collection<Object[]> getParameters() {
         return Arrays.asList(new Object[][]{ 
                 { "src/testpackage/FieldRefs.java" },
+                { "src/testpackage/TypeRefs.java" }, 
                 { "src/testpackage/ComplexTypeRefs.java" }, 
                 { "src/testpackage/Enumdecl.java" },
                 { "src/testpackage/EnumdeclNores.java" },
