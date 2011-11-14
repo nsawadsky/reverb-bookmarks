@@ -130,30 +130,27 @@ public class WebPageSearcher {
         
         // Merge later groups of results in to earlier groups if all results in the later group match  
         // the first query for the earlier group.
-        for (int i = 0; i < mergedResults.size()-1; i++) {
-            for (int j = i+1; j < mergedResults.size(); j++) {
-                MergedQueryResult result1 = mergedResults.get(i);
-                if (!result1.hits.isEmpty()) {
-                    MergedQueryResult result2 = mergedResults.get(j);
-                    if (! result2.hits.isEmpty()) {
-                        if (result2.allHitsMatch(result1.queries.get(0))) {
-                            result1.queries.addAll(result2.queries);
-                            result1.hits.addAll(result2.hits);
-                            result2.hits.clear();
-                        }
-                    }
+        List<MergedQueryResult> nextMergedResults = new ArrayList<MergedQueryResult>();
+        for (MergedQueryResult currResult: mergedResults) {
+            boolean foundMatch = false;
+            for (MergedQueryResult nextResult: nextMergedResults) {
+                if (currResult.allHitsMatch(nextResult.queries.get(0))) {
+                    nextResult.queries.addAll(currResult.queries);
+                    nextResult.hits.addAll(currResult.hits);
+                    foundMatch = true;
+                    break;
                 }
+            }
+            if (!foundMatch) {
+                nextMergedResults.add(currResult);
             }
         }
         
         // Create the result structure to be sent to the client.
         BatchQueryResult result = new BatchQueryResult();
-        for (MergedQueryResult mergedResult: mergedResults) {
-            // Prune entries which were merged with earlier entries.
-            if (! mergedResult.hits.isEmpty()) {
-                result.queryResults.add(new QueryResult(
-                        mergedResult.queries, getLocationList(mergedResult.hits)));
-            }
+        for (MergedQueryResult mergedResult: nextMergedResults) {
+            result.queryResults.add(new QueryResult(
+                    mergedResult.queries, getLocationList(mergedResult.hits)));
         }
         return result;
     }
