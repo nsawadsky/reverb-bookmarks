@@ -14,6 +14,24 @@
       "queryClientInfo" : "Enumvaluedecls ENUM_VALUE_1 ENUM_VALUE_2"
     } ],
     
+    "src/testpackage/TypeRefs.java":
+    [ {
+      "queryString" : "+TypeRefs",
+      "queryClientInfo" : "TypeRefs"
+    }, {
+      "queryString" : "+((java.io.File OR java.io) AND File)",
+      "queryClientInfo" : "File"
+    }, {
+      "queryString" : "+ServerSocket",
+      "queryClientInfo" : "ServerSocket"
+    }, {
+      "queryString" : "+((testpackage.Classdecl OR testpackage) AND Classdecl)",
+      "queryClientInfo" : "Classdecl"
+    }, {
+      "queryString" : "+ClassdeclNores",
+      "queryClientInfo" : "ClassdeclNores"
+    } ],
+
     "src/testpackage/ComplexTypeRefs.java":
     [ {
       "queryString" : "+ComplexTypeRefs",
