@@ -53,7 +53,9 @@ public class WebPageIndexer {
     
     public void indexPage(PageInfo info) throws IndexerException {
         try {
-            locationsDatabase.updateLocationInfo(info.url, info.visitTimes);
+            String normalizedUrl = normalizeUrl(info.url);
+
+            locationsDatabase.updateLocationInfo(normalizedUrl, info.visitTimes);
 
             // make a new, empty document
             Document doc = new Document();
@@ -62,7 +64,7 @@ public class WebPageIndexer {
             // field that is indexed (i.e. searchable), but don't tokenize 
             // the field into separate words and don't index term frequency
             // or positional information:
-            Field urlField = new Field(URL_FIELD_NAME, info.url, Field.Store.YES, Field.Index.NOT_ANALYZED_NO_NORMS);
+            Field urlField = new Field(URL_FIELD_NAME, normalizedUrl, Field.Store.YES, Field.Index.NOT_ANALYZED_NO_NORMS);
             urlField.setOmitTermFreqAndPositions(true);
             doc.add(urlField);
     
@@ -98,11 +100,20 @@ public class WebPageIndexer {
             // Existing index (an old copy of this page may have been indexed) so 
             // we use updateDocument instead to replace the old one matching the exact 
             // URL, if present:
-            indexWriter.updateDocument(new Term(URL_FIELD_NAME, info.url), doc);
+            indexWriter.updateDocument(new Term(URL_FIELD_NAME, normalizedUrl), doc);
             indexWriter.commit();
         } catch (Exception e) {
             throw new IndexerException("Exception indexing page: " + e);
         }
+    }
+    
+    private String normalizeUrl(String inputUrl) {
+        int fragmentIndex = inputUrl.lastIndexOf('#');
+        if (fragmentIndex != -1) {
+            String result = inputUrl.substring(0, fragmentIndex);
+            return result;
+        }
+        return inputUrl;
     }
     
 }
