@@ -24,6 +24,7 @@ public class ChromeHistoryExtractor extends HistoryExtractor {
     private static final String MAC_CHROME_SETTINGS_PATH = "Library/Application Support/Google/Chrome/Default";
     private static final String MAC_CHROMIUM_SETTINGS_PATH = "Library/Application Support/Chromium/Default";
     private static final String HISTORY_DB = "History";
+    private static final String ARCHIVED_HISTORY_DB = "Archived History";
     private static final String LINE_SEPARATOR = System.getProperty("line.separator");
     private static final String JDBC_SQLITE = "jdbc:sqlite:";
     private static final String NULL = "(null)";
@@ -44,30 +45,25 @@ public class ChromeHistoryExtractor extends HistoryExtractor {
     }
     
     public Date getEarliestVisitDate() throws HistoryMinerException {
-        final String query = "SELECT min(visit_time) FROM visits";
-        
-        Date result = new Date();
         try {
-            Connection conn = null;
-            Statement stmt = null;
-            try {
-                conn = DriverManager.getConnection(JDBC_SQLITE + this.getChromeHistoryDbPath());
-                stmt = conn.createStatement();
-                
-                ResultSet rs = stmt.executeQuery(query);
-                
-                while (rs.next()) {
-                    result = chromeTimestampToDate(rs.getLong(1));
-                }
-            } finally {
-                if (stmt != null) { stmt.close(); }
-                if (conn != null) { conn.close(); }
-            }
-        } catch (Exception e) {
-            throw new HistoryMinerException(
-                    "Error retrieving earliest visit date: " + e, e);
-        } 
-        return result;
+            return getDbEarliestVisitDate(true);
+        } catch (HistoryMinerException e) {
+            return getDbEarliestVisitDate(false);
+        }
+    }
+    
+    public List<HistoryVisit> extractHistory(Date startDate, Date endDate) throws HistoryMinerException {
+        List<HistoryVisit> archivedResults = null;
+        try {
+            archivedResults = extractDbHistory(startDate, endDate, true);
+        } catch (HistoryMinerException e) { }
+        
+        List<HistoryVisit> currResults = extractDbHistory(startDate, endDate, false);
+        if (archivedResults != null) {
+            archivedResults.addAll(currResults);
+            return archivedResults;
+        }
+        return currResults;
     }
     
     /*
@@ -77,7 +73,7 @@ LEFT OUTER JOIN visits AS from_visits ON visits.from_visit = from_visits.id
 LEFT OUTER JOIN urls AS from_urls ON from_visits.url = from_urls.id 
 ORDER BY visits.id DESC;
      */
-    public List<HistoryVisit> extractHistory(Date startDate, Date endDate) throws HistoryMinerException {
+    private List<HistoryVisit> extractDbHistory(Date startDate, Date endDate, boolean archived) throws HistoryMinerException {
         final String queryTemplate = 
             "SELECT visits.id, visits.visit_time, visits.transition, urls.id, urls.url, urls.title, " +
                 "from_visits.id, from_urls.url " + 
@@ -94,7 +90,7 @@ ORDER BY visits.id DESC;
             Connection conn = null;
             Statement stmt = null;
             try {
-                conn = DriverManager.getConnection(JDBC_SQLITE + this.getChromeHistoryDbPath());
+                conn = DriverManager.getConnection(JDBC_SQLITE + this.getChromeHistoryDbPath(archived));
                 stmt = conn.createStatement();
                 
                 String query = String.format(queryTemplate, dateToChromeTimestamp(startDate), dateToChromeTimestamp(endDate));
@@ -138,7 +134,38 @@ ORDER BY visits.id DESC;
         return results;
     }
     
+    private Date getDbEarliestVisitDate(boolean archived) throws HistoryMinerException {
+        final String query = "SELECT min(visit_time) FROM visits";
+        
+        Date result = new Date();
+        try {
+            Connection conn = null;
+            Statement stmt = null;
+            try {
+                conn = DriverManager.getConnection(JDBC_SQLITE + this.getChromeHistoryDbPath(archived));
+                stmt = conn.createStatement();
+                
+                ResultSet rs = stmt.executeQuery(query);
+                
+                while (rs.next()) {
+                    result = chromeTimestampToDate(rs.getLong(1));
+                }
+            } finally {
+                if (stmt != null) { stmt.close(); }
+                if (conn != null) { conn.close(); }
+            }
+        } catch (Exception e) {
+            throw new HistoryMinerException(
+                    "Error retrieving earliest visit date: " + e, e);
+        } 
+        return result;
+    }
+    
     private String getChromeHistoryDbPath() throws HistoryMinerException {
+        return getChromeHistoryDbPath(false);
+    }
+    
+    private String getChromeHistoryDbPath(boolean archived) throws HistoryMinerException {
         String settingsPath = null;
         OSType osType = getOSType();
         switch (osType) {
@@ -185,6 +212,9 @@ ORDER BY visits.id DESC;
             }
             break;
         } 
+        }
+        if (archived) {
+            return settingsPath + File.separator + ARCHIVED_HISTORY_DB;
         }
         return settingsPath + File.separator + HISTORY_DB;
     }
