@@ -8,7 +8,9 @@ import java.sql.Statement;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 
@@ -53,17 +55,34 @@ public class ChromeHistoryExtractor extends HistoryExtractor {
     }
     
     public List<HistoryVisit> extractHistory(Date startDate, Date endDate) throws HistoryMinerException {
-        List<HistoryVisit> archivedResults = null;
+        List<HistoryVisit> results = null;
         try {
-            archivedResults = extractDbHistory(startDate, endDate, true);
+            results = extractDbHistory(startDate, endDate, true);
         } catch (HistoryMinerException e) { }
         
         List<HistoryVisit> currResults = extractDbHistory(startDate, endDate, false);
-        if (archivedResults != null) {
-            archivedResults.addAll(currResults);
-            return archivedResults;
+        if (results != null) {
+            results.addAll(currResults);
+        } else {
+            results = currResults;
         }
-        return currResults;
+        ensureIdsUnique(results);
+        return results;
+    }
+    
+    private void ensureIdsUnique(List<HistoryVisit> visits) {
+        long currVisitId = 1;
+        long currLocationId = 1;
+        Map<String, Long> locationIdsByUrl = new HashMap<String, Long>();
+        for (HistoryVisit visit: visits) {
+            Long locationId = locationIdsByUrl.get(visit.url);
+            if (locationId == null) {
+                locationId = currLocationId++;
+                locationIdsByUrl.put(visit.url, locationId);
+            }
+            visit.locationId = locationId;
+            visit.visitId = currVisitId++;
+        }
     }
     
     /*
@@ -121,7 +140,12 @@ ORDER BY visits.id DESC;
                         log.trace(logMsg.toString());
                     }
                     
-                    results.add(new HistoryVisit(visitId, visitDate, visitType, 0, locationId, url, title, fromVisitId, fromUrl));
+                    // Because we are combining results from "Archived History" and "History" databases,
+                    // we will later assign new values for visitId and locationId.  However, we have
+                    // not written the code to correct the fromVisitId, so here we set it to 0.
+                    // Also, it appears that the from_visit column in the "Archived History" database
+                    // may always be set to 0.
+                    results.add(new HistoryVisit(visitId, visitDate, visitType, 0, locationId, url, title, 0, fromUrl));
                 }
             } finally {
                 if (stmt != null) { stmt.close(); }
