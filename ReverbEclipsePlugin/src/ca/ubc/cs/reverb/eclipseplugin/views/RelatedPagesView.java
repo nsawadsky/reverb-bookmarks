@@ -1,6 +1,8 @@
 package ca.ubc.cs.reverb.eclipseplugin.views;
 
 
+import java.awt.Desktop;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,7 +14,6 @@ import org.eclipse.jface.action.*;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.ui.*;
 import org.eclipse.ui.texteditor.AbstractTextEditor;
-import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.SWT;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
@@ -65,13 +66,7 @@ public class RelatedPagesView extends ViewPart {
      */
     public static final String ID = "ca.ubc.cs.hminer.eclipseplugin.views.RelatedPagesView";
     
-    private final static String UPDATE_VIEW_ERROR_MSG = "Error updating view.";
-
     private TreeViewer viewer;
-    private DrillDownAdapter drillDownAdapter;
-    private Action action1;
-    private Action action2;
-    private Action doubleClickAction;
     private ViewContentProvider contentProvider;
     private IndexerConnection indexerConnection;
     private NavigationListener navigationListener;
@@ -181,7 +176,7 @@ public class RelatedPagesView extends ViewPart {
         }
         
         public Image getImage(Object obj) {
-            String imageKey = ISharedImages.IMG_OBJ_ELEMENT;
+            String imageKey = ISharedImages.IMG_OBJ_FILE;
             if (obj instanceof QueryResult) {
                 imageKey = ISharedImages.IMG_OBJ_FOLDER;
             }
@@ -249,16 +244,89 @@ public class RelatedPagesView extends ViewPart {
     public void createPartControl(Composite parent) {
         contentProvider = new ViewContentProvider();
         viewer = new TreeViewer(parent, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL);
-        drillDownAdapter = new DrillDownAdapter(viewer);
         viewer.setContentProvider(contentProvider);
         ColumnViewerToolTipSupport.enableFor(viewer);
         viewer.setLabelProvider(new ViewLabelProvider());
         viewer.setInput(getViewSite());
-        makeActions();
-        hookContextMenu();
-        hookDoubleClickAction();
-        contributeToActionBars();
-    }
+        
+        final Action openBrowserAction = new Action() {
+            public void run() {
+                IStructuredSelection structured = (IStructuredSelection)viewer.getSelection();
+                if (structured.getFirstElement() instanceof Location) {
+                    Location location = (Location)structured.getFirstElement();
+                    try {
+                        Desktop.getDesktop().browse(new URI(location.url));
+                    } catch (Exception e) {
+                        getLogger().logError(
+                                "Exception opening browser on '" + location.url + "'", e);
+                    }
+                }
+            }
+        };
+        openBrowserAction.setText("Open Page");
+        openBrowserAction.setToolTipText("Open Page");
+        openBrowserAction.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages().getImageDescriptor(
+                ISharedImages.IMG_OBJ_FILE));
+        openBrowserAction.setEnabled(false);
+        
+        viewer.addSelectionChangedListener(new ISelectionChangedListener() {
+
+            @Override
+            public void selectionChanged(SelectionChangedEvent event) {
+                IStructuredSelection structured = (IStructuredSelection)viewer.getSelection();
+                if (structured.getFirstElement() instanceof Location) {
+                    openBrowserAction.setEnabled(true);
+                } else {
+                    openBrowserAction.setEnabled(false);
+                }
+            }
+            
+        });
+        
+        viewer.addDoubleClickListener(new IDoubleClickListener() {
+
+            @Override
+            public void doubleClick(DoubleClickEvent event) {
+                openBrowserAction.run();
+            } 
+            
+        });
+        
+        final Action updateViewAction = new Action() {
+            public void run() {
+                updateLinks(getSite().getPage().getActiveEditor());
+            }
+        };
+        updateViewAction.setText("Update View");
+        updateViewAction.setToolTipText("Update View");
+        updateViewAction.setImageDescriptor(PluginActivator.getImageDescriptor("icons/refresh.gif"));
+
+        MenuManager menuManager = new MenuManager("#PopupMenu");
+        menuManager.setRemoveAllWhenShown(true);
+        menuManager.addMenuListener( new IMenuListener() {
+
+            @Override
+            public void menuAboutToShow(IMenuManager manager) {
+                manager.add(openBrowserAction);
+                manager.add(updateViewAction);
+                manager.add(new Separator());
+                // Other plug-ins can contribute there actions here
+                manager.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
+            }
+            
+        });
+        viewer.getControl().setMenu(menuManager.createContextMenu(viewer.getControl()));
+        getSite().registerContextMenu(menuManager, viewer);
+
+        IActionBars bars = getViewSite().getActionBars();
+        IMenuManager barMenuManager = bars.getMenuManager();
+        barMenuManager.add(openBrowserAction);
+        barMenuManager.add(updateViewAction);
+
+        IToolBarManager toolbarManager = bars.getToolBarManager();
+        toolbarManager.add(openBrowserAction);
+        toolbarManager.add(updateViewAction);
+   }
     
     @Override 
     public void dispose() {
@@ -279,47 +347,6 @@ public class RelatedPagesView extends ViewPart {
         viewer.getControl().setFocus();
     }
     
-    private void hookContextMenu() {
-        MenuManager menuMgr = new MenuManager("#PopupMenu");
-        menuMgr.setRemoveAllWhenShown(true);
-        menuMgr.addMenuListener(new IMenuListener() {
-            public void menuAboutToShow(IMenuManager manager) {
-                RelatedPagesView.this.fillContextMenu(manager);
-            }
-        });
-        Menu menu = menuMgr.createContextMenu(viewer.getControl());
-        viewer.getControl().setMenu(menu);
-        getSite().registerContextMenu(menuMgr, viewer);
-    }
-
-    private void contributeToActionBars() {
-        IActionBars bars = getViewSite().getActionBars();
-        fillLocalPullDown(bars.getMenuManager());
-        fillLocalToolBar(bars.getToolBarManager());
-    }
-
-    private void fillLocalPullDown(IMenuManager manager) {
-        manager.add(action1);
-        manager.add(new Separator());
-        manager.add(action2);
-    }
-
-    private void fillContextMenu(IMenuManager manager) {
-        manager.add(action1);
-        manager.add(action2);
-        manager.add(new Separator());
-        drillDownAdapter.addNavigationActions(manager);
-        // Other plug-ins can contribute there actions here
-        manager.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
-    }
-
-    private void fillLocalToolBar(IToolBarManager manager) {
-        manager.add(action1);
-        manager.add(action2);
-        manager.add(new Separator());
-        drillDownAdapter.addNavigationActions(manager);
-    }
-
     private IStatus buildAndExecuteQuery(ICompilationUnit compilationUnit, 
             int topPosition, int bottomPosition, IProgressMonitor monitor) throws PluginException, InterruptedException {
         ASTParser parser = ASTParser.newParser(AST.JLS3);
@@ -409,42 +436,6 @@ public class RelatedPagesView extends ViewPart {
         }
     }
     
-    private void makeActions() {
-        action1 = new Action() {
-            public void run() {
-                updateLinks(getSite().getPage().getActiveEditor());
-            }
-        };
-        action1.setText("Update View");
-        action1.setToolTipText("Update View");
-        action1.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages().
-                getImageDescriptor(ISharedImages.IMG_OBJS_INFO_TSK));
-
-        action2 = new Action() {
-            public void run() {
-                showMessage("Action 2 executed");
-            }
-        };
-        action2.setText("Action 2");
-        action2.setToolTipText("Action 2 tooltip");
-        action2.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages().
-                getImageDescriptor(ISharedImages.IMG_OBJS_INFO_TSK));
-        doubleClickAction = new Action() {
-            public void run() {
-                ISelection selection = viewer.getSelection();
-                Object obj = ((IStructuredSelection)selection).getFirstElement();
-                showMessage("Double-click detected on "+obj.toString());
-            }
-        };
-    }
-
-    private void hookDoubleClickAction() {
-        viewer.addDoubleClickListener(new IDoubleClickListener() {
-            public void doubleClick(DoubleClickEvent event) {
-                doubleClickAction.run();
-            }
-        });
-    }
     private void showMessage(String message) {
         MessageDialog.openInformation(
                 viewer.getControl().getShell(),

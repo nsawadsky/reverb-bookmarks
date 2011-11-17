@@ -10,7 +10,7 @@
       </category>
       <view
             name="Reverb"
-            icon="icons/sample.gif"
+            icon="icons/reverb-small.png"
             category="ca.ubc.cs.reverb.eclipseplugin"
             class="ca.ubc.cs.reverb.eclipseplugin.views.RelatedPagesView"
             id="ca.ubc.cs.reverb.eclipseplugin.views.RelatedPagesView">
