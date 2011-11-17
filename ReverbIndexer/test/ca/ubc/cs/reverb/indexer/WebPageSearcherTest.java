@@ -39,21 +39,21 @@ public class WebPageSearcherTest {
     @Test
     public void testFilterGroupAndReorder() throws IndexerException, IOException {
         List<IndexerQuery> inputQueries = new ArrayList<IndexerQuery>();
-        inputQueries.add(new IndexerQuery("Query1", "Query1"));
-        inputQueries.add(new IndexerQuery("Query1", "Query1"));
-        inputQueries.add(new IndexerQuery("Query2", "Query2"));
+        inputQueries.add(new IndexerQuery("QueryA", "QueryA"));
+        inputQueries.add(new IndexerQuery("QueryA", "QueryA"));
+        inputQueries.add(new IndexerQuery("QueryB", "QueryB"));
         
         WebPageSearcher searcher = new WebPageSearcher() {
             protected IndexSearcher getNewIndexSearcher() { return null; }
             
             protected List<Hit> performSearch(IndexSearcher searcher, String queryString, int maxResults) throws IndexerException {
                 List<Hit> result = new ArrayList<Hit>();
-                if (queryString == "Query1") {
-                    result.add(new Hit("Url1_1", "Url1_1", 2.0F));
-                    result.add(new Hit("Url2_2", "Url2_2", 1.0F));
-                } else if (queryString == "Query2") {
-                    result.add(new Hit("Url2_1", "Url2_1", 1.0F));
-                    result.add(new Hit("Url2_2", "Url2_2", 2.0F));
+                if (queryString == "QueryA") {
+                    result.add(new Hit("UrlA_A", "UrlA_A", 2.0F));
+                    result.add(new Hit("UrlB_B", "UrlB_B", 1.0F));
+                } else if (queryString == "QueryB") {
+                    result.add(new Hit("UrlB_A", "UrlB_A", 1.0F));
+                    result.add(new Hit("UrlB_B", "UrlB_B", 2.0F));
                 } 
                 return result;
             }
@@ -68,20 +68,20 @@ public class WebPageSearcherTest {
     @Test
     public void testFrecencyBoost() throws IndexerException, IOException {
         List<IndexerQuery> inputQueries = new ArrayList<IndexerQuery>();
-        inputQueries.add(new IndexerQuery("Query1", "Query1"));
-        inputQueries.add(new IndexerQuery("Query2", "Query2"));
+        inputQueries.add(new IndexerQuery("QueryA", "QueryA"));
+        inputQueries.add(new IndexerQuery("QueryB", "QueryB"));
         
         WebPageSearcher searcher = new WebPageSearcher() {
             protected IndexSearcher getNewIndexSearcher() { return null; }
             
             protected List<Hit> performSearch(IndexSearcher searcher, String queryString, int maxResults) throws IndexerException {
                 List<Hit> result = new ArrayList<Hit>();
-                if (queryString == "Query1") {
-                    Hit hit = new Hit("Url1_1", "Url1_1", 3.0F);
+                if (queryString == "QueryA") {
+                    Hit hit = new Hit("UrlA_A", "UrlA_A", 3.0F);
                     hit.frecencyBoost = 1.0F;
                     result.add(hit);
-                } else if (queryString == "Query2") {
-                    Hit hit = new Hit("Url2_1", "Url2_1", 2.0F);
+                } else if (queryString == "QueryB") {
+                    Hit hit = new Hit("UrlB_A", "UrlB_A", 2.0F);
                     hit.frecencyBoost = 2.0F;
                     result.add(hit);
                 } 
@@ -98,25 +98,25 @@ public class WebPageSearcherTest {
     @Test
     public void testMerge() throws IndexerException, IOException {
         List<IndexerQuery> inputQueries = new ArrayList<IndexerQuery>();
-        inputQueries.add(new IndexerQuery("Query1", "Query1"));
-        inputQueries.add(new IndexerQuery("Query2", "Query2"));
-        inputQueries.add(new IndexerQuery("Query3", "Query3"));
+        inputQueries.add(new IndexerQuery("QueryA", "QueryA"));
+        inputQueries.add(new IndexerQuery("QueryB", "QueryB"));
+        inputQueries.add(new IndexerQuery("QueryC", "QueryC"));
         
         WebPageSearcher searcher = new WebPageSearcher() {
             protected IndexSearcher getNewIndexSearcher() { return null; }
             
             protected List<Hit> performSearch(IndexSearcher searcher, String queryString, int maxResults) throws IndexerException {
                 List<Hit> result = new ArrayList<Hit>();
-                if (queryString == "Query1") {
-                    result.add(new Hit("Url1_1", "Url1_1", 4.0F));
-                    result.add(new Hit("Url2_1", "Url2_1", 1.0F));
-                    result.add(new Hit("Url2_2", "Url2_2", 1.0F));
-                } else if (queryString == "Query2") {
-                    result.add(new Hit("Url2_1", "Url2_1", 2.0F));
-                    result.add(new Hit("Url2_2", "Url2_2", 2.0F));
-                } else if (queryString == "Query3") {
-                    result.add(new Hit("Url3_1", "Url3_1", 1.0F));
-                    result.add(new Hit("Url3_2", "Url3_2", 1.0F));
+                if (queryString == "QueryA") {
+                    result.add(new Hit("UrlA_A", "UrlA_A", 4.0F));
+                    result.add(new Hit("UrlB_A", "UrlB_A", 1.0F));
+                    result.add(new Hit("UrlB_B", "UrlB_B", 1.0F));
+                } else if (queryString == "QueryB") {
+                    result.add(new Hit("UrlB_A", "UrlB_A", 2.0F));
+                    result.add(new Hit("UrlB_B", "UrlB_B", 2.0F));
+                } else if (queryString == "QueryC") {
+                    result.add(new Hit("UrlC_A", "UrlC_A", 1.0F));
+                    result.add(new Hit("UrlC_B", "UrlC_B", 1.0F));
                 } 
                 return result;
             }
@@ -125,6 +125,42 @@ public class WebPageSearcherTest {
         
         BatchQueryResult result = searcher.performSearch(inputQueries);
         JsonNode expected = getExpectedResult("testMerge");
+        assertEquals("formatted actual: " + getJsonString(result), expected, getJsonNode(result));
+    }
+    
+    @Test
+    public void testCompactHitInfos() throws IndexerException, IOException {
+        List<IndexerQuery> inputQueries = new ArrayList<IndexerQuery>();
+        inputQueries.add(new IndexerQuery("QueryA", "QueryA"));
+        
+        WebPageSearcher searcher = new WebPageSearcher() {
+            protected IndexSearcher getNewIndexSearcher() { return null; }
+            
+            protected List<Hit> performSearch(IndexSearcher searcher, String queryString, int maxResults) throws IndexerException {
+                List<Hit> result = new ArrayList<Hit>();
+                if (queryString == "QueryA") {
+                    result.add(new Hit("http://www.test.com/docs/1.2.3/TestFirstDifferent/1.2/rest", "TestFirstDifferent", 1.0F, 3.0F));
+                    result.add(new Hit("http://www.test.com/docs/1.2.4/TestFirstDifferent/1.2/rest", "TestFirstDifferent", 1.0F, 3.0F));
+                    result.add(new Hit("http://www.test.com/docs/1.2.4/TestFirstDifferentReverse/1.2/rest", "TestFirstDifferentReverse", 1.0F, 3.0F));
+                    result.add(new Hit("http://www.test.com/docs/1.2.3/TestFirstDifferentReverse/1.2/rest", "TestFirstDifferentReverse", 1.0F, 3.0F));
+                    result.add(new Hit("http://www.test.com/docs/1.2.3/TestSecondDifferent/1.2/rest", "TestSecondDifferent", 1.0F, 3.0F));
+                    result.add(new Hit("http://www.test.com/docs/1.2.3/TestSecondDifferent/2.2/rest", "TestSecondDifferent", 1.0F, 3.0F));
+                    result.add(new Hit("http://www.test.com/docs/1.2.3/TestBothDifferent/1.2/rest", "TestBothDifferent", 1.0F, 3.0F));
+                    result.add(new Hit("http://www.test.com/docs/1.2.4/TestBothDifferent/1.3/rest", "TestBothDifferent", 1.0F, 3.0F));
+                    result.add(new Hit("http://www.domainone.com/docs/1.2.3/TestDiffDomain/1.2/rest", "TestDiffDomain", 1.0F, 3.0F));
+                    result.add(new Hit("http://www.domaintwo.com/docs/1.2.3/TestDiffDomain/1.2/rest", "TestDiffDomain", 1.0F, 3.0F));
+                    result.add(new Hit("http://www.test.com/docs/1.2.3/TestEndsWithVersion/1.2", "TestEndsWithVersion", 1.0F, 3.0F));
+                    result.add(new Hit("http://www.test.com/docs/1.2.3/TestEndsWithVersion/2.2", "TestEndsWithVersion", 1.0F, 3.0F));
+                    result.add(new Hit("http://www.test.com/docs/1.2.3/TestDiffLengthVersion/1.2/rest", "TestDiffLengthVersion", 1.0F, 3.0F));
+                    result.add(new Hit("http://www.test.com/docs/2/TestDiffLengthVersion/1.2/rest", "TestDiffLengthVersion", 1.0F, 3.0F));
+                } 
+                return result;
+            }
+
+        };
+        
+        BatchQueryResult result = searcher.performSearch(inputQueries);
+        JsonNode expected = getExpectedResult("testCompactHitInfos");
         assertEquals("formatted actual: " + getJsonString(result), expected, getJsonNode(result));
     }
 

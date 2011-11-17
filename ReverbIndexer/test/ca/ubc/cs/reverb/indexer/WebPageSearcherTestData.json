@@ -4,30 +4,30 @@
       "batchQueryResult" : {
         "queryResults" : [ {
           "indexerQueries" : [ {
-            "queryString" : "Query2",
-            "queryClientInfo" : "Query2"
+            "queryString" : "QueryB",
+            "queryClientInfo" : "QueryB"
           } ],
           "locations" : [ {
-            "url" : "Url2_2",
-            "title" : "Url2_2",
+            "url" : "UrlB_B",
+            "title" : "UrlB_B",
             "luceneScore" : 3.0,
             "frecencyBoost" : 0.0,
             "overallScore" : 3.0
           }, {
-            "url" : "Url2_1",
-            "title" : "Url2_1",
+            "url" : "UrlB_A",
+            "title" : "UrlB_A",
             "luceneScore" : 1.0,
             "frecencyBoost" : 0.0,
             "overallScore" : 1.0
           } ]
         }, {
           "indexerQueries" : [ {
-            "queryString" : "Query1",
-            "queryClientInfo" : "Query1"
+            "queryString" : "QueryA",
+            "queryClientInfo" : "QueryA"
           } ],
           "locations" : [ {
-            "url" : "Url1_1",
-            "title" : "Url1_1",
+            "url" : "UrlA_A",
+            "title" : "UrlA_A",
             "luceneScore" : 2.0,
             "frecencyBoost" : 0.0,
             "overallScore" : 2.0
@@ -41,24 +41,24 @@
       "batchQueryResult" : {
         "queryResults" : [ {
           "indexerQueries" : [ {
-            "queryString" : "Query2",
-            "queryClientInfo" : "Query2"
+            "queryString" : "QueryB",
+            "queryClientInfo" : "QueryB"
           } ],
           "locations" : [ {
-            "url" : "Url2_1",
-            "title" : "Url2_1",
+            "url" : "UrlB_A",
+            "title" : "UrlB_A",
             "luceneScore" : 2.0,
             "frecencyBoost" : 2.0,
             "overallScore" : 4.0
           } ]
         }, {
           "indexerQueries" : [ {
-            "queryString" : "Query1",
-            "queryClientInfo" : "Query1"
+            "queryString" : "QueryA",
+            "queryClientInfo" : "QueryA"
           } ],
           "locations" : [ {
-            "url" : "Url1_1",
-            "title" : "Url1_1",
+            "url" : "UrlA_A",
+            "title" : "UrlA_A",
             "luceneScore" : 3.0,
             "frecencyBoost" : 1.0,
             "overallScore" : 3.0
@@ -72,48 +72,115 @@
       "batchQueryResult" : {
         "queryResults" : [ {
           "indexerQueries" : [ {
-            "queryString" : "Query1",
-            "queryClientInfo" : "Query1"
+            "queryString" : "QueryA",
+            "queryClientInfo" : "QueryA"
           }, {
-            "queryString" : "Query2",
-            "queryClientInfo" : "Query2"
+            "queryString" : "QueryB",
+            "queryClientInfo" : "QueryB"
           } ],
           "locations" : [ {
-            "url" : "Url1_1",
-            "title" : "Url1_1",
+            "url" : "UrlA_A",
+            "title" : "UrlA_A",
             "luceneScore" : 4.0,
             "frecencyBoost" : 0.0,
             "overallScore" : 4.0
           }, {
-            "url" : "Url2_1",
-            "title" : "Url2_1",
+            "url" : "UrlB_A",
+            "title" : "UrlB_A",
             "luceneScore" : 3.0,
             "frecencyBoost" : 0.0,
             "overallScore" : 3.0
           }, {
-            "url" : "Url2_2",
-            "title" : "Url2_2",
+            "url" : "UrlB_B",
+            "title" : "UrlB_B",
             "luceneScore" : 3.0,
             "frecencyBoost" : 0.0,
             "overallScore" : 3.0
           } ]
         }, {
           "indexerQueries" : [ {
-            "queryString" : "Query3",
-            "queryClientInfo" : "Query3"
+            "queryString" : "QueryC",
+            "queryClientInfo" : "QueryC"
           } ],
           "locations" : [ {
-            "url" : "Url3_1",
-            "title" : "Url3_1",
+            "url" : "UrlC_B",
+            "title" : "UrlC_B",
             "luceneScore" : 1.0,
             "frecencyBoost" : 0.0,
             "overallScore" : 1.0
           }, {
-            "url" : "Url3_2",
-            "title" : "Url3_2",
+            "url" : "UrlC_A",
+            "title" : "UrlC_A",
             "luceneScore" : 1.0,
             "frecencyBoost" : 0.0,
             "overallScore" : 1.0
+          } ]
+        } ]
+      }
+    },
+    
+    "testCompactHitInfos": 
+    {
+      "batchQueryResult" : {
+        "queryResults" : [ {
+          "indexerQueries" : [ {
+            "queryString" : "QueryA",
+            "queryClientInfo" : "QueryA"
+          } ],
+          "locations" : [ {
+            "url" : "http://www.test.com/docs/1.2.4/TestFirstDifferentReverse/1.2/rest",
+            "title" : "TestFirstDifferentReverse",
+            "luceneScore" : 1.0,
+            "frecencyBoost" : 5.0,
+            "overallScore" : 5.0
+          }, {
+            "url" : "http://www.test.com/docs/1.2.4/TestFirstDifferent/1.2/rest",
+            "title" : "TestFirstDifferent",
+            "luceneScore" : 1.0,
+            "frecencyBoost" : 5.0,
+            "overallScore" : 5.0
+          }, {
+            "url" : "http://www.test.com/docs/2/TestDiffLengthVersion/1.2/rest",
+            "title" : "TestDiffLengthVersion",
+            "luceneScore" : 1.0,
+            "frecencyBoost" : 5.0,
+            "overallScore" : 5.0
+          }, {
+            "url" : "http://www.test.com/docs/1.2.3/TestEndsWithVersion/2.2",
+            "title" : "TestEndsWithVersion",
+            "luceneScore" : 1.0,
+            "frecencyBoost" : 5.0,
+            "overallScore" : 5.0
+          }, {
+            "url" : "http://www.test.com/docs/1.2.3/TestSecondDifferent/2.2/rest",
+            "title" : "TestSecondDifferent",
+            "luceneScore" : 1.0,
+            "frecencyBoost" : 5.0,
+            "overallScore" : 5.0
+          }, {
+            "url" : "http://www.test.com/docs/1.2.4/TestBothDifferent/1.3/rest",
+            "title" : "TestBothDifferent",
+            "luceneScore" : 1.0,
+            "frecencyBoost" : 3.0,
+            "overallScore" : 3.0
+          }, {
+            "url" : "http://www.domainone.com/docs/1.2.3/TestDiffDomain/1.2/rest",
+            "title" : "TestDiffDomain",
+            "luceneScore" : 1.0,
+            "frecencyBoost" : 3.0,
+            "overallScore" : 3.0
+          }, {
+            "url" : "http://www.test.com/docs/1.2.3/TestBothDifferent/1.2/rest",
+            "title" : "TestBothDifferent",
+            "luceneScore" : 1.0,
+            "frecencyBoost" : 3.0,
+            "overallScore" : 3.0
+          }, {
+            "url" : "http://www.domaintwo.com/docs/1.2.3/TestDiffDomain/1.2/rest",
+            "title" : "TestDiffDomain",
+            "luceneScore" : 1.0,
+            "frecencyBoost" : 3.0,
+            "overallScore" : 3.0
           } ]
         } ]
       }
