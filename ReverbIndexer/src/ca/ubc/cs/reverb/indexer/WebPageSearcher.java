@@ -9,6 +9,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.queryParser.MultiFieldQueryParser;
@@ -36,6 +38,11 @@ public class WebPageSearcher {
     private SharedIndexReader reader;
     private QueryParser parser;
     private LocationsDatabase locationsDatabase;
+
+    private final static String VERSION_FIELD_SEP = "[\\_\\-\\.]";
+    private final static String VERSION_NUMBER = "[0-9]+(?:" + VERSION_FIELD_SEP + "[0-9]+)*";
+    private final static Pattern VERSION_NUMBER_PATTERN = Pattern.compile(VERSION_NUMBER); 
+    private final static Pattern TEXT_PLUS_VERSION_NUMBER_PATTERN = Pattern.compile("(.*?)(" + VERSION_NUMBER + ")");
     
     // For testing
     WebPageSearcher() { }
@@ -86,9 +93,11 @@ public class WebPageSearcher {
                 }
             }
         }
+
+        // Compact hit infos whose URL's are identical except for a version number.
+        List<HitInfo> hitInfos = compactHitInfos(new ArrayList<HitInfo>(infosByUrl.values()));
         
         // Sort results by overall score.
-        List<HitInfo> hitInfos = new ArrayList<HitInfo>(infosByUrl.values());
         Collections.sort(hitInfos, new Comparator<HitInfo>() {
 
             @Override
@@ -155,6 +164,141 @@ public class WebPageSearcher {
         return result;
     }
     
+    /**
+     * Compacts hit infos whose URL's differ only in a version number.
+     * 
+     * @param hitInfos The list of hit infos to be compacted.
+     * @return The input list, with entries whose URL's differ only in a (single) version number replaced by 
+     *         a single entry.
+     */
+    protected List<HitInfo> compactHitInfos(List<HitInfo> hitInfos) {
+        class TopHitInfo {
+            String[] splitUrl;
+            HitInfo topInfo;
+            
+            TopHitInfo(HitInfo info) {
+                topInfo = info;
+                splitUrl = splitUrlWithVersionNumber(info.hit.url);
+            }
+            
+            boolean tryCombine(HitInfo testInfo) {
+                if (splitUrl != null) {
+                    String[] testSplitUrl = splitUrlWithVersionNumber(testInfo.hit.url);
+                    if (testSplitUrl != null && testSplitUrl.length == splitUrl.length) {
+                        int misses = 0;
+                        int missIndex = 0;
+                        for (int i = 0; i < splitUrl.length; i++) {
+                            if (!splitUrl[i].equals(testSplitUrl[i])) {
+                                misses++;
+                                if (misses > 1) {
+                                    break;
+                                }
+                                missIndex = i;
+                            }
+                        }
+                        if (misses == 0) {
+                            // URL's are identical -- should never happen.
+                            topInfo.frecencyBoost = Math.min(
+                                    topInfo.frecencyBoost + testInfo.frecencyBoost, LocationsDatabase.MAX_FRECENCY_BOOST);
+                            return true;
+                        }
+                        if (misses == 1) {
+                            Matcher m1 = VERSION_NUMBER_PATTERN.matcher(splitUrl[missIndex]);
+                            Matcher m2 = VERSION_NUMBER_PATTERN.matcher(testSplitUrl[missIndex]);
+                            if (m1.matches() && m2.matches()) {
+                                try {
+                                    if (compareVersionNumbers(splitUrl[missIndex], testSplitUrl[missIndex]) < 0) {
+                                        testInfo.frecencyBoost = Math.min(
+                                                topInfo.frecencyBoost + testInfo.frecencyBoost, LocationsDatabase.MAX_FRECENCY_BOOST);
+                                        topInfo = testInfo;
+                                        splitUrl = testSplitUrl;
+                                    } else {
+                                        topInfo.frecencyBoost = Math.min(
+                                                topInfo.frecencyBoost + testInfo.frecencyBoost, LocationsDatabase.MAX_FRECENCY_BOOST);
+                                    }
+                                    return true;
+                                } catch (NumberFormatException e) {
+                                    // Should never happen, since we already matched VERSION_NUMBER_PATTERN.
+                                    return false;
+                                }
+                            }
+                        }
+                    }
+                }
+                return false;
+            }
+            
+            private int compareVersionNumbers(String a, String b) throws NumberFormatException {
+                String[] aSplit = a.split(VERSION_FIELD_SEP);
+                String[] bSplit = b.split(VERSION_FIELD_SEP);
+                int minLength = Math.min(aSplit.length, bSplit.length);
+                for (int i = 0; i < minLength; i++) {
+                    int aVal = Integer.parseInt(aSplit[i]);
+                    int bVal = Integer.parseInt(bSplit[i]);
+                    if (aVal > bVal) {
+                        return 1;
+                    }
+                    if (bVal > aVal) {
+                        return -1;
+                    }
+                }
+                if (aSplit.length > bSplit.length) {
+                    return 1;
+                }
+                if (bSplit.length > aSplit.length) {
+                    return -1;
+                }
+                return 0;
+            }
+            
+            private String[] splitUrlWithVersionNumber(String url) {
+                List<String> result = new ArrayList<String>();
+                Matcher matcher = TEXT_PLUS_VERSION_NUMBER_PATTERN.matcher(url);
+                boolean foundMatch = false;
+                int matchEnd = 0;
+                while (matcher.find()) {
+                    foundMatch = true;
+                    matchEnd = matcher.end();
+                    for (int i = 1; i <= matcher.groupCount(); i++) {
+                        if (matcher.group(i) != null) {
+                            result.add(matcher.group(i));
+                        }
+                    }
+                }
+                if (foundMatch) {
+                    if (matchEnd < url.length() - 1) {
+                        result.add(url.substring(matchEnd));
+                    }
+                    return result.toArray(new String[] {});
+                }
+                return null;
+            }
+
+        }
+        
+        // Collapse hits whose URL's are identical except for a version number. 
+        List<TopHitInfo> topHitInfos = new ArrayList<TopHitInfo>();
+        
+        for (HitInfo hitInfo: hitInfos) {
+            boolean found = false;
+            for (TopHitInfo topInfo: topHitInfos) {
+                if (topInfo.tryCombine(hitInfo)) {
+                    found = true; 
+                    break;
+                }
+            }
+            if (!found) {
+                topHitInfos.add(new TopHitInfo(hitInfo));
+            }
+        }
+        
+        List<HitInfo> result = new ArrayList<HitInfo>();
+        for (TopHitInfo topInfo: topHitInfos) {
+            result.add(topInfo.topInfo);
+        }
+        return result;
+    }
+
     protected IndexSearcher getNewIndexSearcher() throws IndexerException {
         try {
             // Must create new IndexSearcher if you are creating a new IndexReader 
@@ -239,6 +383,13 @@ public class WebPageSearcher {
             this.luceneScore = luceneScore;
         }
         
+        public Hit(String url, String title, float luceneScore, float frecencyBoost) {
+            this.url = url;
+            this.title = title;
+            this.luceneScore = luceneScore;
+            this.frecencyBoost = frecencyBoost;
+        }
+
         public String url;
         public String title;
         public float luceneScore;

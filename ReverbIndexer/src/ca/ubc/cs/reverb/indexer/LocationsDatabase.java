@@ -17,6 +17,8 @@ import java.util.Map;
  * public accessors of this class (and by the fact that there should only ever be one instance of the indexer process).
  */
 public class LocationsDatabase {
+    public final static float MAX_FRECENCY_BOOST = 5.0F;
+    
     private static final String JDBC_SQLITE = "jdbc:sqlite:";
     private static final long VISIT_HALF_LIFE_MSECS = 6 * 30 * 24 * 60 * 60 * 1000L;
     private static final float DECAY = (float)Math.log(0.5) / VISIT_HALF_LIFE_MSECS;
@@ -69,7 +71,7 @@ public class LocationsDatabase {
                 Float frecencyBoost = rs.getFloat(4);
                 frecencyBoost = frecencyBoost * (float)Math.exp(DECAY * (now.getTime() - lastVisitTime));
                 
-                results.put(url, (float)Math.min(frecencyBoost, 5.0));
+                results.put(url, (float)Math.min(frecencyBoost, MAX_FRECENCY_BOOST));
             }
         } catch (SQLException e) {
             throw new IndexerException("Error getting frecency boosts: " + e, e);
