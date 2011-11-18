@@ -98,9 +98,11 @@ public class QueryBuilderASTVisitorTest {
         return testData.get(testKey);
     }
     
-    private JsonNode getJsonNode(Object obj) {
-        ObjectMapper mapper = new ObjectMapper();
-        return mapper.valueToTree(obj);
+    private JsonNode getJsonNode(Object obj) throws JsonParseException, IOException {
+        JsonFactory factory = new JsonFactory();
+        JsonParser parser = factory.createJsonParser(getJsonString(obj));
+        parser.setCodec(new ObjectMapper());
+        return parser.readValueAsTree();
     }
     
     private String getJsonString(Object obj) throws IOException {
