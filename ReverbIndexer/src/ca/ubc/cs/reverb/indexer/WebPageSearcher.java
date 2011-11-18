@@ -165,136 +165,32 @@ public class WebPageSearcher {
     }
     
     /**
-     * Compacts hit infos whose URL's differ only in a version number.
+     * Combines hit infos whose URL's differ only in a version number.
      * 
      * @param hitInfos The list of hit infos to be compacted.
      * @return The input list, with entries whose URL's differ only in a (single) version number replaced by 
      *         a single entry.
      */
     protected List<HitInfo> compactHitInfos(List<HitInfo> hitInfos) {
-        class TopHitInfo {
-            String[] splitUrl;
-            HitInfo topInfo;
-            
-            TopHitInfo(HitInfo info) {
-                topInfo = info;
-                splitUrl = splitUrlWithVersionNumber(info.hit.url);
-            }
-            
-            boolean tryCombine(HitInfo testInfo) {
-                if (splitUrl != null) {
-                    String[] testSplitUrl = splitUrlWithVersionNumber(testInfo.hit.url);
-                    if (testSplitUrl != null && testSplitUrl.length == splitUrl.length) {
-                        int misses = 0;
-                        int missIndex = 0;
-                        for (int i = 0; i < splitUrl.length; i++) {
-                            if (!splitUrl[i].equals(testSplitUrl[i])) {
-                                misses++;
-                                if (misses > 1) {
-                                    break;
-                                }
-                                missIndex = i;
-                            }
-                        }
-                        if (misses == 0) {
-                            // URL's are identical -- should never happen.
-                            topInfo.frecencyBoost = Math.min(
-                                    topInfo.frecencyBoost + testInfo.frecencyBoost, LocationsDatabase.MAX_FRECENCY_BOOST);
-                            return true;
-                        }
-                        if (misses == 1) {
-                            Matcher m1 = VERSION_NUMBER_PATTERN.matcher(splitUrl[missIndex]);
-                            Matcher m2 = VERSION_NUMBER_PATTERN.matcher(testSplitUrl[missIndex]);
-                            if (m1.matches() && m2.matches()) {
-                                try {
-                                    if (compareVersionNumbers(splitUrl[missIndex], testSplitUrl[missIndex]) < 0) {
-                                        testInfo.frecencyBoost = Math.min(
-                                                topInfo.frecencyBoost + testInfo.frecencyBoost, LocationsDatabase.MAX_FRECENCY_BOOST);
-                                        topInfo = testInfo;
-                                        splitUrl = testSplitUrl;
-                                    } else {
-                                        topInfo.frecencyBoost = Math.min(
-                                                topInfo.frecencyBoost + testInfo.frecencyBoost, LocationsDatabase.MAX_FRECENCY_BOOST);
-                                    }
-                                    return true;
-                                } catch (NumberFormatException e) {
-                                    // Should never happen, since we already matched VERSION_NUMBER_PATTERN.
-                                    return false;
-                                }
-                            }
-                        }
-                    }
-                }
-                return false;
-            }
-            
-            private int compareVersionNumbers(String a, String b) throws NumberFormatException {
-                String[] aSplit = a.split(VERSION_FIELD_SEP);
-                String[] bSplit = b.split(VERSION_FIELD_SEP);
-                int minLength = Math.min(aSplit.length, bSplit.length);
-                for (int i = 0; i < minLength; i++) {
-                    int aVal = Integer.parseInt(aSplit[i]);
-                    int bVal = Integer.parseInt(bSplit[i]);
-                    if (aVal > bVal) {
-                        return 1;
-                    }
-                    if (bVal > aVal) {
-                        return -1;
-                    }
-                }
-                if (aSplit.length > bSplit.length) {
-                    return 1;
-                }
-                if (bSplit.length > aSplit.length) {
-                    return -1;
-                }
-                return 0;
-            }
-            
-            private String[] splitUrlWithVersionNumber(String url) {
-                List<String> result = new ArrayList<String>();
-                Matcher matcher = TEXT_PLUS_VERSION_NUMBER_PATTERN.matcher(url);
-                boolean foundMatch = false;
-                int matchEnd = 0;
-                while (matcher.find()) {
-                    foundMatch = true;
-                    matchEnd = matcher.end();
-                    for (int i = 1; i <= matcher.groupCount(); i++) {
-                        if (matcher.group(i) != null) {
-                            result.add(matcher.group(i));
-                        }
-                    }
-                }
-                if (foundMatch) {
-                    if (matchEnd < url.length() - 1) {
-                        result.add(url.substring(matchEnd));
-                    }
-                    return result.toArray(new String[] {});
-                }
-                return null;
-            }
-
-        }
-        
         // Collapse hits whose URL's are identical except for a version number. 
-        List<TopHitInfo> topHitInfos = new ArrayList<TopHitInfo>();
+        List<LatestVersionHitInfo> latestVersionHitInfos = new ArrayList<LatestVersionHitInfo>();
         
         for (HitInfo hitInfo: hitInfos) {
             boolean found = false;
-            for (TopHitInfo topInfo: topHitInfos) {
+            for (LatestVersionHitInfo topInfo: latestVersionHitInfos) {
                 if (topInfo.tryCombine(hitInfo)) {
                     found = true; 
                     break;
                 }
             }
             if (!found) {
-                topHitInfos.add(new TopHitInfo(hitInfo));
+                latestVersionHitInfos.add(new LatestVersionHitInfo(hitInfo));
             }
         }
         
         List<HitInfo> result = new ArrayList<HitInfo>();
-        for (TopHitInfo topInfo: topHitInfos) {
-            result.add(topInfo.topInfo);
+        for (LatestVersionHitInfo topInfo: latestVersionHitInfos) {
+            result.add(topInfo.hitInfo);
         }
         return result;
     }
@@ -420,4 +316,109 @@ public class WebPageSearcher {
             return combinedScore;
         }
     }
+
+    protected class LatestVersionHitInfo {
+        public String[] splitUrl;
+        public HitInfo hitInfo;
+        
+        public LatestVersionHitInfo(HitInfo info) {
+            hitInfo = info;
+            splitUrl = splitUrlWithVersionNumber(info.hit.url);
+        }
+        
+        public boolean tryCombine(HitInfo testInfo) {
+            if (splitUrl != null) {
+                String[] testSplitUrl = splitUrlWithVersionNumber(testInfo.hit.url);
+                if (testSplitUrl != null && testSplitUrl.length == splitUrl.length) {
+                    int misses = 0;
+                    int missIndex = 0;
+                    for (int i = 0; i < splitUrl.length; i++) {
+                        if (!splitUrl[i].equals(testSplitUrl[i])) {
+                            misses++;
+                            if (misses > 1) {
+                                break;
+                            }
+                            missIndex = i;
+                        }
+                    }
+                    if (misses == 0) {
+                        // URL's are identical -- should never happen.
+                        hitInfo.frecencyBoost = Math.min(
+                                hitInfo.frecencyBoost + testInfo.frecencyBoost, LocationsDatabase.MAX_FRECENCY_BOOST);
+                        return true;
+                    }
+                    if (misses == 1) {
+                        Matcher m1 = VERSION_NUMBER_PATTERN.matcher(splitUrl[missIndex]);
+                        Matcher m2 = VERSION_NUMBER_PATTERN.matcher(testSplitUrl[missIndex]);
+                        if (m1.matches() && m2.matches()) {
+                            try {
+                                if (compareVersionNumbers(splitUrl[missIndex], testSplitUrl[missIndex]) < 0) {
+                                    testInfo.frecencyBoost = Math.min(
+                                            hitInfo.frecencyBoost + testInfo.frecencyBoost, LocationsDatabase.MAX_FRECENCY_BOOST);
+                                    hitInfo = testInfo;
+                                    splitUrl = testSplitUrl;
+                                } else {
+                                    hitInfo.frecencyBoost = Math.min(
+                                            hitInfo.frecencyBoost + testInfo.frecencyBoost, LocationsDatabase.MAX_FRECENCY_BOOST);
+                                }
+                                return true;
+                            } catch (NumberFormatException e) {
+                                // Should never happen, since we already matched VERSION_NUMBER_PATTERN.
+                                return false;
+                            }
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+        
+        private int compareVersionNumbers(String a, String b) throws NumberFormatException {
+            String[] aSplit = a.split(VERSION_FIELD_SEP);
+            String[] bSplit = b.split(VERSION_FIELD_SEP);
+            int minLength = Math.min(aSplit.length, bSplit.length);
+            for (int i = 0; i < minLength; i++) {
+                int aVal = Integer.parseInt(aSplit[i]);
+                int bVal = Integer.parseInt(bSplit[i]);
+                if (aVal > bVal) {
+                    return 1;
+                }
+                if (bVal > aVal) {
+                    return -1;
+                }
+            }
+            if (aSplit.length > bSplit.length) {
+                return 1;
+            }
+            if (bSplit.length > aSplit.length) {
+                return -1;
+            }
+            return 0;
+        }
+        
+        private String[] splitUrlWithVersionNumber(String url) {
+            List<String> result = new ArrayList<String>();
+            Matcher matcher = TEXT_PLUS_VERSION_NUMBER_PATTERN.matcher(url);
+            boolean foundMatch = false;
+            int matchEnd = 0;
+            while (matcher.find()) {
+                foundMatch = true;
+                matchEnd = matcher.end();
+                for (int i = 1; i <= matcher.groupCount(); i++) {
+                    if (matcher.group(i) != null) {
+                        result.add(matcher.group(i));
+                    }
+                }
+            }
+            if (foundMatch) {
+                if (matchEnd < url.length() - 1) {
+                    result.add(url.substring(matchEnd));
+                }
+                return result.toArray(new String[] {});
+            }
+            return null;
+        }
+
+    }
+    
 }
