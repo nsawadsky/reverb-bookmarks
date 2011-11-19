@@ -16,4 +16,6 @@ public class Methoddecl extends Superclassdecl implements Interfacedecl, Interfa
     }
     
     public void methoddeclMethod() { }
+    
+    public static void staticMethod() { }
 }

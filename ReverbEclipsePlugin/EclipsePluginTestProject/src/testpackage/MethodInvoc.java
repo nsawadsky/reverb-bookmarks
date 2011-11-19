@@ -7,6 +7,8 @@ public class MethodInvoc {
         
         methoddecl.superclassdeclMethod();
         
+        Methoddecl.staticMethod();
+        
         MethoddeclNores methoddeclNores = new MethoddeclNores();
         methoddeclNores.methoddeclNoresMethod();
         

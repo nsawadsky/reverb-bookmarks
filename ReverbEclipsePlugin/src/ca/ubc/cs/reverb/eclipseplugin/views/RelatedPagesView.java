@@ -352,7 +352,6 @@ public class RelatedPagesView extends ViewPart {
         ASTParser parser = ASTParser.newParser(AST.JLS3);
         parser.setSource(compilationUnit);
         parser.setResolveBindings(true);
-        parser.setBindingsRecovery(true);
         parser.setStatementsRecovery(true);
         CompilationUnit compileUnit = (CompilationUnit)parser.createAST(null);
         QueryBuilderASTVisitor visitor = new QueryBuilderASTVisitor(topPosition, bottomPosition);

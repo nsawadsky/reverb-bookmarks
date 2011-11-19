@@ -81,7 +81,6 @@ public class QueryBuilderASTVisitorTest {
         ASTParser parser = ASTParser.newParser(AST.JLS3);
         parser.setSource((ICompilationUnit)fileElement);
         parser.setResolveBindings(true);
-        parser.setBindingsRecovery(true);
         parser.setStatementsRecovery(true);
         CompilationUnit compileUnit = (CompilationUnit)parser.createAST(null);
         QueryBuilderASTVisitor visitor = new QueryBuilderASTVisitor(0, 10000);

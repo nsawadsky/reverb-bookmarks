@@ -317,6 +317,7 @@ public class WebPageSearcher {
         }
     }
 
+    // TODO: Consider unescaping URL's before checking for version numbers.
     protected class LatestVersionHitInfo {
         public String[] splitUrl;
         public HitInfo hitInfo;
