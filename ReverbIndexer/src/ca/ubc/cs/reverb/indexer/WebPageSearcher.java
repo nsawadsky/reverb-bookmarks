@@ -98,20 +98,7 @@ public class WebPageSearcher {
         List<HitInfo> hitInfos = compactHitInfos(new ArrayList<HitInfo>(infosByUrl.values()));
         
         // Sort results by overall score.
-        Collections.sort(hitInfos, new Comparator<HitInfo>() {
-
-            @Override
-            public int compare(HitInfo o1, HitInfo o2) {
-                if (o1.getOverallScore() > o2.getOverallScore()) {
-                    return -1;
-                }
-                if (o1.getOverallScore() < o2.getOverallScore()) {
-                    return 1;
-                }
-                return 0;
-            }
-            
-        });
+        sortHitInfoList(hitInfos);
         
         // Truncate the list based on the max results to be returned.
         if (hitInfos.size() > MAX_RESULTS) {
@@ -145,7 +132,7 @@ public class WebPageSearcher {
             for (MergedQueryResult nextResult: nextMergedResults) {
                 if (currResult.allHitsMatch(nextResult.queries.get(0))) {
                     nextResult.queries.addAll(currResult.queries);
-                    nextResult.hits.addAll(currResult.hits);
+                    nextResult.mergeHits(currResult.hits);
                     foundMatch = true;
                     break;
                 }
@@ -246,6 +233,23 @@ public class WebPageSearcher {
         return result;
     }
     
+    private void sortHitInfoList(List<HitInfo> input) {
+        Collections.sort(input, new Comparator<HitInfo>() {
+
+            @Override
+            public int compare(HitInfo o1, HitInfo o2) {
+                if (o1.getOverallScore() > o2.getOverallScore()) {
+                    return -1;
+                }
+                if (o1.getOverallScore() < o2.getOverallScore()) {
+                    return 1;
+                }
+                return 0;
+            }
+            
+        });
+    }
+    
     protected class MergedQueryResult {
         public MergedQueryResult(IndexerQuery query, HitInfo info) {
             queries.add(query);
@@ -266,6 +270,11 @@ public class WebPageSearcher {
                 }
             }
             return true;
+        }
+        
+        public void mergeHits(List<HitInfo> toMerge) {
+            hits.addAll(toMerge);
+            sortHitInfoList(hits);
         }
         
         public List<IndexerQuery> queries = new ArrayList<IndexerQuery>();

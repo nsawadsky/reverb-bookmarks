@@ -5,13 +5,13 @@
       "queryClientInfo" : "FieldRefs"
     }, {
       "queryString" : "(+(testpackage.Fielddecls OR testpackage) Fielddecls FIELDDECLS_CONSTANT_1 FIELDDECLS_CONSTANT_2) OR (+Fielddecls.FIELDDECLS_CONSTANT_1) OR (+Fielddecls.FIELDDECLS_CONSTANT_2)",
-      "queryClientInfo" : "Fielddecls FIELDDECLS_CONSTANT_1 FIELDDECLS_CONSTANT_2"
+      "queryClientInfo" : "Fielddecls"
     }, {
       "queryString" : "(+(testpackage.Enumvaluedecls OR testpackage) Enumvaluedecls ENUM_VALUE_1 ENUM_VALUE_2) OR (+Enumvaluedecls.ENUM_VALUE_1) OR (+Enumvaluedecls.ENUM_VALUE_2)",
-      "queryClientInfo" : "Enumvaluedecls ENUM_VALUE_1 ENUM_VALUE_2"
+      "queryClientInfo" : "Enumvaluedecls"
     }, {
       "queryString" : "(+(testpackage.Fielddecls.Innerclassdecl OR testpackage) Fielddecls.Innerclassdecl FIELDDECLS_CONSTANT_1) OR (+Fielddecls.Innerclassdecl.FIELDDECLS_CONSTANT_1)",
-      "queryClientInfo" : "Fielddecls.Innerclassdecl FIELDDECLS_CONSTANT_1"
+      "queryClientInfo" : "Fielddecls.Innerclassdecl"
     } ],
     
     "src/testpackage/TypeRefs.java":
