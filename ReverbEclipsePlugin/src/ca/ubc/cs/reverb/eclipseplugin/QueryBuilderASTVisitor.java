@@ -139,7 +139,7 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
             if (varBinding.isField() && Modifier.isFinal(modifiers) && Modifier.isStatic(modifiers)) {
                 ITypeBinding declarer = varBinding.getDeclaringClass();
                 if (declarer != null) {
-                    addStaticMemberToQuery(declarer, node.getIdentifier());
+                    addStaticMemberToQuery(declarer, node.getIdentifier(), false);
                 }
             }
             
@@ -199,7 +199,7 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
         }
         String identifier = node.getName().getIdentifier();
         if (Modifier.isStatic(methodBinding.getModifiers())) {
-            addStaticMemberToQuery(typeBinding, identifier);
+            addStaticMemberToQuery(typeBinding, identifier, true);
         } else {
             QueryElement typeElement = getTypeQueryElement(typeBinding, null);
             if (typeElement != null) {
@@ -290,19 +290,25 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
         return null;
     }
     
-    private void addStaticMemberToQuery(ITypeBinding typeBinding, String memberIdentifier) {
+    private void addStaticMemberToQuery(ITypeBinding typeBinding, String memberIdentifier, 
+            boolean isMethod) {
         TypeInfo typeInfo = getTypeInfo(typeBinding);
         if (typeInfo == null) {
             return;
         }
 
         QueryElement typeQueryElement = getTypeQueryElement(typeInfo, true);
-        typeQueryElement.addOptionalQuery(memberIdentifier, memberIdentifier);
+        typeQueryElement.addOptionalQuery(memberIdentifier, null);
+        if (isMethod) {
+            typeQueryElement.addDisplayText(memberIdentifier);
+        }
         addToQueryElements(typeQueryElement);
         
         QueryElement memberReferenceElement = new QueryElement(typeInfo.fullyQualifiedName, 
                 typeInfo.className + "." + memberIdentifier, typeInfo.className);
-        memberReferenceElement.addDisplayText(memberIdentifier);
+        if (isMethod) {
+            memberReferenceElement.addDisplayText(memberIdentifier);
+        }
         addToQueryElements(memberReferenceElement);
     }
     
