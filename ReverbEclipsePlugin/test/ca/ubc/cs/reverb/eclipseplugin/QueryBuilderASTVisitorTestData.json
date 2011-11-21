@@ -1,118 +1,136 @@
 {
     "src/testpackage/FieldRefs.java": 
     [ {
-      "queryString" : "+FieldRefs",
+      "queryString" : "(+FieldRefs)",
       "queryClientInfo" : "FieldRefs"
     }, {
-      "queryString" : "Fielddecls.FIELDDECLS_CONSTANT_1 (testpackage.Fielddecls AND FIELDDECLS_CONSTANT_1) Fielddecls.FIELDDECLS_CONSTANT_2 (testpackage.Fielddecls AND FIELDDECLS_CONSTANT_2)",
-      "queryClientInfo" : "Fielddecls.FIELDDECLS_CONSTANT_1 Fielddecls.FIELDDECLS_CONSTANT_2"
+      "queryString" : "(+(testpackage.Fielddecls OR testpackage) Fielddecls FIELDDECLS_CONSTANT_1 FIELDDECLS_CONSTANT_2) OR (+Fielddecls.FIELDDECLS_CONSTANT_1) OR (+Fielddecls.FIELDDECLS_CONSTANT_2)",
+      "queryClientInfo" : "Fielddecls FIELDDECLS_CONSTANT_1 FIELDDECLS_CONSTANT_2"
     }, {
-      "queryString" : "(+(testpackage.Enumvaluedecls OR testpackage) Enumvaluedecls) OR (Enumvaluedecls.ENUM_VALUE_1 (testpackage.Enumvaluedecls AND ENUM_VALUE_1) Enumvaluedecls.ENUM_VALUE_2 (testpackage.Enumvaluedecls AND ENUM_VALUE_2))",
-      "queryClientInfo" : "Enumvaluedecls Enumvaluedecls.ENUM_VALUE_1 Enumvaluedecls.ENUM_VALUE_2"
+      "queryString" : "(+(testpackage.Enumvaluedecls OR testpackage) Enumvaluedecls ENUM_VALUE_1 ENUM_VALUE_2) OR (+Enumvaluedecls.ENUM_VALUE_1) OR (+Enumvaluedecls.ENUM_VALUE_2)",
+      "queryClientInfo" : "Enumvaluedecls ENUM_VALUE_1 ENUM_VALUE_2"
     }, {
-      "queryString" : "Fielddecls.Innerclassdecl.FIELDDECLS_CONSTANT_1 (testpackage.Fielddecls.Innerclassdecl AND FIELDDECLS_CONSTANT_1)",
-      "queryClientInfo" : "Fielddecls.Innerclassdecl.FIELDDECLS_CONSTANT_1"
+      "queryString" : "(+(testpackage.Fielddecls.Innerclassdecl OR testpackage) Fielddecls.Innerclassdecl FIELDDECLS_CONSTANT_1) OR (+Fielddecls.Innerclassdecl.FIELDDECLS_CONSTANT_1)",
+      "queryClientInfo" : "Fielddecls.Innerclassdecl FIELDDECLS_CONSTANT_1"
     } ],
     
     "src/testpackage/TypeRefs.java":
     [ {
-      "queryString" : "+TypeRefs",
+      "queryString" : "(+TypeRefs)",
       "queryClientInfo" : "TypeRefs"
     }, {
-      "queryString" : "+(java.io.File OR java.io) File",
+      "queryString" : "(+(java.io.File OR java.io) File)",
       "queryClientInfo" : "File"
     }, {
-      "queryString" : "+ServerSocket",
+      "queryString" : "(+ServerSocket)",
       "queryClientInfo" : "ServerSocket"
     }, {
-      "queryString" : "+(testpackage.Classdecl OR testpackage) Classdecl",
+      "queryString" : "(+(testpackage.Classdecl OR testpackage) Classdecl)",
       "queryClientInfo" : "Classdecl"
     }, {
-      "queryString" : "+Classdecl.Innerclassdecl",
+      "queryString" : "(+Classdecl.Innerclassdecl)",
       "queryClientInfo" : "Classdecl.Innerclassdecl"
     }, {
-      "queryString" : "+ClassdeclNores",
+      "queryString" : "(+ClassdeclNores)",
       "queryClientInfo" : "ClassdeclNores"
     } ],
     
     "src/testpackage/ComplexTypeRefs.java":
     [ {
-      "queryString" : "+ComplexTypeRefs",
+      "queryString" : "(+ComplexTypeRefs)",
       "queryClientInfo" : "ComplexTypeRefs"
     }, {
-      "queryString" : "+(java.util.List OR java.util) List",
+      "queryString" : "(+(java.util.List OR java.util) List)",
       "queryClientInfo" : "List"
     }, {
-      "queryString" : "+(java.io.File OR java.io) File",
+      "queryString" : "(+(java.io.File OR java.io) File)",
       "queryClientInfo" : "File"
     }, {
-      "queryString" : "+(java.util.UUID OR java.util) UUID",
+      "queryString" : "(+(java.util.UUID OR java.util) UUID)",
       "queryClientInfo" : "UUID"
     } ],
         
     "src/testpackage/Enumdecl.java":
     [ {
-      "queryString" : "+(testpackage.Enumdecl OR testpackage) Enumdecl",
+      "queryString" : "(+(testpackage.Enumdecl OR testpackage) Enumdecl)",
       "queryClientInfo" : "Enumdecl"
     } ],
 
     "src/testpackage/EnumdeclNores.java":
     [ {
-      "queryString" : "+EnumdeclNores",
+      "queryString" : "(+EnumdeclNores)",
       "queryClientInfo" : "EnumdeclNores"
     } ],
     
     "src/testpackage/Classdecl.java":
     [ {
-      "queryString" : "+(testpackage.Classdecl OR testpackage) Classdecl",
+      "queryString" : "(+(testpackage.Classdecl OR testpackage) Classdecl)",
       "queryClientInfo" : "Classdecl"
     }, {
-      "queryString" : "+Classdecl.Innerclassdecl",
+      "queryString" : "(+Classdecl.Innerclassdecl)",
       "queryClientInfo" : "Classdecl.Innerclassdecl"
     } ],
    
    "src/testpackage/ClassdeclNores.java": 
     [ {
-      "queryString" : "+ClassdeclNores",
+      "queryString" : "(+ClassdeclNores)",
       "queryClientInfo" : "ClassdeclNores"
-    } ],    
-    
+    } ],
+        
     "src/testpackage/Methoddecl.java":
     [ {
-      "queryString" : "+(testpackage.Methoddecl OR testpackage) Methoddecl",
+      "queryString" : "(+(testpackage.Methoddecl OR testpackage) Methoddecl)",
       "queryClientInfo" : "Methoddecl"
     }, {
-      "queryString" : "+(testpackage.Superclassdecl OR testpackage) Superclassdecl superclassdeclMethod",
-      "queryClientInfo" : "Superclassdecl superclassdeclMethod"
+      "queryString" : "(+(testpackage.Derivedclassdecl OR testpackage) Derivedclassdecl derivedclassdeclMethod)",
+      "queryClientInfo" : "Derivedclassdecl derivedclassdeclMethod"
     }, {
-      "queryString" : "+(testpackage.Interfacedecl OR testpackage) Interfacedecl interfaceDeclMethod",
+      "queryString" : "(+(testpackage.Interfacedecl OR testpackage) Interfacedecl interfaceDeclMethod)",
       "queryClientInfo" : "Interfacedecl interfaceDeclMethod"
     }, {
-      "queryString" : "+InterfacedeclNores interfacedeclNoresMethod",
+      "queryString" : "(+InterfacedeclNores interfacedeclNoresMethod)",
       "queryClientInfo" : "InterfacedeclNores interfacedeclNoresMethod"
+    }, {
+      "queryString" : "(+(testpackage.Baseclassdecl OR testpackage) Baseclassdecl baseclassdeclMethod)",
+      "queryClientInfo" : "Baseclassdecl baseclassdeclMethod"
+    }, {
+      "queryString" : "(+(testpackage.Baseinterfacedecl OR testpackage) Baseinterfacedecl baseinterfacedeclMethod)",
+      "queryClientInfo" : "Baseinterfacedecl baseinterfacedeclMethod"
     } ],
     
     "src/testpackage/MethodInvoc.java":
     [ {
-      "queryString" : "+MethodInvoc",
+      "queryString" : "(+MethodInvoc)",
       "queryClientInfo" : "MethodInvoc"
     }, {
-      "queryString" : "(+(testpackage.Methoddecl OR testpackage) Methoddecl methoddeclMethod superclassdeclMethod) OR (Methoddecl.staticMethod (testpackage.Methoddecl AND staticMethod))",
-      "queryClientInfo" : "Methoddecl methoddeclMethod superclassdeclMethod Methoddecl.staticMethod"
+      "queryString" : "(+(testpackage.Methoddecl OR testpackage) Methoddecl methoddeclMethod baseclassdeclMethod staticMethod) OR (+Methoddecl.staticMethod)",
+      "queryClientInfo" : "Methoddecl methoddeclMethod baseclassdeclMethod staticMethod"
     }, {
-      "queryString" : "+MethoddeclNores methoddeclNoresMethod",
+      "queryString" : "(+MethoddeclNores methoddeclNoresMethod)",
       "queryClientInfo" : "MethoddeclNores methoddeclNoresMethod"
     }, {
-      "queryString" : "+UnknownType",
+      "queryString" : "(+UnknownType)",
       "queryClientInfo" : "UnknownType"
     }, {
-      "queryString" : "+methoddeclNores",
+      "queryString" : "(+methoddeclNores)",
       "queryClientInfo" : "methoddeclNores"
     } ],
     
     "src/testpackage/PrimitiveRefs.java":
     [ {
-      "queryString" : "+PrimitiveRefs",
+      "queryString" : "(+PrimitiveRefs)",
       "queryClientInfo" : "PrimitiveRefs"
-    } ]
+    } ],
+    
+    "src/testpackage/AnnotationRefs.java":
+    [ {
+      "queryString" : "(+AnnotationRefs)",
+      "queryClientInfo" : "AnnotationRefs"
+    }, {
+      "queryString" : "(+(testpackage.Baseclassdecl OR testpackage) Baseclassdecl baseclassdeclMethod)",
+      "queryClientInfo" : "Baseclassdecl baseclassdeclMethod"
+    }, {
+      "queryString" : "(+(testpackage.Annotationdecl OR testpackage) Annotationdecl)",
+      "queryClientInfo" : "Annotationdecl"
+    } ]      
 }

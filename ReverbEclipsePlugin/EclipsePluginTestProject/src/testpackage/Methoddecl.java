@@ -1,6 +1,6 @@
 package testpackage;
 
-public class Methoddecl extends Superclassdecl implements Interfacedecl, InterfacedeclNores {
+public class Methoddecl extends Derivedclassdecl implements Interfacedecl, InterfacedeclNores {
 
     @Override
     public void interfacedeclNoresMethod() {
@@ -11,7 +11,17 @@ public class Methoddecl extends Superclassdecl implements Interfacedecl, Interfa
     }
     
     @Override 
-    public void superclassdeclMethod() {
+    public void derivedclassdeclMethod() {
+        
+    }
+    
+    @Override 
+    public void baseclassdeclMethod() { 
+    
+    }
+    
+    @Override 
+    public void baseinterfacedeclMethod() {
         
     }
     

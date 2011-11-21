@@ -354,7 +354,7 @@ public class RelatedPagesView extends ViewPart {
         parser.setResolveBindings(true);
         parser.setStatementsRecovery(true);
         CompilationUnit compileUnit = (CompilationUnit)parser.createAST(null);
-        QueryBuilderASTVisitor visitor = new QueryBuilderASTVisitor(topPosition, bottomPosition);
+        QueryBuilderASTVisitor visitor = new QueryBuilderASTVisitor(compileUnit.getAST(), topPosition, bottomPosition);
         compileUnit.accept(visitor);
         
         List<IndexerQuery> queries = visitor.getQueries();
