@@ -1,5 +1,5 @@
 package testpackage;
 
-public interface Interfacedecl {
+public interface Interfacedecl extends Baseinterfacedecl {
     void interfaceDeclMethod();
 }

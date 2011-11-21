@@ -5,7 +5,7 @@ public class MethodInvoc {
         Methoddecl methoddecl = new Methoddecl();
         methoddecl.methoddeclMethod();
         
-        methoddecl.superclassdeclMethod();
+        methoddecl.baseclassdeclMethod();
         
         Methoddecl.staticMethod();
         

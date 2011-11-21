@@ -52,6 +52,7 @@ public class QueryBuilderASTVisitorTest {
                 { "src/testpackage/Methoddecl.java" },
                 { "src/testpackage/MethodInvoc.java" },
                 { "src/testpackage/PrimitiveRefs.java" },
+                { "src/testpackage/AnnotationRefs.java" },
                 });
     }
     
@@ -83,7 +84,7 @@ public class QueryBuilderASTVisitorTest {
         parser.setResolveBindings(true);
         parser.setStatementsRecovery(true);
         CompilationUnit compileUnit = (CompilationUnit)parser.createAST(null);
-        QueryBuilderASTVisitor visitor = new QueryBuilderASTVisitor(0, 10000);
+        QueryBuilderASTVisitor visitor = new QueryBuilderASTVisitor(compileUnit.getAST(), 0, 10000);
         compileUnit.accept(visitor);
         
         List<IndexerQuery> queries = visitor.getQueries();
