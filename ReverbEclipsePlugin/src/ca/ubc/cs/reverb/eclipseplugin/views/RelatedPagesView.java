@@ -138,7 +138,6 @@ public class RelatedPagesView extends ViewPart {
     }
     
     class ViewLabelProvider extends ColumnLabelProvider {
-
         public String getToolTipText(Object obj) {
             if (obj instanceof Location) {
                 return ((Location)obj).url;
@@ -178,10 +177,11 @@ public class RelatedPagesView extends ViewPart {
         public Image getImage(Object obj) {
             String imageKey = ISharedImages.IMG_OBJ_FILE;
             if (obj instanceof QueryResult) {
-                imageKey = ISharedImages.IMG_OBJ_FOLDER;
+                return PluginActivator.getDefault().getSearchImage();
             }
-            return PlatformUI.getWorkbench().getSharedImages().getImage(imageKey);
+            return PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_OBJ_FILE);
         }
+        
     }
     
     class NavigationListener implements IPartListener, ISelectionListener {
@@ -319,12 +319,13 @@ public class RelatedPagesView extends ViewPart {
         getSite().registerContextMenu(menuManager, viewer);
 
         IActionBars bars = getViewSite().getActionBars();
+        /*
         IMenuManager barMenuManager = bars.getMenuManager();
         barMenuManager.add(openBrowserAction);
         barMenuManager.add(updateViewAction);
+        */
 
         IToolBarManager toolbarManager = bars.getToolBarManager();
-        toolbarManager.add(openBrowserAction);
         toolbarManager.add(updateViewAction);
    }
     

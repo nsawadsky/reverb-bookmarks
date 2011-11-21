@@ -1,6 +1,7 @@
 package ca.ubc.cs.reverb.eclipseplugin;
 
 import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.BundleContext;
 
@@ -16,6 +17,8 @@ public class PluginActivator extends AbstractUIPlugin {
 	private static PluginActivator plugin;
 	
 	private PluginLogger logger;
+	
+	private Image searchImage;
 	
 	/**
 	 * The constructor
@@ -66,4 +69,13 @@ public class PluginActivator extends AbstractUIPlugin {
 	    return this.logger;
 	}
 	
+    public Image getSearchImage() {
+        if (searchImage == null) {
+            ImageDescriptor descriptor = getImageDescriptor("icons/search.gif");
+            if (descriptor != null) {
+                searchImage = descriptor.createImage();
+            }
+        }
+        return searchImage;
+    }
 }
