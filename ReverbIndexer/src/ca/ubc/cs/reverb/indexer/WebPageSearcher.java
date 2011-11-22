@@ -132,7 +132,7 @@ public class WebPageSearcher {
             for (MergedQueryResult nextResult: nextMergedResults) {
                 if (currResult.allHitsMatch(nextResult.queries.get(0))) {
                     nextResult.queries.addAll(currResult.queries);
-                    nextResult.mergeHits(currResult.hits);
+                    nextResult.hits.addAll(currResult.hits);
                     foundMatch = true;
                     break;
                 }
@@ -140,6 +140,11 @@ public class WebPageSearcher {
             if (!foundMatch) {
                 nextMergedResults.add(currResult);
             }
+        }
+        
+        // Sort hit info lists for merged results.
+        for (MergedQueryResult mergedResult: nextMergedResults) {
+            sortHitInfoList(mergedResult.hits);
         }
         
         // Create the result structure to be sent to the client.
@@ -270,11 +275,6 @@ public class WebPageSearcher {
                 }
             }
             return true;
-        }
-        
-        public void mergeHits(List<HitInfo> toMerge) {
-            hits.addAll(toMerge);
-            sortHitInfoList(hits);
         }
         
         public List<IndexerQuery> queries = new ArrayList<IndexerQuery>();
