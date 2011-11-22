@@ -39,6 +39,9 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
     private ITypeBinding objectBinding;
     
     /**
+     * Define a pattern which matches identifiers which are "selective" -- i.e. unlikely to match
+     * ordinary English words.
+     * 
      * Starts with lower-case and contains at least one upper-case 
      *   OR
      * Starts with upper-case and contains at least one lower-case, followed by at least one upper-case
@@ -53,6 +56,9 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
     
     private final static Pattern SELECTIVE_IDENTIFIER = Pattern.compile(IDENTIFIER_PATTERN);
     
+    /**
+     * Types which are never included in the query.
+     */
     private static List<String> SKIP_TYPES = Arrays.asList(
             "java.lang.String", "String", "java.lang.Override", "java.lang.Deprecated", 
             "byte", "short", "int", "long", "float", "double", "boolean", "char");
@@ -71,6 +77,7 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
             for (QueryElement element: elementList) {
                 boolean merged = false;
                 for (QueryElement mergedElement: mergedList) {
+                    // Merge queries which have the same *required* query.
                     if (mergedElement.tryMerge(element)) {
                         merged = true;
                         break;
@@ -80,6 +87,7 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
                     mergedList.add(element);
                 }
             }
+            // All queries for a given type are combined in to a single query string.
             StringBuilder query = new StringBuilder();
             StringBuilder display = new StringBuilder();
             Set<String> allDisplayTexts = new HashSet<String>();
@@ -120,11 +128,17 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
         return visitAnnotation(node);
     }
 
+    /** 
+     * Catch qualified references to static final fields.
+     */
     @Override 
     public boolean visit(QualifiedName node) {
         return visit(node.getName());
     }
     
+    /** 
+     * Catch references to static final fields.
+     */
     @Override 
     public boolean visit(SimpleName node) {
         if (!nodeOverlaps(node)) {
@@ -148,6 +162,9 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
         return false;
     }
 
+    /**
+     * Catch method declarations which override or implement a method in a parent class or interface.
+     */
     @Override
     public boolean visit(MethodDeclaration node) {
         if (!nodeOverlaps(node)) {
@@ -187,6 +204,8 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
         IMethodBinding methodBinding = node.resolveMethodBinding();
         if (methodBinding == null) {
             String identifier = node.getName().getIdentifier();
+            // If the method binding cannot be resolved, but the method name itself is selective enough,
+            // then include just the method name in the query.
             if (!nameNeedsResolution(identifier)) {
                 QueryElement result = new QueryElement(identifier, identifier, identifier);
                 addToQueryElements(result);
@@ -210,6 +229,11 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
         return true;
     }
 
+    /**
+     * Catch enum declarations (there may actually be web pages that discuss the code the developer
+     * is developing -- creating queries for type declarations goes a little way towards including such
+     * pages in the result list).
+     */
     @Override
     public boolean visit(EnumDeclaration node) {
         if (nodeOverlaps(node)) {
@@ -223,6 +247,11 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
         return false;
     }
 
+    /**
+     * Catch type declarations (there may actually be web pages that discuss the code the developer
+     * is developing -- creating queries for type declarations goes a little way towards including such
+     * pages in the result list).
+     */
     @Override
     public boolean visit(TypeDeclaration node) {
         if (nodeOverlaps(node)) {
@@ -235,7 +264,13 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
         }
         return false;
     }
-    
+
+    /**
+     * Catch references to types (e.g. variable declarations, method parameters, field declarations).
+     * Array type declarations will result in a call to this method for the type of the elements.
+     * Generic type instantiations result in a call to this method for the generic type, as well as the
+     * parameter types.  
+     */
     @Override
     public boolean visit(SimpleType node) {
         if (nodeOverlaps(node)) {
@@ -267,6 +302,11 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
         return false;
     }
 
+    /**
+     * Find the parent class or interface which declares a given method (if one exists).
+     * Currently, for performance and simplicity, this method matches the method name only, and ignores
+     * the parameter lists.
+     */
     private ITypeBinding findOriginalDeclaringType(ITypeBinding typeBinding, boolean checkThisType, boolean isInterface,
             IMethodBinding methodBinding) {
         if (checkThisType && typeBindingHasMethod(typeBinding, methodBinding)) {
@@ -297,16 +337,24 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
             return;
         }
 
+        // Static methods and fields may be referenced without any qualifiers in two cases: if the class
+        // containing the member has been imported with "import static", or if we inherit from (or 
+        // implement) the containing class.  This query tries to capture these two cases.
         QueryElement typeQueryElement = getTypeQueryElement(typeInfo, true);
         typeQueryElement.addOptionalQuery(memberIdentifier, null);
         if (isMethod) {
+            // We do not add static field names to the displayed query.
             typeQueryElement.addDisplayText(memberIdentifier);
         }
         addToQueryElements(typeQueryElement);
         
+        // The other, perhaps more common way to reference a static member is with the containing class
+        // as a qualifer.  This form is quite selective, so for this query we do not the fully qualified
+        // type name or package.
         QueryElement memberReferenceElement = new QueryElement(typeInfo.fullyQualifiedName, 
                 typeInfo.className + "." + memberIdentifier, typeInfo.className);
         if (isMethod) {
+            // We do not add static field names to the displayed query.
             memberReferenceElement.addDisplayText(memberIdentifier);
         }
         addToQueryElements(memberReferenceElement);
@@ -314,6 +362,8 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
     
     private QueryElement getTypeQueryElement(ITypeBinding typeBinding, String typeIdentifier) {
         if (typeBinding == null) {
+            // If no type binding is available, but the type name alone is quite selective,
+            // add the type name on its own to the query.  
             if (typeIdentifier != null && !nameNeedsResolution(typeIdentifier)) {
                 return new QueryElement(typeIdentifier, typeIdentifier, typeIdentifier);
             } else {
@@ -321,6 +371,7 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
             }
         }
         
+        // Handle instances of generic types.
         if (typeBinding.isParameterizedType() || typeBinding.isRawType()) {
             typeBinding = typeBinding.getTypeDeclaration();
             if (typeBinding == null) {
@@ -337,10 +388,13 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
     }
     
     private QueryElement getTypeQueryElement(TypeInfo typeInfo, boolean forceResolution) {
+        // If the type name is selective enough, add it on its own to the query.
         if (!forceResolution && !nameNeedsResolution(typeInfo.className)) {
             return new QueryElement(typeInfo.fullyQualifiedName, typeInfo.className, typeInfo.className);
         }
         
+        // The type name is not selective on its own (could match ordinary English words).
+        // Require that results also contain either the fully-qualified type name, or the package name.
         // Note that our tokenizer will remove the trailing ".*" from package imports, so 
         // pkgName alone will match such imports.
         QueryElement result = new QueryElement(typeInfo.fullyQualifiedName, 
@@ -368,6 +422,9 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
         return new TypeInfo(fullyQualifiedName, pkgName);
     }
     
+    /**
+     * Is the name alone selective enough for use in a query?
+     */
     private boolean nameNeedsResolution(String name) {
         Matcher matcher = SELECTIVE_IDENTIFIER.matcher(name);
         if (matcher.matches()) {
@@ -376,6 +433,10 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
         return true;
     }
     
+    /**
+     * We group query elements by type -- a single query will eventually be generated for all
+     * the query elements matching a given type.
+     */
     private void addToQueryElements(QueryElement element) {
         QueryElementsForKey container = null;
         for (QueryElementsForKey queryElementsForKey: queryElementsByKey) {
@@ -391,6 +452,9 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
         container.queryElements.add(element);
     }
     
+    /**
+     * Does the node overlap the source file range we are interested in?
+     */
     private boolean nodeOverlaps(ASTNode node) {
         int nodeStartPosition = node.getStartPosition();
         int nodeEndPosition = nodeStartPosition + node.getLength();
@@ -425,11 +489,17 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
             this.key = key;
         }
         
+        /**
+         *  Key is usually the fully-qualified type name.
+         */
         public String key;
         public List<QueryElement> queryElements = new ArrayList<QueryElement>();
     }
     
     private class QueryElement {
+        /**
+         *  Key is usually the fully-qualified type name.
+         */
         private String key;
         private String requiredQuery;
         private List<String> optionalQueries = new ArrayList<String>();
