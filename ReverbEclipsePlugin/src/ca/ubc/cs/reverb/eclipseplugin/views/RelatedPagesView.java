@@ -2,7 +2,6 @@ package ca.ubc.cs.reverb.eclipseplugin.views;
 
 
 import java.awt.Desktop;
-import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,30 +13,13 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.jface.action.*;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.ui.*;
-import org.eclipse.ui.texteditor.AbstractTextEditor;
 import org.eclipse.swt.SWT;
-import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.Status;
-import org.eclipse.core.runtime.jobs.Job;
-import org.eclipse.jdt.core.ICompilationUnit;
-import org.eclipse.jdt.core.IJavaElement;
-import org.eclipse.jdt.core.dom.AST;
-import org.eclipse.jdt.core.dom.ASTParser;
-import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.eclipse.jdt.ui.JavaUI;
-import org.eclipse.jface.text.IDocument;
-import org.eclipse.jface.text.ITextOperationTarget;
-import org.eclipse.jface.text.ITextViewer;
 
 import ca.ubc.cs.reverb.eclipseplugin.EditorMonitor;
-import ca.ubc.cs.reverb.eclipseplugin.IndexerConnection;
+import ca.ubc.cs.reverb.eclipseplugin.EditorMonitorListener;
 import ca.ubc.cs.reverb.eclipseplugin.PluginActivator;
-import ca.ubc.cs.reverb.eclipseplugin.PluginException;
 import ca.ubc.cs.reverb.eclipseplugin.PluginLogger;
-import ca.ubc.cs.reverb.eclipseplugin.QueryBuilderASTVisitor;
 import ca.ubc.cs.reverb.indexer.messages.BatchQueryResult;
-import ca.ubc.cs.reverb.indexer.messages.IndexerBatchQuery;
 import ca.ubc.cs.reverb.indexer.messages.IndexerQuery;
 import ca.ubc.cs.reverb.indexer.messages.Location;
 import ca.ubc.cs.reverb.indexer.messages.QueryResult;
@@ -61,7 +43,7 @@ import ca.ubc.cs.reverb.indexer.messages.QueryResult;
  * <p>
  */
 
-public class RelatedPagesView extends ViewPart {
+public class RelatedPagesView extends ViewPart implements EditorMonitorListener {
 
     /**
      * The ID of the view as specified by the extension.
@@ -70,7 +52,6 @@ public class RelatedPagesView extends ViewPart {
     
     private TreeViewer viewer;
     private ViewContentProvider contentProvider;
-    private IndexerConnection indexerConnection;
 
     class ViewContentProvider implements IStructuredContentProvider, 
             ITreeContentProvider {
@@ -196,9 +177,7 @@ public class RelatedPagesView extends ViewPart {
         super.init(site);
 
         try {
-            indexerConnection = new IndexerConnection();
-            indexerConnection.start();
-
+            EditorMonitor.getDefault().addListener(this);
             EditorMonitor.getDefault().start(site.getPage());
         } catch (Exception e) {
             throw new PartInitException("Error initializing Reverb view: " + e, e);
@@ -262,7 +241,7 @@ public class RelatedPagesView extends ViewPart {
         
         final Action updateViewAction = new Action() {
             public void run() {
-                updateLinks(getSite().getPage().getActiveEditor());
+                EditorMonitor.getDefault().startQuery(getSite().getPage().getActiveEditor());
             }
         };
         updateViewAction.setText("Update View");
@@ -297,16 +276,6 @@ public class RelatedPagesView extends ViewPart {
         toolbarManager.add(updateViewAction);
    }
     
-    @Override 
-    public void dispose() {
-        if (indexerConnection != null) {
-            try {
-                indexerConnection.stop();
-            } catch (IOException e) { }
-            indexerConnection = null;
-        }
-    }
-
     /**
      * Passing the focus request to the viewer's control.
      */
@@ -314,94 +283,13 @@ public class RelatedPagesView extends ViewPart {
         viewer.getControl().setFocus();
     }
     
-    private IStatus buildAndExecuteQuery(ICompilationUnit compilationUnit, 
-            int topPosition, int bottomPosition, IProgressMonitor monitor) throws InterruptedException, IOException {
-        ASTParser parser = ASTParser.newParser(AST.JLS3);
-        parser.setSource(compilationUnit);
-        parser.setResolveBindings(true);
-        parser.setStatementsRecovery(true);
-        CompilationUnit compileUnit = (CompilationUnit)parser.createAST(null);
-        QueryBuilderASTVisitor visitor = new QueryBuilderASTVisitor(compileUnit.getAST(), topPosition, bottomPosition);
-        compileUnit.accept(visitor);
-        
-        List<IndexerQuery> queries = visitor.getQueries();
-        //logQueries(queries);
-        
-        final BatchQueryResult result = indexerConnection.runQuery(new IndexerBatchQuery(visitor.getQueries()), 20000);
-        
-        getSite().getShell().getDisplay().asyncExec(new Runnable() {
-
-            @Override
-            public void run() {
-                contentProvider.setQueryResult(result);
-                viewer.refresh();
-                viewer.expandAll();
-            }
-        });
-        
-        return new Status(IStatus.OK, PluginActivator.PLUGIN_ID, "Updated Reverb view successfully");
+    @Override
+    public void handleBatchQueryResult(BatchQueryResult result) {
+        contentProvider.setQueryResult(result);
+        viewer.refresh();
+        viewer.expandAll();
     }
-    
-    private void logQueries(List<IndexerQuery> queries) {
-        PluginLogger log = getLogger();
-        for (IndexerQuery query: queries) {
-            log.logInfo("Query display = " + query.queryClientInfo + ", query detail = " + query.queryString);
-        }
-    }
-    
-    private void updateLinks(IEditorPart editorPart) {
-        try {
-            if (editorPart != null) {
-                ITextOperationTarget target = (ITextOperationTarget)editorPart.getAdapter(ITextOperationTarget.class);
-                if (target == null) {
-                    throw new PluginException("Failed to get ITextOperationTarget adapter");
-                } 
-                if (!(target instanceof ITextViewer)) {
-                    throw new PluginException("ITextOperationTarget adapter is not instance of ITextViewer");
-                }
-                final ITextViewer textViewer = (ITextViewer)target;
-                if (!(editorPart instanceof AbstractTextEditor)) {
-                    throw new PluginException("Editor part is not instance of AbstractTextEditor");
-                } 
-                IEditorInput editorInput = editorPart.getEditorInput();
-                if (editorInput == null) {
-                    throw new PluginException("Editor input is null");
-                } 
-                final IJavaElement javaElement = JavaUI.getEditorInputJavaElement(editorInput);
-                if (javaElement == null) {
-                    throw new PluginException("Failed to get Java element from editor input");
-                } 
-                if (!(javaElement instanceof ICompilationUnit)) {
-                    throw new PluginException("Editor input Java element is not instance of ICompilationUnit");
-                } 
-                final int topLine = textViewer.getTopIndex();
-                final int bottomLine = textViewer.getBottomIndex();
 
-                Job updateViewJob = new Job("Update View") {
-
-                    @Override
-                    protected IStatus run(IProgressMonitor monitor) {
-                        IDocument doc = textViewer.getDocument();
-                        try {
-                            int topPosition = doc.getLineOffset(topLine);
-                            int bottomPosition = doc.getLineOffset(bottomLine) + doc.getLineLength(bottomLine) - 1;
-                            return buildAndExecuteQuery((ICompilationUnit)javaElement, 
-                                    topPosition, bottomPosition, monitor);
-                        } catch (Exception e) {
-                            String msg = "Error creating/executing query";
-                            getLogger().logError(msg, e);
-                            return new Status(IStatus.ERROR, PluginActivator.PLUGIN_ID, msg, e);
-                        }
-                    }
-                    
-                };
-                updateViewJob.schedule();
-            }
-        } catch (PluginException e) {
-            getLogger().logError(e.getMessage(), e);
-        }
-    }
-    
     private void showMessage(String message) {
         MessageDialog.openInformation(
                 viewer.getControl().getShell(),
@@ -412,4 +300,5 @@ public class RelatedPagesView extends ViewPart {
     private PluginLogger getLogger() {
         return PluginActivator.getDefault().getLogger();
     }
+
 }

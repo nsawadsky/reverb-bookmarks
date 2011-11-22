@@ -1,13 +1,34 @@
 package ca.ubc.cs.reverb.eclipseplugin;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.jobs.Job;
+import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.dom.AST;
+import org.eclipse.jdt.core.dom.ASTParser;
+import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.ui.JavaUI;
+import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.ITextOperationTarget;
 import org.eclipse.jface.text.ITextViewer;
 import org.eclipse.jface.text.IViewportListener;
+import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IPartListener;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.texteditor.AbstractTextEditor;
+
+import ca.ubc.cs.reverb.indexer.messages.BatchQueryResult;
+import ca.ubc.cs.reverb.indexer.messages.IndexerBatchQuery;
+import ca.ubc.cs.reverb.indexer.messages.IndexerQuery;
 
 public class EditorMonitor implements IPartListener, IViewportListener {
     private final static int REFRESH_DELAY_MSECS = 5000;
@@ -16,20 +37,51 @@ public class EditorMonitor implements IPartListener, IViewportListener {
     private static EditorMonitor instance = new EditorMonitor();
     private boolean isStarted = false;
     private long lastRefreshTime = INVALID_TIME;
+    private IndexerConnection indexerConnection;
+    private IWorkbenchPage workbenchPage;
     
+    /**
+     * Access must be synchronized on the listeners reference.
+     */
+    private List<EditorMonitorListener> listeners = new ArrayList<EditorMonitorListener>();
+    
+    private EditorMonitor() {
+       
+    }
+
     public static EditorMonitor getDefault() {
         return instance;
     }
     
     public void start(IWorkbenchPage page) throws PluginException {
         if (!isStarted) {
-            page.addPartListener(this);
-            IWorkbenchPart part = page.getActivePart();
+            workbenchPage = page;
+            try {
+                indexerConnection = new IndexerConnection();
+                indexerConnection.start();
+            } catch (IOException e) {
+                throw new PluginException("Failed to create indexer connection: " + e, e);
+            }
+    
+            workbenchPage.addPartListener(this);
+            IWorkbenchPart part = workbenchPage.getActivePart();
             if (part instanceof IEditorPart) {
                 addViewportListener((IEditorPart)part);
                 startRefreshTimer();
             }
             isStarted = true;
+        }
+    }
+    
+    public void addListener(EditorMonitorListener listener) {
+        synchronized (listeners) {
+            listeners.add(listener);
+        }
+    }
+    
+    public void removeListener(EditorMonitorListener listener) {
+        synchronized (listeners) {
+            listeners.remove(listener);
         }
     }
     
@@ -65,6 +117,59 @@ public class EditorMonitor implements IPartListener, IViewportListener {
         startRefreshTimer();
     }
 
+    public void startQuery(IEditorPart editorPart) {
+        try {
+            if (editorPart != null) {
+                ITextOperationTarget target = (ITextOperationTarget)editorPart.getAdapter(ITextOperationTarget.class);
+                if (target == null) {
+                    throw new PluginException("Failed to get ITextOperationTarget adapter");
+                } 
+                if (!(target instanceof ITextViewer)) {
+                    throw new PluginException("ITextOperationTarget adapter is not instance of ITextViewer");
+                }
+                final ITextViewer textViewer = (ITextViewer)target;
+                if (!(editorPart instanceof AbstractTextEditor)) {
+                    throw new PluginException("Editor part is not instance of AbstractTextEditor");
+                } 
+                IEditorInput editorInput = editorPart.getEditorInput();
+                if (editorInput == null) {
+                    throw new PluginException("Editor input is null");
+                } 
+                final IJavaElement javaElement = JavaUI.getEditorInputJavaElement(editorInput);
+                if (javaElement == null) {
+                    throw new PluginException("Failed to get Java element from editor input");
+                } 
+                if (!(javaElement instanceof ICompilationUnit)) {
+                    throw new PluginException("Editor input Java element is not instance of ICompilationUnit");
+                } 
+                final int topLine = textViewer.getTopIndex();
+                final int bottomLine = textViewer.getBottomIndex();
+
+                Job updateViewJob = new Job("Update View") {
+
+                    @Override
+                    protected IStatus run(IProgressMonitor monitor) {
+                        IDocument doc = textViewer.getDocument();
+                        try {
+                            int topPosition = doc.getLineOffset(topLine);
+                            int bottomPosition = doc.getLineOffset(bottomLine) + doc.getLineLength(bottomLine) - 1;
+                            return buildAndExecuteQuery((ICompilationUnit)javaElement, 
+                                    topPosition, bottomPosition, monitor);
+                        } catch (Exception e) {
+                            String msg = "Error creating/executing query";
+                            getLogger().logError(msg, e);
+                            return new Status(IStatus.ERROR, PluginActivator.PLUGIN_ID, msg, e);
+                        }
+                    }
+                    
+                };
+                updateViewJob.schedule();
+            }
+        } catch (PluginException e) {
+            getLogger().logError(e.getMessage(), e);
+        }
+    }
+    
     private void addViewportListener(IEditorPart editorPart) {
         ITextOperationTarget target = (ITextOperationTarget)editorPart.getAdapter(ITextOperationTarget.class);
         if (target == null) {
@@ -113,6 +218,7 @@ public class EditorMonitor implements IPartListener, IViewportListener {
                 if (!restart) {
                     getLogger().logInfo("Timer timed out");
                     lastRefreshTime = INVALID_TIME;
+                    startQuery(workbenchPage.getActiveEditor());
                 }
             }
         }
@@ -129,10 +235,53 @@ public class EditorMonitor implements IPartListener, IViewportListener {
         }
     }
 
-    private EditorMonitor() {
+    private IStatus buildAndExecuteQuery(ICompilationUnit compilationUnit, 
+            int topPosition, int bottomPosition, IProgressMonitor monitor) throws InterruptedException, IOException {
+        ASTParser parser = ASTParser.newParser(AST.JLS3);
+        parser.setSource(compilationUnit);
+        parser.setResolveBindings(true);
+        parser.setStatementsRecovery(true);
+        CompilationUnit compileUnit = (CompilationUnit)parser.createAST(null);
+        QueryBuilderASTVisitor visitor = new QueryBuilderASTVisitor(compileUnit.getAST(), topPosition, bottomPosition);
+        compileUnit.accept(visitor);
         
-    }
+        List<IndexerQuery> queries = visitor.getQueries();
+        //logQueries(queries);
+        
+        final BatchQueryResult result = indexerConnection.runQuery(new IndexerBatchQuery(visitor.getQueries()), 20000);
+        
+       PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
 
+            @Override
+            public void run() {
+                notifyListeners(result);
+            }
+        });
+        
+        return new Status(IStatus.OK, PluginActivator.PLUGIN_ID, "Updated Reverb view successfully");
+    }
+    
+    private void notifyListeners(BatchQueryResult result) {
+        List<EditorMonitorListener> listenersCopy = null;
+        synchronized (listeners) {
+            listenersCopy = new ArrayList<EditorMonitorListener>(listeners);
+        }
+        for (EditorMonitorListener listener: listenersCopy) {
+            try {
+                listener.handleBatchQueryResult(result);
+            } catch (Throwable t) {
+                getLogger().logError("Listener threw exception", t);
+            }
+        }
+    }
+    
+    private void logQueries(List<IndexerQuery> queries) {
+        PluginLogger log = getLogger();
+        for (IndexerQuery query: queries) {
+            log.logInfo("Query display = " + query.queryClientInfo + ", query detail = " + query.queryString);
+        }
+    }
+    
     private PluginLogger getLogger() {
         return PluginActivator.getDefault().getLogger();
     }
