@@ -3,12 +3,10 @@ package ca.ubc.cs.reverb.eclipseplugin;
 import org.eclipse.jface.text.ITextOperationTarget;
 import org.eclipse.jface.text.ITextViewer;
 import org.eclipse.jface.text.IViewportListener;
-import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IPartListener;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchPart;
-import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 
 public class EditorMonitor implements IPartListener, IViewportListener {
@@ -23,14 +21,10 @@ public class EditorMonitor implements IPartListener, IViewportListener {
         return instance;
     }
     
-    public void start() throws PluginException {
+    public void start(IWorkbenchPage page) throws PluginException {
         if (!isStarted) {
-            IWorkbenchPage activePage = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
-            if (activePage == null) {
-                throw new PluginException("Failed to get workbench active page");
-            }
-            activePage.addPartListener(this);
-            IWorkbenchPart part = activePage.getActivePart();
+            page.addPartListener(this);
+            IWorkbenchPart part = page.getActivePart();
             if (part instanceof IEditorPart) {
                 addViewportListener((IEditorPart)part);
                 startRefreshTimer();
