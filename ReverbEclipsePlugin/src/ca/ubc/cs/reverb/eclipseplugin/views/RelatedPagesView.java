@@ -30,6 +30,7 @@ import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.ITextOperationTarget;
 import org.eclipse.jface.text.ITextViewer;
 
+import ca.ubc.cs.reverb.eclipseplugin.EditorMonitor;
 import ca.ubc.cs.reverb.eclipseplugin.IndexerConnection;
 import ca.ubc.cs.reverb.eclipseplugin.PluginActivator;
 import ca.ubc.cs.reverb.eclipseplugin.PluginException;
@@ -65,12 +66,11 @@ public class RelatedPagesView extends ViewPart {
     /**
      * The ID of the view as specified by the extension.
      */
-    public static final String ID = "ca.ubc.cs.hminer.eclipseplugin.views.RelatedPagesView";
+    public static final String ID = "ca.ubc.cs.reverb.eclipseplugin.views.RelatedPagesView";
     
     private TreeViewer viewer;
     private ViewContentProvider contentProvider;
     private IndexerConnection indexerConnection;
-    private NavigationListener navigationListener;
 
     class ViewContentProvider implements IStructuredContentProvider, 
             ITreeContentProvider {
@@ -185,39 +185,6 @@ public class RelatedPagesView extends ViewPart {
         
     }
     
-    class NavigationListener implements IPartListener, ISelectionListener {
-
-        @Override
-        public void selectionChanged(IWorkbenchPart part, ISelection selection) {
-            /*
-            if (part instanceof IEditorPart) {
-                updateLinks((IEditorPart)part);
-            }
-            */
-        }
-
-        @Override
-        public void partActivated(IWorkbenchPart part) {
-        }
-
-        @Override
-        public void partBroughtToTop(IWorkbenchPart part) {
-        }
-
-        @Override
-        public void partClosed(IWorkbenchPart part) {
-        }
-
-        @Override
-        public void partDeactivated(IWorkbenchPart part) {
-        }
-
-        @Override
-        public void partOpened(IWorkbenchPart part) {
-        } 
-        
-    }
-    
     /**
      * The constructor.
      */
@@ -231,10 +198,7 @@ public class RelatedPagesView extends ViewPart {
         try {
             indexerConnection = new IndexerConnection();
             indexerConnection.start();
-            navigationListener = new NavigationListener();
-            getSite().getPage().addSelectionListener(navigationListener);
-            getSite().getPage().addPartListener(navigationListener);
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new PartInitException("Error initializing Reverb view: " + e, e);
         }
     }
@@ -243,7 +207,10 @@ public class RelatedPagesView extends ViewPart {
      * This is a callback that will allow us
      * to create the viewer and initialize it.
      */
-    public void createPartControl(Composite parent) {
+    public void createPartControl(Composite parent){
+        // Start the monitor here -- if we start it in init(), it sometimes cannot get the active page.
+        EditorMonitor.getDefault().start();
+
         contentProvider = new ViewContentProvider();
         viewer = new TreeViewer(parent, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL);
         viewer.setContentProvider(contentProvider);
@@ -333,10 +300,6 @@ public class RelatedPagesView extends ViewPart {
     
     @Override 
     public void dispose() {
-        if (navigationListener != null) {
-            getSite().getPage().removeSelectionListener(navigationListener);
-            getSite().getPage().removePartListener(navigationListener);
-        }
         if (indexerConnection != null) {
             try {
                 indexerConnection.stop();
@@ -383,7 +346,7 @@ public class RelatedPagesView extends ViewPart {
     private void logQueries(List<IndexerQuery> queries) {
         PluginLogger log = getLogger();
         for (IndexerQuery query: queries) {
-            log.logInfo("Query display = " + query.queryClientInfo + ", query detail = " + query.queryString, null);
+            log.logInfo("Query display = " + query.queryClientInfo + ", query detail = " + query.queryString);
         }
     }
     
