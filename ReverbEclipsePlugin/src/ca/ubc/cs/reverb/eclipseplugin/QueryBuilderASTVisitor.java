@@ -36,6 +36,10 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
     private List<QueryElementsForKey> queryElementsByKey = new ArrayList<QueryElementsForKey>();
     private int startPosition;
     private int endPosition;
+    
+    /**
+     * The type binding for java.lang.Object.
+     */
     private ITypeBinding objectBinding;
     
     /**
