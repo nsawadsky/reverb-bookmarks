@@ -352,8 +352,8 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
         }
         addToQueryElements(typeQueryElement);
         
-        // The other, perhaps more common way to reference a static member is with the containing class
-        // as a qualifer.  This form is quite selective, so for this query we do not the fully qualified
+        // The other (perhaps more common) way to reference a static member is with the containing class
+        // as a qualifer.  This form is quite selective, so for this query we do not add the fully qualified
         // type name or package.
         QueryElement memberReferenceElement = new QueryElement(typeInfo.fullyQualifiedName, 
                 typeInfo.className + "." + memberIdentifier, typeInfo.className);
