@@ -4,6 +4,7 @@ window.addEventListener("unload", function(e) { ca_ubc_cs_reverb.onUnload(e); },
 var ca_ubc_cs_reverb = {
     onLoad: function() {
       this.consoleService = Components.classes["@mozilla.org/consoleservice;1"].getService(Components.interfaces.nsIConsoleService);
+      this.privateBrowsingService = Components.classes["@mozilla.org/privatebrowsing;1"].getService(Components.interfaces.nsIPrivateBrowsingService);
       
       Components.utils.import("resource://gre/modules/ctypes.jsm");
       Components.utils.import("resource://gre/modules/AddonManager.jsm");
@@ -20,7 +21,7 @@ var ca_ubc_cs_reverb = {
       
       var appcontent = document.getElementById("appcontent");
       if (appcontent != null) {
-        appcontent.addEventListener("DOMContentLoaded", this.onPageLoad, true);
+        appcontent.addEventListener("DOMContentLoaded", function(e) { ca_ubc_cs_reverb.onPageLoad(e); }, true);
       }
     },
     
@@ -44,21 +45,23 @@ var ca_ubc_cs_reverb = {
     },
 
     onPageLoad: function(event) {
-      var doc = event.originalTarget; 
-      var win = doc.defaultView;
-      
-      // Ensure we filter out images.
-      if (doc.nodeName != "#document") { return; }
-      // Filter out popup windows.
-      if (win != win.top) { return; }
-      // Filter out frames (for now).
-      if (win.frameElement != null) { return; }
-
-      var href = win.location.href;
-      
-      // TODO: Make list of domains to filter configurable.
-      if (href.indexOf("http://www.google.") != 0 && href.indexOf("https://www.google.") != 0) {
-        setTimeout(function() {ca_ubc_cs_reverb.onPageLoadTimerCallback(doc, win, href);}, 5000);
+      if (!this.privateBrowsingService.privateBrowsingEnabled) {  
+        var doc = event.originalTarget; 
+        var win = doc.defaultView;
+        
+        // Ensure we filter out images.
+        if (doc.nodeName != "#document") { return; }
+        // Filter out popup windows.
+        if (win != win.top) { return; }
+        // Filter out frames (for now).
+        if (win.frameElement != null) { return; }
+  
+        var href = win.location.href;
+        
+        // TODO: Make list of domains to filter configurable.
+        if (href.indexOf("http://www.google.") != 0 && href.indexOf("https://www.google.") != 0) {
+          setTimeout(function() {ca_ubc_cs_reverb.onPageLoadTimerCallback(doc, win, href);}, 5000);
+        }
       }
     },
     
