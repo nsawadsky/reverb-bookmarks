@@ -66,7 +66,7 @@ public class IndexerConnection implements Runnable {
                 if (envelope != null) {
                     CallbackInfo callbackInfo = removeCallbackInfo(requestId);
                     if (callbackInfo == null) {
-                        getLogger().logInfo("Callback not found for request ID " + requestId, null);
+                        getLogger().logInfo("Callback not found for request ID " + requestId);
                     } else {
                         try {
                             callbackInfo.callback.handleMessage(envelope.message, callbackInfo.clientInfo);
