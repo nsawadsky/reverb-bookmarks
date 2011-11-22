@@ -198,6 +198,8 @@ public class RelatedPagesView extends ViewPart {
         try {
             indexerConnection = new IndexerConnection();
             indexerConnection.start();
+
+            EditorMonitor.getDefault().start(site.getPage());
         } catch (Exception e) {
             throw new PartInitException("Error initializing Reverb view: " + e, e);
         }
@@ -208,9 +210,6 @@ public class RelatedPagesView extends ViewPart {
      * to create the viewer and initialize it.
      */
     public void createPartControl(Composite parent){
-        // Start the monitor here -- if we start it in init(), it sometimes cannot get the active page.
-        EditorMonitor.getDefault().start();
-
         contentProvider = new ViewContentProvider();
         viewer = new TreeViewer(parent, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL);
         viewer.setContentProvider(contentProvider);
