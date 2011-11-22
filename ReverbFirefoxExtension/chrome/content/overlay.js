@@ -60,7 +60,7 @@ var ca_ubc_cs_reverb = {
         
         // TODO: Make list of domains to filter configurable.
         if (href.indexOf("http://www.google.") != 0 && href.indexOf("https://www.google.") != 0) {
-          setTimeout(function() {ca_ubc_cs_reverb.onPageLoadTimerCallback(doc, win, href);}, 5000);
+          setTimeout(function() { ca_ubc_cs_reverb.onPageLoadTimerCallback(doc, win, href); }, 5000);
         }
       }
     },
