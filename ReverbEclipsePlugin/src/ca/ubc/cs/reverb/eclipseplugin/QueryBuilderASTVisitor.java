@@ -346,8 +346,8 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
         // implement) the containing class.  This query tries to capture these two cases.
         QueryElement typeQueryElement = getTypeQueryElement(typeInfo, true);
         typeQueryElement.addOptionalQuery(memberIdentifier, null);
+        // We do not add static field names to the displayed query.
         if (isMethod) {
-            // We do not add static field names to the displayed query.
             typeQueryElement.addDisplayText(memberIdentifier);
         }
         addToQueryElements(typeQueryElement);
@@ -357,8 +357,8 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
         // type name or package.
         QueryElement memberReferenceElement = new QueryElement(typeInfo.fullyQualifiedName, 
                 typeInfo.className + "." + memberIdentifier, typeInfo.className);
+        // We do not add static field names to the displayed query.
         if (isMethod) {
-            // We do not add static field names to the displayed query.
             memberReferenceElement.addDisplayText(memberIdentifier);
         }
         addToQueryElements(memberReferenceElement);
