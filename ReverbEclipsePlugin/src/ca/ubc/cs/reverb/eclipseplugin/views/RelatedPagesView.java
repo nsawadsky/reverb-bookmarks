@@ -2,6 +2,7 @@ package ca.ubc.cs.reverb.eclipseplugin.views;
 
 
 import java.awt.Desktop;
+import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -229,10 +230,11 @@ public class RelatedPagesView extends ViewPart {
 
         try {
             indexerConnection = new IndexerConnection();
+            indexerConnection.start();
             navigationListener = new NavigationListener();
             getSite().getPage().addSelectionListener(navigationListener);
             getSite().getPage().addPartListener(navigationListener);
-        } catch (PluginException e) {
+        } catch (IOException e) {
             throw new PartInitException("Error initializing Reverb view: " + e, e);
         }
     }
@@ -336,7 +338,9 @@ public class RelatedPagesView extends ViewPart {
             getSite().getPage().removePartListener(navigationListener);
         }
         if (indexerConnection != null) {
-            indexerConnection.close();
+            try {
+                indexerConnection.stop();
+            } catch (IOException e) { }
             indexerConnection = null;
         }
     }
@@ -349,7 +353,7 @@ public class RelatedPagesView extends ViewPart {
     }
     
     private IStatus buildAndExecuteQuery(ICompilationUnit compilationUnit, 
-            int topPosition, int bottomPosition, IProgressMonitor monitor) throws PluginException, InterruptedException {
+            int topPosition, int bottomPosition, IProgressMonitor monitor) throws InterruptedException, IOException {
         ASTParser parser = ASTParser.newParser(AST.JLS3);
         parser.setSource(compilationUnit);
         parser.setResolveBindings(true);
@@ -361,7 +365,7 @@ public class RelatedPagesView extends ViewPart {
         List<IndexerQuery> queries = visitor.getQueries();
         //logQueries(queries);
         
-        final BatchQueryResult result = indexerConnection.runQuery(new IndexerBatchQuery(visitor.getQueries()));
+        final BatchQueryResult result = indexerConnection.runQuery(new IndexerBatchQuery(visitor.getQueries()), 20000);
         
         getSite().getShell().getDisplay().asyncExec(new Runnable() {
 

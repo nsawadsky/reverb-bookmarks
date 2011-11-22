@@ -5,9 +5,11 @@ public class IndexerMessageEnvelope {
         
     }
     
-    public IndexerMessageEnvelope(IndexerMessage payload) {
+    public IndexerMessageEnvelope(String clientRequestId, IndexerMessage payload) {
+        this.clientRequestId = clientRequestId;
         this.message = payload;
     }
     
     public IndexerMessage message;
+    public String clientRequestId;
 }
