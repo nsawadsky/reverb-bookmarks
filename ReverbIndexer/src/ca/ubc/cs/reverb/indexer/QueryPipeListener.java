@@ -90,7 +90,7 @@ public class QueryPipeListener implements Runnable {
                             throw new IndexerException("envelope.message is null");
                         }
                         if (envelope.message instanceof IndexerBatchQuery) {
-                            handleBatchQuery((IndexerBatchQuery)envelope.message);
+                            handleBatchQuery(envelope.clientRequestId, (IndexerBatchQuery)envelope.message);
                         } else {
                             throw new IndexerException("Unexpected message content: " + envelope.message.getClass());
                         }
@@ -106,11 +106,11 @@ public class QueryPipeListener implements Runnable {
             }
         }
         
-        private void handleBatchQuery(IndexerBatchQuery query) throws IndexerException {
+        private void handleBatchQuery(String clientRequestId, IndexerBatchQuery query) throws IndexerException {
             BatchQueryResult result = searcher.performSearch(query.queries);
             ObjectMapper mapper = new ObjectMapper();
             
-            IndexerMessageEnvelope envelope = new IndexerMessageEnvelope(result);
+            IndexerMessageEnvelope envelope = new IndexerMessageEnvelope(clientRequestId, result);
             byte [] jsonData = null;
             try {
                 jsonData = mapper.writeValueAsBytes(envelope);
