@@ -69,7 +69,7 @@ public class IndexerConnection implements Runnable {
                         getLogger().logInfo("Callback not found for request ID " + requestId);
                     } else {
                         try {
-                            callbackInfo.callback.handleMessage(envelope.message, callbackInfo.clientInfo);
+                            callbackInfo.callback.onIndexerMessage(envelope.message, callbackInfo.clientInfo);
                         } catch (Throwable t) {
                             getLogger().logError("Callback threw exception", t);
                         }
@@ -81,7 +81,7 @@ public class IndexerConnection implements Runnable {
             getLogger().logError("Error reading from pipe", e);
             for (CallbackInfo info: removeAllCallbacks()) {
                 try {
-                    info.callback.handleError("Error reading from pipe: " + e, e);
+                    info.callback.onIndexerError("Error reading from pipe: " + e, e);
                 } catch (Throwable t) {
                     getLogger().logError("Callback threw exception", t);
                 }
@@ -96,7 +96,7 @@ public class IndexerConnection implements Runnable {
             String errorMessage;
             
             @Override
-            public void handleMessage(IndexerMessage message, Object clientInfo) {
+            public void onIndexerMessage(IndexerMessage message, Object clientInfo) {
                 result = message;
                 synchronized (this) {
                     this.notify();
@@ -104,7 +104,7 @@ public class IndexerConnection implements Runnable {
             }
             
             @Override 
-            public void handleError(String message, Throwable t) {
+            public void onIndexerError(String message, Throwable t) {
                 errorOccurred = true;
                 errorMessage = message;
                 synchronized(this) {
