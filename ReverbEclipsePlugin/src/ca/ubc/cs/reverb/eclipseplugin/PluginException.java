@@ -1,6 +1,6 @@
 package ca.ubc.cs.reverb.eclipseplugin;
 
-public class PluginException extends Exception {
+public class PluginException extends RuntimeException {
 
     public PluginException() {
         super();

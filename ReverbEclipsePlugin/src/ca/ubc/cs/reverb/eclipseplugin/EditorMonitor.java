@@ -76,10 +76,7 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener 
             workbenchPage.addPartListener(this);
             IWorkbenchPart part = workbenchPage.getActivePart();
             if (part instanceof IEditorPart) {
-                IEditorPart editorPart = (IEditorPart)part;
-                if (listen(editorPart)) {
-                    handleNavigationEvent(editorPart);
-                }
+                listen((IEditorPart)part);
             }
             isStarted = true;
         }
@@ -102,7 +99,7 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener 
         if (part instanceof IEditorPart) {
             IEditorPart editorPart = (IEditorPart)part;
             if (listen(editorPart)) {
-                handleNavigationEvent(editorPart);
+                handleNavigationEvent();
             }
         }
     }
@@ -149,8 +146,13 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener 
         handleNavigationEvent();
     }
 
-    public void startQuery(IEditorPart editorPart) {
+    public void requestRefresh() {
+        requestRefresh(true);
+    }
+    
+    private void requestRefresh(boolean force) {
         try {
+            IEditorPart editorPart = workbenchPage.getActiveEditor();
             if (editorPart != null) {
                 final ITextViewer textViewer = getTextViewer(editorPart);
                 if (textViewer == null) {
@@ -163,7 +165,7 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener 
                 final int topLine = textViewer.getTopIndex();
                 final int bottomLine = textViewer.getBottomIndex();
                 
-                if (!textViewer.equals(lastTextViewer) || topLine != lastTopLine || bottomLine != lastBottomLine) {
+                if (force || (!textViewer.equals(lastTextViewer) || topLine != lastTopLine || bottomLine != lastBottomLine)) {
                     lastTextViewer = textViewer;
                     lastTopLine = topLine;
                     lastBottomLine = bottomLine;
@@ -190,6 +192,9 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener 
             }
         } catch (PluginException e) {
             getLogger().logError(e.getMessage(), e);
+            if (force) {
+                notifyListeners(new BatchQueryResult());
+            }
         }
     }
     
@@ -236,7 +241,7 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener 
                 }
                 if (!restart) {
                     lastRefreshTime = INVALID_TIME;
-                    startQuery(workbenchPage.getActiveEditor());
+                    requestRefresh(false);
                 }
             }
         }
@@ -252,13 +257,6 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener 
     }
 
     private void handleNavigationEvent() {
-        IEditorPart editorPart = workbenchPage.getActiveEditor();
-        if (editorPart != null) {
-            handleNavigationEvent(editorPart);
-        }
-    }
-    
-    private void handleNavigationEvent(IEditorPart editorPart) {
         startRefreshTimer();
     }
     

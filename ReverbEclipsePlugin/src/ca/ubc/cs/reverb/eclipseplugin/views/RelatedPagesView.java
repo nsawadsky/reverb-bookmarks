@@ -37,16 +37,10 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
     class ViewContentProvider implements IStructuredContentProvider, 
             ITreeContentProvider {
         private BatchQueryResult batchQueryResult;
-        private String message = "No results available.";
+        private final static String NO_RESULTS = "No results available.";
         
         public void setQueryResult(BatchQueryResult result) {
-            this.message = null;
             this.batchQueryResult = result;
-        }
-        
-        public void setMessage(String message) {
-            this.batchQueryResult = null;
-            this.message = message;
         }
         
         public void inputChanged(Viewer v, Object oldInput, Object newInput) {
@@ -57,8 +51,8 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
         
         public Object[] getElements(Object parent) {
             if (parent.equals(getViewSite())) {
-                if (message != null) {
-                    return new Object[] { message };
+                if (batchQueryResult == null || batchQueryResult.queryResults.isEmpty()) {
+                    return new Object[] { NO_RESULTS };
                 } 
                 List<QueryResult> filteredResults = new ArrayList<QueryResult>();
                 for (QueryResult result: batchQueryResult.queryResults) {
@@ -159,13 +153,6 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
     @Override
     public void init(IViewSite site) throws PartInitException {
         super.init(site);
-
-        try {
-            EditorMonitor.getDefault().addListener(this);
-            EditorMonitor.getDefault().start(site.getPage());
-        } catch (Exception e) {
-            throw new PartInitException("Error initializing Reverb view: " + e, e);
-        }
     }
     
     /**
@@ -225,7 +212,7 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
         
         final Action updateViewAction = new Action() {
             public void run() {
-                EditorMonitor.getDefault().startQuery(getSite().getPage().getActiveEditor());
+                EditorMonitor.getDefault().requestRefresh();
             }
         };
         updateViewAction.setText("Update Links");
@@ -258,13 +245,27 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
 
         IToolBarManager toolbarManager = bars.getToolBarManager();
         toolbarManager.add(updateViewAction);
+
+        EditorMonitor.getDefault().start(getSite().getPage());
+        EditorMonitor.getDefault().addListener(this);
+        EditorMonitor.getDefault().requestRefresh();
    }
+
+    public void updateView() {
+        EditorMonitor.getDefault().requestRefresh();
+    }
     
     /**
      * Passing the focus request to the viewer's control.
      */
     public void setFocus() {
         viewer.getControl().setFocus();
+    }
+    
+    @Override
+    public void dispose() {
+        super.dispose();
+        EditorMonitor.getDefault().removeListener(this);
     }
     
     @Override
