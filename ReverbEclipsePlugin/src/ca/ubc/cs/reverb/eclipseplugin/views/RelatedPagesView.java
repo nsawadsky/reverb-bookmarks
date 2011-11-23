@@ -24,25 +24,6 @@ import ca.ubc.cs.reverb.indexer.messages.IndexerQuery;
 import ca.ubc.cs.reverb.indexer.messages.Location;
 import ca.ubc.cs.reverb.indexer.messages.QueryResult;
 
-
-/**
- * This sample class demonstrates how to plug-in a new
- * workbench view. The view shows data obtained from the
- * model. The sample creates a dummy model on the fly,
- * but a real implementation would connect to the model
- * available either in this or another plug-in (e.g. the workspace).
- * The view is connected to the model using a content provider.
- * <p>
- * The view uses a label provider to define how model
- * objects should be presented in the view. Each
- * view can present the same model objects using
- * different labels and icons, if needed. Alternatively,
- * a single label provider can be shared between views
- * in order to ensure that objects of the same type are
- * presented in the same way everywhere.
- * <p>
- */
-
 public class RelatedPagesView extends ViewPart implements EditorMonitorListener {
 
     /**
@@ -56,7 +37,7 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
     class ViewContentProvider implements IStructuredContentProvider, 
             ITreeContentProvider {
         private BatchQueryResult batchQueryResult;
-        private String message = "Select 'Update View' to get results.";
+        private String message = "No results available.";
         
         public void setQueryResult(BatchQueryResult result) {
             this.message = null;
@@ -160,8 +141,11 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
             String imageKey = ISharedImages.IMG_OBJ_FILE;
             if (obj instanceof QueryResult) {
                 return PluginActivator.getDefault().getSearchImage();
+            } else if (obj instanceof Location) {
+                return PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_OBJ_FILE);
+            } else {
+                return null;
             }
-            return PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_OBJ_FILE);
         }
         
     }
@@ -244,8 +228,8 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
                 EditorMonitor.getDefault().startQuery(getSite().getPage().getActiveEditor());
             }
         };
-        updateViewAction.setText("Update View");
-        updateViewAction.setToolTipText("Update View");
+        updateViewAction.setText("Update Links");
+        updateViewAction.setToolTipText("Update Links");
         updateViewAction.setImageDescriptor(PluginActivator.getImageDescriptor("icons/refresh.gif"));
 
         MenuManager menuManager = new MenuManager("#PopupMenu");
@@ -284,7 +268,7 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
     }
     
     @Override
-    public void handleBatchQueryResult(BatchQueryResult result) {
+    public void onBatchQueryResult(BatchQueryResult result) {
         contentProvider.setQueryResult(result);
         viewer.refresh();
         viewer.expandAll();

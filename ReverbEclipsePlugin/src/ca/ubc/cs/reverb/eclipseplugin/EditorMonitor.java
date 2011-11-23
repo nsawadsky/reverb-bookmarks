@@ -4,10 +4,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.Status;
-import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.dom.AST;
@@ -31,7 +27,7 @@ import ca.ubc.cs.reverb.indexer.messages.IndexerBatchQuery;
 import ca.ubc.cs.reverb.indexer.messages.IndexerQuery;
 
 public class EditorMonitor implements IPartListener, IViewportListener {
-    private final static int REFRESH_DELAY_MSECS = 5000;
+    private final static int REFRESH_DELAY_MSECS = 3000;
     private final static long INVALID_TIME = -1;
     
     private static EditorMonitor instance = new EditorMonitor();
@@ -144,26 +140,25 @@ public class EditorMonitor implements IPartListener, IViewportListener {
                 } 
                 final int topLine = textViewer.getTopIndex();
                 final int bottomLine = textViewer.getBottomIndex();
-
-                Job updateViewJob = new Job("Update View") {
+                Runnable updateViewTask = new Runnable() {
 
                     @Override
-                    protected IStatus run(IProgressMonitor monitor) {
+                    public void run() {
                         IDocument doc = textViewer.getDocument();
                         try {
                             int topPosition = doc.getLineOffset(topLine);
                             int bottomPosition = doc.getLineOffset(bottomLine) + doc.getLineLength(bottomLine) - 1;
-                            return buildAndExecuteQuery((ICompilationUnit)javaElement, 
-                                    topPosition, bottomPosition, monitor);
+                            buildAndExecuteQuery((ICompilationUnit)javaElement, 
+                                    topPosition, bottomPosition);
                         } catch (Exception e) {
-                            String msg = "Error creating/executing query";
-                            getLogger().logError(msg, e);
-                            return new Status(IStatus.ERROR, PluginActivator.PLUGIN_ID, msg, e);
+                            getLogger().logError("Error creating/executing query", e);
                         }
                     }
                     
                 };
-                updateViewJob.schedule();
+                Thread updateViewThread = new Thread(updateViewTask);
+                updateViewThread.setPriority(Thread.MIN_PRIORITY);
+                updateViewThread.start();
             }
         } catch (PluginException e) {
             getLogger().logError(e.getMessage(), e);
@@ -212,11 +207,9 @@ public class EditorMonitor implements IPartListener, IViewportListener {
                         restart = true;
                         this.startTime = lastRefreshTime;
                         PlatformUI.getWorkbench().getDisplay().timerExec(newDelay, this);
-                        getLogger().logInfo("Restarting timer");
                     }
                 }
                 if (!restart) {
-                    getLogger().logInfo("Timer timed out");
                     lastRefreshTime = INVALID_TIME;
                     startQuery(workbenchPage.getActiveEditor());
                 }
@@ -228,15 +221,13 @@ public class EditorMonitor implements IPartListener, IViewportListener {
             lastRefreshTime = System.currentTimeMillis();
             TimerCallback callback = new TimerCallback(lastRefreshTime);
             PlatformUI.getWorkbench().getDisplay().timerExec(REFRESH_DELAY_MSECS, callback);
-            getLogger().logInfo("Starting timer");
         } else {
             lastRefreshTime = System.currentTimeMillis();
-            getLogger().logInfo("Resetting timer");
         }
     }
 
-    private IStatus buildAndExecuteQuery(ICompilationUnit compilationUnit, 
-            int topPosition, int bottomPosition, IProgressMonitor monitor) throws InterruptedException, IOException {
+    private void buildAndExecuteQuery(ICompilationUnit compilationUnit, 
+            int topPosition, int bottomPosition) throws InterruptedException, IOException {
         ASTParser parser = ASTParser.newParser(AST.JLS3);
         parser.setSource(compilationUnit);
         parser.setResolveBindings(true);
@@ -250,15 +241,13 @@ public class EditorMonitor implements IPartListener, IViewportListener {
         
         final BatchQueryResult result = indexerConnection.runQuery(new IndexerBatchQuery(visitor.getQueries()), 20000);
         
-       PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
+        PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
 
             @Override
             public void run() {
                 notifyListeners(result);
             }
         });
-        
-        return new Status(IStatus.OK, PluginActivator.PLUGIN_ID, "Updated Reverb view successfully");
     }
     
     private void notifyListeners(BatchQueryResult result) {
@@ -268,7 +257,7 @@ public class EditorMonitor implements IPartListener, IViewportListener {
         }
         for (EditorMonitorListener listener: listenersCopy) {
             try {
-                listener.handleBatchQueryResult(result);
+                listener.onBatchQueryResult(result);
             } catch (Throwable t) {
                 getLogger().logError("Listener threw exception", t);
             }
