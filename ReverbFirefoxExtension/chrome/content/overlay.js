@@ -5,7 +5,14 @@ var ca_ubc_cs_reverb = {
     onLoad: function() {
       this.consoleService = Components.classes["@mozilla.org/consoleservice;1"].getService(Components.interfaces.nsIConsoleService);
       this.privateBrowsingService = Components.classes["@mozilla.org/privatebrowsing;1"].getService(Components.interfaces.nsIPrivateBrowsingService);
+
+      this.prefsService = Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefService)  
+          .getBranch("extensions.cs.ubc.ca.reverb.");  
+      this.prefsService.QueryInterface(Components.interfaces.nsIPrefBranch2);  
+      this.prefsService.addObserver("", this, false);  
       
+      this.updateIgnoredAddresses();
+
       Components.utils.import("resource://gre/modules/ctypes.jsm");
       Components.utils.import("resource://gre/modules/AddonManager.jsm");
       
@@ -25,7 +32,37 @@ var ca_ubc_cs_reverb = {
       }
     },
     
-    finishInit: function(extensionLibPath) {
+    observe: function(subject, topic, data) {  
+      if (topic != "nsPref:changed") {  
+        return;  
+      }  
+    
+      switch(data) {  
+        case "ignoredAddresses":
+          this.ignoredAddressesChanged = true;
+      }  
+    },
+ 
+    getIgnoredAddresses: function() {
+      if (this.ignoredAddressesChanged) {
+        this.ignoredAddressesChanged = false;
+        this.updateIgnoredAddresses();
+      }
+      return this.ignoredAddresses;
+    },
+    
+    updateIgnoredAddresses: function() {
+      var prefString = this.prefsService.getCharPref("ignoredAddresses").toLowerCase();
+      var tempIgnoredAddresses = prefString.split(',');
+      
+      for (var i = 0; i < tempIgnoredAddresses.length; i++) {
+        tempIgnoredAddresses[i] = tempIgnoredAddresses[i].replace(" ", "");
+        this.consoleService.logStringMessage("Ignored address: " + tempIgnoredAddresses[i]);
+      }
+      this.ignoredAddresses = tempIgnoredAddresses;
+    },
+    
+   finishInit: function(extensionLibPath) {
       this.extensionLib = ctypes.open(extensionLibPath);
       if (this.extensionLib != null) {
         this.startBackgroundThread = this.extensionLib.declare("RFD_startBackgroundThread", ctypes.default_abi, ctypes.int32_t);
@@ -55,10 +92,13 @@ var ca_ubc_cs_reverb = {
       if (doc.nodeName != "#document") { return; }
 
       var href = win.location.href;
+      var topHost = win.top.location.host;
       
-      // TODO: Make list of domains to filter configurable.
-      if (href.indexOf("http://www.google.") != 0 && href.indexOf("https://www.google.") != 0) {
-        setTimeout(function() { ca_ubc_cs_reverb.onPageLoadTimerCallback(win, href); }, 5000);
+      if (win.location.host == topHost) {
+        var tempIgnoredAddresses = this.getIgnoredAddresses();
+        if (tempIgnoredAddresses == null || tempIgnoredAddresses.indexOf(topHost) == -1) {
+          setTimeout(function() { ca_ubc_cs_reverb.onPageLoadTimerCallback(win, href); }, 5000);
+        }
       }
     },
     
