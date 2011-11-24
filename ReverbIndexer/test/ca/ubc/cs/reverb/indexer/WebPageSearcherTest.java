@@ -19,7 +19,7 @@ import org.codehaus.jackson.util.DefaultPrettyPrinter;
 import org.junit.Before;
 import org.junit.Test;
 
-import ca.ubc.cs.reverb.indexer.messages.BatchQueryResult;
+import ca.ubc.cs.reverb.indexer.messages.BatchQueryReply;
 import ca.ubc.cs.reverb.indexer.messages.IndexerQuery;
 
 
@@ -60,7 +60,7 @@ public class WebPageSearcherTest {
 
         };
         
-        BatchQueryResult result = searcher.performSearch(inputQueries);
+        BatchQueryReply result = searcher.performSearch(inputQueries);
         JsonNode expected = getExpectedResult("testFilterGroupAndReorder");
         assertEquals("formatted actual: " + getJsonString(result), expected, getJsonNode(result));
     }
@@ -90,7 +90,7 @@ public class WebPageSearcherTest {
 
         };
         
-        BatchQueryResult result = searcher.performSearch(inputQueries);
+        BatchQueryReply result = searcher.performSearch(inputQueries);
         JsonNode expected = getExpectedResult("testFrecencyBoost");
         assertEquals("formatted actual: " + getJsonString(result), expected, getJsonNode(result));
     }
@@ -123,7 +123,7 @@ public class WebPageSearcherTest {
 
         };
         
-        BatchQueryResult result = searcher.performSearch(inputQueries);
+        BatchQueryReply result = searcher.performSearch(inputQueries);
         JsonNode expected = getExpectedResult("testMerge");
         assertEquals("formatted actual: " + getJsonString(result), expected, getJsonNode(result));
     }
@@ -160,7 +160,7 @@ public class WebPageSearcherTest {
 
         };
         
-        BatchQueryResult result = searcher.performSearch(inputQueries);
+        BatchQueryReply result = searcher.performSearch(inputQueries);
         JsonNode expected = getExpectedResult("testCompactHitInfos");
         assertEquals("formatted actual: " + getJsonString(result), expected, getJsonNode(result));
     }

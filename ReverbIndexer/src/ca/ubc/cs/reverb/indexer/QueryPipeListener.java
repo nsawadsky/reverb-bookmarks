@@ -8,8 +8,8 @@ import xpnp.XpNamedPipe;
 import org.apache.log4j.Logger;
 import org.apache.lucene.index.IndexReader;
 
-import ca.ubc.cs.reverb.indexer.messages.BatchQueryResult;
-import ca.ubc.cs.reverb.indexer.messages.IndexerBatchQuery;
+import ca.ubc.cs.reverb.indexer.messages.BatchQueryReply;
+import ca.ubc.cs.reverb.indexer.messages.BatchQueryRequest;
 import ca.ubc.cs.reverb.indexer.messages.IndexerMessageEnvelope;
 
 
@@ -89,8 +89,8 @@ public class QueryPipeListener implements Runnable {
                         if (envelope.message == null) {
                             throw new IndexerException("envelope.message is null");
                         }
-                        if (envelope.message instanceof IndexerBatchQuery) {
-                            handleBatchQuery(envelope.clientRequestId, (IndexerBatchQuery)envelope.message);
+                        if (envelope.message instanceof BatchQueryRequest) {
+                            handleBatchQuery(envelope.clientRequestId, (BatchQueryRequest)envelope.message);
                         } else {
                             throw new IndexerException("Unexpected message content: " + envelope.message.getClass());
                         }
@@ -106,8 +106,8 @@ public class QueryPipeListener implements Runnable {
             }
         }
         
-        private void handleBatchQuery(String clientRequestId, IndexerBatchQuery query) throws IndexerException {
-            BatchQueryResult result = searcher.performSearch(query.queries);
+        private void handleBatchQuery(String clientRequestId, BatchQueryRequest query) throws IndexerException {
+            BatchQueryReply result = searcher.performSearch(query.queries);
             ObjectMapper mapper = new ObjectMapper();
             
             IndexerMessageEnvelope envelope = new IndexerMessageEnvelope(clientRequestId, result);
