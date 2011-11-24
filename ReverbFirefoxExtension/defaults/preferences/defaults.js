@@ -1,0 +1,1 @@
+pref("extensions.cs.ubc.ca.reverb.ignoredAddresses", "www.google.com, www.google.ca");
