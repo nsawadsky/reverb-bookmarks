@@ -76,7 +76,9 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener 
             workbenchPage.addPartListener(this);
             IWorkbenchPart part = workbenchPage.getActivePart();
             if (part instanceof IEditorPart) {
-                listen((IEditorPart)part);
+                if (listen((IEditorPart)part)) {
+                    handleNavigationEvent();
+                }
             }
             isStarted = true;
         }
@@ -151,14 +153,16 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener 
     }
 
     public void requestRefresh() {
-        requestRefresh(true);
+        // Ensure that an update will be sent.
+        lastTextViewer = null;
+        startRefreshTimer();
     }
     
-    private void requestRefresh(boolean force) {
+    private void doRefresh() {
         try {
             IEditorPart editorPart = workbenchPage.getActiveEditor();
             if (editorPart != null) {
-                final ITextViewer textViewer = getTextViewer(editorPart);
+                ITextViewer textViewer = getTextViewer(editorPart);
                 if (textViewer == null) {
                     throw new PluginException("Failed to get text viewer");
                 }
@@ -166,22 +170,23 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener 
                 if (compileUnit == null) {
                     throw new PluginException("Failed to get compilation unit");
                 }
-                final int topLine = textViewer.getTopIndex();
-                final int bottomLine = textViewer.getBottomIndex();
+                int topLine = textViewer.getTopIndex();
+                int bottomLine = textViewer.getBottomIndex();
                 
-                if (force || (!textViewer.equals(lastTextViewer) || topLine != lastTopLine || bottomLine != lastBottomLine)) {
+                if (!textViewer.equals(lastTextViewer) || topLine != lastTopLine || bottomLine != lastBottomLine) {
                     lastTextViewer = textViewer;
                     lastTopLine = topLine;
                     lastBottomLine = bottomLine;
+                    
+                    IDocument doc = textViewer.getDocument();
+                    final int topPosition = doc.getLineOffset(topLine);
+                    final int bottomPosition = doc.getLineOffset(bottomLine) + doc.getLineLength(bottomLine) - 1;
                     
                     Runnable updateViewTask = new Runnable() {
 
                         @Override
                         public void run() {
-                            IDocument doc = textViewer.getDocument();
                             try {
-                                int topPosition = doc.getLineOffset(topLine);
-                                int bottomPosition = doc.getLineOffset(bottomLine) + doc.getLineLength(bottomLine) - 1;
                                 buildAndExecuteQuery(compileUnit, topPosition, bottomPosition);
                             } catch (Exception e) {
                                 getLogger().logError("Error creating/executing query", e);
@@ -194,8 +199,8 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener 
                     updateViewThread.start();
                 }
             }
-        } catch (PluginException e) {
-            getLogger().logError(e.getMessage(), e);
+        } catch (Exception e) {
+            getLogger().logError("Error refreshing result list", e);
         }
     }
     
@@ -242,7 +247,7 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener 
                 }
                 if (!restart) {
                     lastRefreshTime = INVALID_TIME;
-                    requestRefresh(false);
+                    doRefresh();
                 }
             }
         }
