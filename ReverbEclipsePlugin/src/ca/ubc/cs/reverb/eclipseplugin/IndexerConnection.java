@@ -8,8 +8,8 @@ import java.util.Map;
 
 import org.codehaus.jackson.map.ObjectMapper;
 
-import ca.ubc.cs.reverb.indexer.messages.BatchQueryResult;
-import ca.ubc.cs.reverb.indexer.messages.IndexerBatchQuery;
+import ca.ubc.cs.reverb.indexer.messages.BatchQueryReply;
+import ca.ubc.cs.reverb.indexer.messages.BatchQueryRequest;
 import ca.ubc.cs.reverb.indexer.messages.IndexerMessage;
 import ca.ubc.cs.reverb.indexer.messages.IndexerMessageEnvelope;
 
@@ -40,12 +40,12 @@ public class IndexerConnection implements Runnable {
         pipe.stop();
     }
     
-    public BatchQueryResult runQuery(IndexerBatchQuery query, int timeoutMsecs) throws IOException, InterruptedException {
+    public BatchQueryReply runQuery(BatchQueryRequest query, int timeoutMsecs) throws IOException, InterruptedException {
         IndexerMessage result = sendMessage(query, timeoutMsecs);
-        if (! (result instanceof BatchQueryResult)) {
+        if (! (result instanceof BatchQueryReply)) {
             throw new IOException("Unexpected reply message type: " + result.getClass());
         }
-        return (BatchQueryResult)sendMessage(query, timeoutMsecs);
+        return (BatchQueryReply)sendMessage(query, timeoutMsecs);
     }
     
     @Override

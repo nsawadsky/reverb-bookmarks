@@ -2,12 +2,12 @@ package ca.ubc.cs.reverb.indexer.messages;
 
 import java.util.List;
 
-public class IndexerBatchQuery implements IndexerMessage {
-    public IndexerBatchQuery() {
+public class BatchQueryRequest implements IndexerMessage {
+    public BatchQueryRequest() {
         
     }
     
-    public IndexerBatchQuery(List<IndexerQuery> queries) {
+    public BatchQueryRequest(List<IndexerQuery> queries) {
         this.queries = queries;
     }
     

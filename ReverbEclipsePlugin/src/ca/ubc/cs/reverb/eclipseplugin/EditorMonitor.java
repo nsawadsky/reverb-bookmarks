@@ -27,8 +27,8 @@ import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.PlatformUI;
 
-import ca.ubc.cs.reverb.indexer.messages.BatchQueryResult;
-import ca.ubc.cs.reverb.indexer.messages.IndexerBatchQuery;
+import ca.ubc.cs.reverb.indexer.messages.BatchQueryReply;
+import ca.ubc.cs.reverb.indexer.messages.BatchQueryRequest;
 import ca.ubc.cs.reverb.indexer.messages.IndexerQuery;
 
 public class EditorMonitor implements IPartListener, MouseListener, KeyListener {
@@ -193,7 +193,7 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener 
         } catch (PluginException e) {
             getLogger().logError(e.getMessage(), e);
             if (force) {
-                notifyListeners(new BatchQueryResult());
+                notifyListeners(new BatchQueryReply());
             }
         }
     }
@@ -208,7 +208,7 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener 
         QueryBuilderASTVisitor visitor = new QueryBuilderASTVisitor(compileUnit.getAST(), topPosition, bottomPosition);
         compileUnit.accept(visitor);
         
-        final BatchQueryResult result = indexerConnection.runQuery(new IndexerBatchQuery(visitor.getQueries()), 20000);
+        final BatchQueryReply result = indexerConnection.runQuery(new BatchQueryRequest(visitor.getQueries()), 20000);
         
         PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
 
@@ -304,7 +304,7 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener 
         return (ICompilationUnit)javaElement;
     }
     
-    private void notifyListeners(BatchQueryResult result) {
+    private void notifyListeners(BatchQueryReply result) {
         List<EditorMonitorListener> listenersCopy = null;
         synchronized (listeners) {
             listenersCopy = new ArrayList<EditorMonitorListener>(listeners);

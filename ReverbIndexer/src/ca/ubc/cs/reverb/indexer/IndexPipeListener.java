@@ -8,7 +8,7 @@ import xpnp.XpNamedPipe;
 import org.apache.log4j.Logger;
 
 import ca.ubc.cs.reverb.indexer.messages.IndexerMessageEnvelope;
-import ca.ubc.cs.reverb.indexer.messages.PageInfo;
+import ca.ubc.cs.reverb.indexer.messages.UpdatePageInfoRequest;
 
 
 public class IndexPipeListener implements Runnable {
@@ -62,16 +62,16 @@ public class IndexPipeListener implements Runnable {
                 ObjectMapper mapper = new ObjectMapper();
                 while (true) {
                     byte[] data = pipe.readMessage();
-                    PageInfo info = null;
+                    UpdatePageInfoRequest info = null;
                     try {
                         IndexerMessageEnvelope envelope = mapper.readValue(data, IndexerMessageEnvelope.class);
                         if (envelope.message == null) {
                             throw new IndexerException("envelope.message is null");
                         }
-                        if (!(envelope.message instanceof PageInfo)) {
+                        if (!(envelope.message instanceof UpdatePageInfoRequest)) {
                             throw new IndexerException("Unexpected message content: " + envelope.message.getClass());
                         }
-                        info = (PageInfo)envelope.message;
+                        info = (UpdatePageInfoRequest)envelope.message;
                     } catch (Exception e) {
                         log.error("Exception parsing message from index pipe", e);
                     }

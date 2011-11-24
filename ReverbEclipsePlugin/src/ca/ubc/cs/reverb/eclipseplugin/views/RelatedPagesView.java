@@ -19,7 +19,7 @@ import ca.ubc.cs.reverb.eclipseplugin.EditorMonitor;
 import ca.ubc.cs.reverb.eclipseplugin.EditorMonitorListener;
 import ca.ubc.cs.reverb.eclipseplugin.PluginActivator;
 import ca.ubc.cs.reverb.eclipseplugin.PluginLogger;
-import ca.ubc.cs.reverb.indexer.messages.BatchQueryResult;
+import ca.ubc.cs.reverb.indexer.messages.BatchQueryReply;
 import ca.ubc.cs.reverb.indexer.messages.IndexerQuery;
 import ca.ubc.cs.reverb.indexer.messages.Location;
 import ca.ubc.cs.reverb.indexer.messages.QueryResult;
@@ -36,11 +36,11 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
 
     class ViewContentProvider implements IStructuredContentProvider, 
             ITreeContentProvider {
-        private BatchQueryResult batchQueryResult;
+        private BatchQueryReply batchQueryReply;
         private final static String NO_RESULTS = "No results available.";
         
-        public void setQueryResult(BatchQueryResult result) {
-            this.batchQueryResult = result;
+        public void setQueryResult(BatchQueryReply result) {
+            this.batchQueryReply = result;
         }
         
         public void inputChanged(Viewer v, Object oldInput, Object newInput) {
@@ -51,11 +51,11 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
         
         public Object[] getElements(Object parent) {
             if (parent.equals(getViewSite())) {
-                if (batchQueryResult == null || batchQueryResult.queryResults.isEmpty()) {
+                if (batchQueryReply == null || batchQueryReply.queryResults.isEmpty()) {
                     return new Object[] { NO_RESULTS };
                 } 
                 List<QueryResult> filteredResults = new ArrayList<QueryResult>();
-                for (QueryResult result: batchQueryResult.queryResults) {
+                for (QueryResult result: batchQueryReply.queryResults) {
                     if (result.locations != null && !result.locations.isEmpty()) {
                         filteredResults.add(result);
                     }
@@ -69,8 +69,8 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
             if (child instanceof QueryResult) {
                 return null;
             }
-            if (batchQueryResult != null && child instanceof Location) {
-                for (QueryResult result: batchQueryResult.queryResults) {
+            if (batchQueryReply != null && child instanceof Location) {
+                for (QueryResult result: batchQueryReply.queryResults) {
                     for (Location location: result.locations) {
                         if (location == child) {
                             return result;
@@ -269,7 +269,7 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
     }
     
     @Override
-    public void onBatchQueryResult(BatchQueryResult result) {
+    public void onBatchQueryResult(BatchQueryReply result) {
         contentProvider.setQueryResult(result);
         viewer.refresh();
         viewer.expandAll();

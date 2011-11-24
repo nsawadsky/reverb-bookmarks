@@ -17,7 +17,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import ca.ubc.cs.reverb.indexer.messages.PageInfo;
+import ca.ubc.cs.reverb.indexer.messages.UpdatePageInfoRequest;
 
 public class WebPageIndexer {
     private static Logger log = Logger.getLogger(WebPageIndexer.class);
@@ -51,7 +51,7 @@ public class WebPageIndexer {
         return this.indexWriter;
     }
     
-    public void indexPage(PageInfo info) throws IndexerException {
+    public void indexPage(UpdatePageInfoRequest info) throws IndexerException {
         try {
             String normalizedUrl = normalizeUrl(info.url);
 

@@ -14,7 +14,7 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.search.DefaultSimilarity;
 import org.apache.lucene.search.Similarity;
 
-import ca.ubc.cs.reverb.indexer.messages.BatchQueryResult;
+import ca.ubc.cs.reverb.indexer.messages.BatchQueryReply;
 import ca.ubc.cs.reverb.indexer.messages.IndexerQuery;
 import ca.ubc.cs.reverb.indexer.messages.Location;
 import ca.ubc.cs.reverb.indexer.messages.QueryResult;
@@ -73,7 +73,7 @@ public class IndexerService {
         
         List<IndexerQuery> queries = new ArrayList<IndexerQuery>();
         queries.add(new IndexerQuery(query, query));
-        BatchQueryResult batchResult = searcher.performSearch(queries);
+        BatchQueryReply batchResult = searcher.performSearch(queries);
         if (batchResult.queryResults.isEmpty()) {
             System.out.println("No results.");
         } else {

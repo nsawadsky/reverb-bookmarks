@@ -21,7 +21,7 @@ import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.util.Version;
 
-import ca.ubc.cs.reverb.indexer.messages.BatchQueryResult;
+import ca.ubc.cs.reverb.indexer.messages.BatchQueryReply;
 import ca.ubc.cs.reverb.indexer.messages.IndexerQuery;
 import ca.ubc.cs.reverb.indexer.messages.Location;
 import ca.ubc.cs.reverb.indexer.messages.QueryResult;
@@ -58,7 +58,7 @@ public class WebPageSearcher {
         this.reader = reader;
     }
     
-    public BatchQueryResult performSearch(List<IndexerQuery> inputQueries) throws IndexerException {
+    public BatchQueryReply performSearch(List<IndexerQuery> inputQueries) throws IndexerException {
         IndexSearcher indexSearcher = getNewIndexSearcher();
         
         // First, ensure query strings are unique.
@@ -148,7 +148,7 @@ public class WebPageSearcher {
         }
         
         // Create the result structure to be sent to the client.
-        BatchQueryResult result = new BatchQueryResult();
+        BatchQueryReply result = new BatchQueryReply();
         for (MergedQueryResult mergedResult: nextMergedResults) {
             result.queryResults.add(new QueryResult(
                     mergedResult.queries, getLocationList(mergedResult.hits)));

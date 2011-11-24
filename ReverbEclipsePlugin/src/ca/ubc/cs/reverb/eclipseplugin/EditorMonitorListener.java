@@ -1,7 +1,7 @@
 package ca.ubc.cs.reverb.eclipseplugin;
 
-import ca.ubc.cs.reverb.indexer.messages.BatchQueryResult;
+import ca.ubc.cs.reverb.indexer.messages.BatchQueryReply;
 
 public interface EditorMonitorListener {
-    void onBatchQueryResult(BatchQueryResult result);
+    void onBatchQueryResult(BatchQueryReply result);
 }
