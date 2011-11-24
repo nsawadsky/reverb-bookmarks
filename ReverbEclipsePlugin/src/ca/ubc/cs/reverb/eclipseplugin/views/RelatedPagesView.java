@@ -17,9 +17,12 @@ import org.eclipse.swt.SWT;
 
 import ca.ubc.cs.reverb.eclipseplugin.EditorMonitor;
 import ca.ubc.cs.reverb.eclipseplugin.EditorMonitorListener;
+import ca.ubc.cs.reverb.eclipseplugin.IndexerConnectionCallback;
 import ca.ubc.cs.reverb.eclipseplugin.PluginActivator;
 import ca.ubc.cs.reverb.eclipseplugin.PluginLogger;
 import ca.ubc.cs.reverb.indexer.messages.BatchQueryReply;
+import ca.ubc.cs.reverb.indexer.messages.DeleteLocationRequest;
+import ca.ubc.cs.reverb.indexer.messages.IndexerMessage;
 import ca.ubc.cs.reverb.indexer.messages.IndexerQuery;
 import ca.ubc.cs.reverb.indexer.messages.Location;
 import ca.ubc.cs.reverb.indexer.messages.QueryResult;
@@ -187,6 +190,45 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
                 ISharedImages.IMG_OBJ_FILE));
         openBrowserAction.setEnabled(false);
         
+        final Action deleteLocationAction = new Action() {
+            public void run() {
+                IStructuredSelection structured = (IStructuredSelection)viewer.getSelection();
+                if (structured.getFirstElement() instanceof Location) {
+                    final Location location = (Location)structured.getFirstElement();
+                    EditorMonitor.getDefault().getIndexerConnection().sendRequestAsync(
+                            new DeleteLocationRequest(location.url), new IndexerConnectionCallback() {
+
+                                @Override
+                                public void onIndexerMessage(
+                                        IndexerMessage message,
+                                        Object clientInfo) {
+                                    PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
+
+                                        @Override
+                                        public void run() {
+                                            viewer.remove(location);
+                                        }
+                                    });
+                                }
+
+                                @Override
+                                public void onIndexerError(String message,
+                                        Throwable t) {
+                                    MessageDialog.openError(getSite().getShell(), 
+                                            "Error Deleting Page", 
+                                            "Failed to delete location, the indexer service may not be running.");
+                                }
+                                
+                            }, null);
+                }
+            }
+        };
+        deleteLocationAction.setText("Delete Page");
+        deleteLocationAction.setToolTipText("Delete Page");
+        deleteLocationAction.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages().getImageDescriptor(
+                ISharedImages.IMG_ETOOL_DELETE));
+        deleteLocationAction.setEnabled(false);
+
         viewer.addSelectionChangedListener(new ISelectionChangedListener() {
 
             @Override
@@ -194,8 +236,10 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
                 IStructuredSelection structured = (IStructuredSelection)viewer.getSelection();
                 if (structured.getFirstElement() instanceof Location) {
                     openBrowserAction.setEnabled(true);
+                    deleteLocationAction.setEnabled(true);
                 } else {
                     openBrowserAction.setEnabled(false);
+                    deleteLocationAction.setEnabled(false);
                 }
             }
             
@@ -227,6 +271,7 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
             public void menuAboutToShow(IMenuManager manager) {
                 manager.add(openBrowserAction);
                 manager.add(updateViewAction);
+                manager.add(deleteLocationAction);
                 manager.add(new Separator());
                 // Other plug-ins can contribute there actions here
                 manager.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));

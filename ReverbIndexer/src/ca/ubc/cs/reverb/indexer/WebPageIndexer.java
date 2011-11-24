@@ -17,6 +17,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import ca.ubc.cs.reverb.indexer.messages.DeleteLocationRequest;
 import ca.ubc.cs.reverb.indexer.messages.UpdatePageInfoRequest;
 
 public class WebPageIndexer {
@@ -49,6 +50,15 @@ public class WebPageIndexer {
     
     public IndexWriter getIndexWriter() {
         return this.indexWriter;
+    }
+    
+    public void deleteLocation(DeleteLocationRequest request) throws IndexerException {
+        try {
+            locationsDatabase.deleteLocationInfo(request.url);
+            indexWriter.deleteDocuments(new Term(URL_FIELD_NAME, request.url));
+        } catch (Exception e) {
+            throw new IndexerException("Exception deleting document: " + e, e);
+        }
     }
     
     public void indexPage(UpdatePageInfoRequest info) throws IndexerException {

@@ -82,6 +82,10 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener 
         }
     }
     
+    public IndexerConnection getIndexerConnection() {
+        return indexerConnection;
+    }
+    
     public void addListener(EditorMonitorListener listener) {
         synchronized (listeners) {
             listeners.add(listener);
@@ -192,9 +196,6 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener 
             }
         } catch (PluginException e) {
             getLogger().logError(e.getMessage(), e);
-            if (force) {
-                notifyListeners(new BatchQueryReply());
-            }
         }
     }
     
@@ -208,7 +209,7 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener 
         QueryBuilderASTVisitor visitor = new QueryBuilderASTVisitor(compileUnit.getAST(), topPosition, bottomPosition);
         compileUnit.accept(visitor);
         
-        final BatchQueryReply result = indexerConnection.runQuery(new BatchQueryRequest(visitor.getQueries()), 20000);
+        final BatchQueryReply result = indexerConnection.sendBatchQueryRequest(new BatchQueryRequest(visitor.getQueries()), 20000);
         
         PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
 
