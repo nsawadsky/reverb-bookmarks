@@ -10,7 +10,8 @@
     	{
     		"matches": ["<all_urls>"],
     		"exclude_globs": ["*://www.google.*"],
-    		"js": ["reverbContent.js"]
+    		"js": ["reverbContent.js"],
+    		"all_frames": true
     	}
    	]
 }

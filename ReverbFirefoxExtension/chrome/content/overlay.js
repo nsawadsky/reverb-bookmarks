@@ -45,43 +45,43 @@ var ca_ubc_cs_reverb = {
     },
 
     onPageLoad: function(event) {
-      if (!this.privateBrowsingService.privateBrowsingEnabled) {  
-        var doc = event.originalTarget; 
-        var win = doc.defaultView;
-        
-        // Ensure we filter out images.
-        if (doc.nodeName != "#document") { return; }
-        // Filter out popup windows.
-        if (win != win.top) { return; }
-        // Filter out frames (for now).
-        if (win.frameElement != null) { return; }
-  
-        var href = win.location.href;
-        
-        // TODO: Make list of domains to filter configurable.
-        if (href.indexOf("http://www.google.") != 0 && href.indexOf("https://www.google.") != 0) {
-          setTimeout(function() { ca_ubc_cs_reverb.onPageLoadTimerCallback(doc, win, href); }, 5000);
+      if (this.privateBrowsingService.privateBrowsingEnabled) {
+        return;
+      }
+      var doc = event.originalTarget; 
+      var win = doc.defaultView;
+      
+      // Ensure we filter out images.
+      if (doc.nodeName != "#document") { return; }
+
+      var href = win.location.href;
+      
+      // TODO: Make list of domains to filter configurable.
+      if (href.indexOf("http://www.google.") != 0 && href.indexOf("https://www.google.") != 0) {
+        setTimeout(function() { ca_ubc_cs_reverb.onPageLoadTimerCallback(win, href); }, 5000);
+      }
+    },
+    
+    onPageLoadTimerCallback: function(win, href) {
+      if (win.location.href != href) {
+        // This catches cases where the tab has been closed, the back button was hit, or a new page was opened in the tab.
+        // If the browser window has been closed, the timer never fires.
+      } else {
+        if (this.sendPage != null) {
+          this.sendWindowContent(win);
         }
       }
     },
     
-    onPageLoadTimerCallback: function(doc, win, href) {
-      if (win.location.href != href) {
-        // This catches cases where the tab has been closed, the back button was hit, or a new page was opened in the tab.
-        // If the Firefox window has been closed, the timer never fires.
-      } else {
-        if (this.sendPage != null) {
-          if (!this.sendPage(doc.location.href, doc.documentElement.innerHTML)) {
-            var BUF_LEN = 1024;
-
-            var buffer = ctypes.char.array(BUF_LEN)();
-            this.getErrorMessage(buffer, BUF_LEN);
-            this.consoleService.logStringMessage("Failed to send message: " + buffer.readString());
-            this.getBackgroundThreadStatus(buffer, BUF_LEN);
-            this.consoleService.logStringMessage("Background thread status: " + buffer.readString());
-          }
-        }
+    sendWindowContent: function(win) {
+      if (win.location.protocol == "about:") {
+        return;
       }
+      var doc = win.document;
+      if (doc == null) {
+        return;
+      }
+      this.sendPage(win.location.href, doc.documentElement.innerHTML);
     },
 
     onMenuItemCommand: function() {
