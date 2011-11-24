@@ -10,7 +10,10 @@ import org.apache.lucene.index.IndexReader;
 
 import ca.ubc.cs.reverb.indexer.messages.BatchQueryReply;
 import ca.ubc.cs.reverb.indexer.messages.BatchQueryRequest;
+import ca.ubc.cs.reverb.indexer.messages.DeleteLocationRequest;
+import ca.ubc.cs.reverb.indexer.messages.DeleteLocationReply;
 import ca.ubc.cs.reverb.indexer.messages.IndexerMessageEnvelope;
+import ca.ubc.cs.reverb.indexer.messages.IndexerReply;
 
 
 public class QueryPipeListener implements Runnable {
@@ -90,7 +93,9 @@ public class QueryPipeListener implements Runnable {
                             throw new IndexerException("envelope.message is null");
                         }
                         if (envelope.message instanceof BatchQueryRequest) {
-                            handleBatchQuery(envelope.clientRequestId, (BatchQueryRequest)envelope.message);
+                            handleBatchQueryRequest(envelope.clientRequestId, (BatchQueryRequest)envelope.message);
+                        } else if (envelope.message instanceof DeleteLocationRequest) {
+                            handleDeleteLocationRequest(envelope.clientRequestId, (DeleteLocationRequest)envelope.message);
                         } else {
                             throw new IndexerException("Unexpected message content: " + envelope.message.getClass());
                         }
@@ -106,11 +111,30 @@ public class QueryPipeListener implements Runnable {
             }
         }
         
-        private void handleBatchQuery(String clientRequestId, BatchQueryRequest query) throws IndexerException {
-            BatchQueryReply result = searcher.performSearch(query.queries);
+        private void handleDeleteLocationRequest(String clientRequestId, DeleteLocationRequest request) throws IndexerException {
+            DeleteLocationReply reply = new DeleteLocationReply();
+            try {
+                indexer.deleteLocation(request);
+            } catch (IndexerException e) {
+                reply.errorOccurred = true;
+                reply.errorMessage = e.toString();
+            }
+            sendReply(clientRequestId, reply);
+        }
+        
+        private void handleBatchQueryRequest(String clientRequestId, BatchQueryRequest query) throws IndexerException {
+            BatchQueryReply reply = null;
+            try {
+                reply = searcher.performSearch(query.queries);
+            } catch (IndexerException e) {
+                reply = new BatchQueryReply(true, e.toString());
+            }
+            sendReply(clientRequestId, reply);
+        }
+        
+        private void sendReply(String clientRequestId, IndexerReply reply) throws IndexerException {
             ObjectMapper mapper = new ObjectMapper();
-            
-            IndexerMessageEnvelope envelope = new IndexerMessageEnvelope(clientRequestId, result);
+            IndexerMessageEnvelope envelope = new IndexerMessageEnvelope(clientRequestId, reply);
             byte [] jsonData = null;
             try {
                 jsonData = mapper.writeValueAsBytes(envelope);

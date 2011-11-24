@@ -79,6 +79,16 @@ public class LocationsDatabase {
         return results;
     }
     
+    public synchronized void deleteLocationInfo(String url) throws IndexerException { 
+        try {
+            Statement stmt = connection.createStatement();
+            String update = "DELETE FROM locations WHERE (url = '" + url + "')";
+            stmt.executeUpdate(update);
+        } catch (SQLException e) {
+            throw new IndexerException("Error deleting location info: " + e);
+        }
+    }
+    
     public synchronized void updateLocationInfo(String url, List<Long> visitTimes) throws IndexerException { 
         try {
             long currentTime = new Date().getTime();

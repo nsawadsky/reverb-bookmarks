@@ -341,10 +341,14 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
             return;
         }
 
+        if (SKIP_TYPES.contains(typeInfo.fullyQualifiedName)) {
+            return;
+        }
+        
         // Static methods and fields may be referenced without any qualifiers in two cases: if the class
         // containing the member has been imported with "import static", or if we inherit from (or 
         // implement) the containing class.  This query tries to capture these two cases.
-        QueryElement typeQueryElement = getTypeQueryElement(typeInfo, true);
+        QueryElement typeQueryElement = typeInfoToQueryElement(typeInfo);
         typeQueryElement.addOptionalQuery(memberIdentifier, null);
         // We do not add static field names to the displayed query.
         if (isMethod) {
@@ -368,7 +372,7 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
         if (typeBinding == null) {
             // If no type binding is available, but the type name alone is quite selective,
             // add the type name on its own to the query.  
-            if (typeIdentifier != null && !nameNeedsResolution(typeIdentifier)) {
+            if (typeIdentifier != null && !SKIP_TYPES.contains(typeIdentifier) && !nameNeedsResolution(typeIdentifier)) {
                 return new QueryElement(typeIdentifier, typeIdentifier, typeIdentifier);
             } else {
                 return null;
@@ -388,16 +392,18 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
             return null;
         }
         
-        return getTypeQueryElement(info, false); 
-    }
-    
-    private QueryElement getTypeQueryElement(TypeInfo typeInfo, boolean forceResolution) {
-        // If the type name is selective enough, add it on its own to the query.
-        if (!forceResolution && !nameNeedsResolution(typeInfo.className)) {
-            return new QueryElement(typeInfo.fullyQualifiedName, typeInfo.className, typeInfo.className);
+        if (SKIP_TYPES.contains(info.fullyQualifiedName)) {
+            return null;
         }
         
-        // The type name is not selective on its own (could match ordinary English words).
+        // If the type name is selective enough, add it on its own to the query.
+        if (!nameNeedsResolution(info.className)) {
+            return new QueryElement(info.fullyQualifiedName, info.className, info.className);
+        }
+        return typeInfoToQueryElement(info); 
+    }
+    
+    private QueryElement typeInfoToQueryElement(TypeInfo typeInfo) {
         // Require that results also contain either the fully-qualified type name, or the package name.
         // Note that our tokenizer will remove the trailing ".*" from package imports, so 
         // pkgName alone will match such imports.

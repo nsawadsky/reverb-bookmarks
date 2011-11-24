@@ -10,8 +10,11 @@ import org.codehaus.jackson.map.ObjectMapper;
 
 import ca.ubc.cs.reverb.indexer.messages.BatchQueryReply;
 import ca.ubc.cs.reverb.indexer.messages.BatchQueryRequest;
+import ca.ubc.cs.reverb.indexer.messages.DeleteLocationReply;
+import ca.ubc.cs.reverb.indexer.messages.DeleteLocationRequest;
 import ca.ubc.cs.reverb.indexer.messages.IndexerMessage;
 import ca.ubc.cs.reverb.indexer.messages.IndexerMessageEnvelope;
+import ca.ubc.cs.reverb.indexer.messages.IndexerReply;
 
 import xpnp.XpNamedPipe;
 
@@ -40,14 +43,22 @@ public class IndexerConnection implements Runnable {
         pipe.stop();
     }
     
-    public BatchQueryReply runQuery(BatchQueryRequest query, int timeoutMsecs) throws IOException, InterruptedException {
-        IndexerMessage result = sendMessage(query, timeoutMsecs);
-        if (! (result instanceof BatchQueryReply)) {
-            throw new IOException("Unexpected reply message type: " + result.getClass());
+    public BatchQueryReply sendBatchQueryRequest(BatchQueryRequest request, int timeoutMsecs) throws IOException, InterruptedException {
+        IndexerReply reply = sendRequest(request, timeoutMsecs);
+        if (! (reply instanceof BatchQueryReply)) {
+            throw new IOException("Unexpected reply message type: " + reply.getClass());
         }
-        return (BatchQueryReply)sendMessage(query, timeoutMsecs);
+        return (BatchQueryReply)reply;
     }
     
+    public DeleteLocationReply sendDeleteLocationRequest(DeleteLocationRequest request, int timeoutMsecs) throws IOException, InterruptedException {
+        IndexerReply reply = sendRequest(request, timeoutMsecs);
+        if (! (reply instanceof DeleteLocationReply)) {
+            throw new IOException("Unexpected reply message type: " + reply.getClass());
+        }
+        return (DeleteLocationReply)reply;
+    }
+
     @Override
     public void run() {
         ObjectMapper mapper = new ObjectMapper();
@@ -89,15 +100,15 @@ public class IndexerConnection implements Runnable {
         }
     }
     
-    private IndexerMessage sendMessage(IndexerMessage msg, long timeoutMsecs) throws IOException, InterruptedException {
+    public IndexerReply sendRequest(IndexerMessage msg, long timeoutMsecs) throws IOException, InterruptedException {
         class Callback implements IndexerConnectionCallback {
-            IndexerMessage result = null;
+            IndexerMessage reply = null;
             boolean errorOccurred = false;
             String errorMessage;
             
             @Override
             public void onIndexerMessage(IndexerMessage message, Object clientInfo) {
-                result = message;
+                reply = message;
                 synchronized (this) {
                     this.notify();
                 }
@@ -112,31 +123,34 @@ public class IndexerConnection implements Runnable {
                 }
             }
             
-            IndexerMessage waitForReply(long timeoutMsecs) throws IOException, InterruptedException {
+            IndexerReply waitForReply(long timeoutMsecs) throws IOException, InterruptedException {
                 long expireTime = System.currentTimeMillis() + timeoutMsecs;
                 synchronized (this) {
                     do {
                         this.wait(timeoutMsecs);
                         timeoutMsecs = expireTime - System.currentTimeMillis();
-                    } while (result == null && timeoutMsecs > 0);
+                    } while (reply == null && timeoutMsecs > 0);
                 }
                 if (errorOccurred) {
                     throw new IOException("Error while waiting for reply: " + errorMessage);
                 }
-                if (result == null) {
+                if (reply == null) {
                     throw new IOException("Timed out waiting for reply");
                 }
-                return result;
+                if (! (reply instanceof IndexerReply)) {
+                    throw new IOException("Unexpected reply message type: " + reply.getClass());
+                }
+                return (IndexerReply)reply;
             }
             
         }
         Callback callback = new Callback();
-        sendMessageAsync(msg, callback, null);
+        sendRequestAsync(msg, callback, null);
         return callback.waitForReply(timeoutMsecs);
     }
         
     
-    private void sendMessageAsync(IndexerMessage msg, IndexerConnectionCallback callback, Object clientInfo) throws IOException {
+    public void sendRequestAsync(IndexerMessage msg, IndexerConnectionCallback callback, Object clientInfo) {
         Long requestId = getNextRequestId();
         putCallbackInfo(requestId, new CallbackInfo(callback, clientInfo));
         
@@ -154,7 +168,7 @@ public class IndexerConnection implements Runnable {
             pipe.writeMessage(jsonData);
         } catch (IOException e) {
             removeCallbackInfo(requestId);
-            throw e;
+            callback.onIndexerError("Error sending request to indexer: " + e, e);
         }
     }
     
