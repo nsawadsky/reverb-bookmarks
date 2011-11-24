@@ -29,33 +29,11 @@
       </perspectiveExtension>
    </extension>
    <extension
-         point="org.eclipse.ui.actionSets">
-      <actionSet
-            id="ca.ubc.cs.reverb.eclipseplugin.workbenchActionSet"
-            label="Reverb Action Set"
-            visible="false">
-         <action
-               class="ca.ubc.cs.reverb.eclipseplugin.views.OpenRelatedPagesViewHandler"
-               icon="icons/reverb-small.png"
-               id="ca.ubc.cs.reverb.eclipseplugin.openRelatedPagesView"
-               label="Open Reverb"
-               style="push"
-               toolbarPath="ca.ubc.cs.reverb.eclipseplugin.reverbMenu"
-               tooltip="Open the Reverb view">
-         </action>
-         <menu
-               icon="icons/reverb-small.png"
-               id="ca.ubc.cs.reverb.eclipseplugin.reverbMenu"
-               label="Reverb">
-         </menu>
-      </actionSet>
-   </extension>
-   <extension
          point="org.eclipse.ui.bindings">
       <key
             commandId="ca.ubc.cs.reverb.eclipseplugin.commands.openRelatedPagesView"
             schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
-            sequence="Ctrl+Shift+[">
+            sequence="Ctrl+Shift+]">
       </key>
    </extension>
    <extension

@@ -9,6 +9,8 @@ import java.util.List;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.part.*;
 import org.eclipse.jface.viewers.*;
+import org.eclipse.swt.events.KeyAdapter;
+import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.jface.action.*;
 import org.eclipse.jface.dialogs.MessageDialog;
@@ -170,7 +172,102 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
         viewer.setLabelProvider(new ViewLabelProvider());
         viewer.setInput(getViewSite());
         
-        final Action openBrowserAction = new Action() {
+        final Action openBrowserAction = createOpenBrowserAction();
+        final Action deleteLocationAction = createDeleteLocationAction();
+        final Action updateViewAction = createUpdateViewAction();
+        
+        viewer.addSelectionChangedListener(new ISelectionChangedListener() {
+
+            @Override
+            public void selectionChanged(SelectionChangedEvent event) {
+                IStructuredSelection structured = (IStructuredSelection)viewer.getSelection();
+                if (structured.getFirstElement() instanceof Location) {
+                    openBrowserAction.setEnabled(true);
+                    deleteLocationAction.setEnabled(true);
+                } else {
+                    openBrowserAction.setEnabled(false);
+                    deleteLocationAction.setEnabled(false);
+                }
+            }
+            
+        });
+        
+        viewer.addDoubleClickListener(new IDoubleClickListener() {
+
+            @Override
+            public void doubleClick(DoubleClickEvent event) {
+                openBrowserAction.run();
+            } 
+            
+        });
+        
+        MenuManager menuManager = new MenuManager("#PopupMenu");
+        menuManager.setRemoveAllWhenShown(true);
+        menuManager.addMenuListener( new IMenuListener() {
+
+            @Override
+            public void menuAboutToShow(IMenuManager manager) {
+                manager.add(openBrowserAction);
+                manager.add(updateViewAction);
+                manager.add(deleteLocationAction);
+                manager.add(new Separator());
+                // Other plug-ins can contribute there actions here
+                manager.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
+            }
+            
+        });
+        viewer.getControl().setMenu(menuManager.createContextMenu(viewer.getControl()));
+        getSite().registerContextMenu(menuManager, viewer);
+
+        IActionBars bars = getViewSite().getActionBars();
+
+        IToolBarManager toolbarManager = bars.getToolBarManager();
+        toolbarManager.add(updateViewAction);
+
+        EditorMonitor.getDefault().start(getSite().getPage());
+        EditorMonitor.getDefault().addListener(this);
+        EditorMonitor.getDefault().requestRefresh();
+   }
+
+    public void updateView() {
+        EditorMonitor.getDefault().requestRefresh();
+    }
+    
+    /**
+     * Passing the focus request to the viewer's control.
+     */
+    public void setFocus() {
+        viewer.getControl().setFocus();
+    }
+    
+    @Override
+    public void dispose() {
+        super.dispose();
+        EditorMonitor.getDefault().removeListener(this);
+    }
+    
+    @Override
+    public void onBatchQueryResult(BatchQueryReply result) {
+        contentProvider.setQueryResult(result);
+        viewer.refresh();
+        viewer.expandAll();
+    }
+
+    private Action createUpdateViewAction() {
+        Action updateViewAction = new Action() {
+            public void run() {
+                EditorMonitor.getDefault().requestRefresh();
+            }
+        };
+        updateViewAction.setText("Update Links");
+        updateViewAction.setToolTipText("Update Links");
+        updateViewAction.setImageDescriptor(PluginActivator.getImageDescriptor("icons/refresh.gif"));
+
+        return updateViewAction;
+    }
+    
+    private Action createOpenBrowserAction() {
+        Action openBrowserAction = new Action() {
             public void run() {
                 IStructuredSelection structured = (IStructuredSelection)viewer.getSelection();
                 if (structured.getFirstElement() instanceof Location) {
@@ -190,7 +287,11 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
                 ISharedImages.IMG_OBJ_FILE));
         openBrowserAction.setEnabled(false);
         
-        final Action deleteLocationAction = new Action() {
+        return openBrowserAction;
+    }
+    
+    private Action createDeleteLocationAction() {
+        Action deleteLocationAction = new Action() {
             public void run() {
                 IStructuredSelection structured = (IStructuredSelection)viewer.getSelection();
                 if (structured.getFirstElement() instanceof Location) {
@@ -228,98 +329,10 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
         deleteLocationAction.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages().getImageDescriptor(
                 ISharedImages.IMG_ETOOL_DELETE));
         deleteLocationAction.setEnabled(false);
-
-        viewer.addSelectionChangedListener(new ISelectionChangedListener() {
-
-            @Override
-            public void selectionChanged(SelectionChangedEvent event) {
-                IStructuredSelection structured = (IStructuredSelection)viewer.getSelection();
-                if (structured.getFirstElement() instanceof Location) {
-                    openBrowserAction.setEnabled(true);
-                    deleteLocationAction.setEnabled(true);
-                } else {
-                    openBrowserAction.setEnabled(false);
-                    deleteLocationAction.setEnabled(false);
-                }
-            }
-            
-        });
         
-        viewer.addDoubleClickListener(new IDoubleClickListener() {
-
-            @Override
-            public void doubleClick(DoubleClickEvent event) {
-                openBrowserAction.run();
-            } 
-            
-        });
-        
-        final Action updateViewAction = new Action() {
-            public void run() {
-                EditorMonitor.getDefault().requestRefresh();
-            }
-        };
-        updateViewAction.setText("Update Links");
-        updateViewAction.setToolTipText("Update Links");
-        updateViewAction.setImageDescriptor(PluginActivator.getImageDescriptor("icons/refresh.gif"));
-
-        MenuManager menuManager = new MenuManager("#PopupMenu");
-        menuManager.setRemoveAllWhenShown(true);
-        menuManager.addMenuListener( new IMenuListener() {
-
-            @Override
-            public void menuAboutToShow(IMenuManager manager) {
-                manager.add(openBrowserAction);
-                manager.add(updateViewAction);
-                manager.add(deleteLocationAction);
-                manager.add(new Separator());
-                // Other plug-ins can contribute there actions here
-                manager.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
-            }
-            
-        });
-        viewer.getControl().setMenu(menuManager.createContextMenu(viewer.getControl()));
-        getSite().registerContextMenu(menuManager, viewer);
-
-        IActionBars bars = getViewSite().getActionBars();
-        /*
-        IMenuManager barMenuManager = bars.getMenuManager();
-        barMenuManager.add(openBrowserAction);
-        barMenuManager.add(updateViewAction);
-        */
-
-        IToolBarManager toolbarManager = bars.getToolBarManager();
-        toolbarManager.add(updateViewAction);
-
-        EditorMonitor.getDefault().start(getSite().getPage());
-        EditorMonitor.getDefault().addListener(this);
-        EditorMonitor.getDefault().requestRefresh();
-   }
-
-    public void updateView() {
-        EditorMonitor.getDefault().requestRefresh();
+        return deleteLocationAction;
     }
     
-    /**
-     * Passing the focus request to the viewer's control.
-     */
-    public void setFocus() {
-        viewer.getControl().setFocus();
-    }
-    
-    @Override
-    public void dispose() {
-        super.dispose();
-        EditorMonitor.getDefault().removeListener(this);
-    }
-    
-    @Override
-    public void onBatchQueryResult(BatchQueryReply result) {
-        contentProvider.setQueryResult(result);
-        viewer.refresh();
-        viewer.expandAll();
-    }
-
     private void showMessage(String message) {
         MessageDialog.openInformation(
                 viewer.getControl().getShell(),
