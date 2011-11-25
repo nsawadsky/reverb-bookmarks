@@ -1,6 +1,15 @@
 <html>
 <embed type="application/x-reverb" id="reverbPlugin"></embed>
 <script>
+function extractHost(url) {
+  var regexp = /^[^\:]+\:\/\/([^\/]+)/;
+  var matches = url.match(regexp);
+  if (matches == null) {
+    return null;
+  }
+  return matches[1];
+}
+
 function initializePlugin() {
 	var plugin = document.getElementById("reverbPlugin");
 	if (plugin == null) {
@@ -13,9 +22,14 @@ function initializePlugin() {
 	}
 	chrome.extension.onRequest.addListener(
 	    function(request, sender, sendResponse) {
-	      if (!plugin.sendPage(request.url, request.page)) {
-	        console.log("Failed to send page: " + plugin.getErrorMessage());
-	        console.log("Background thread status: " + plugin.getBackgroundThreadStatus());
+	      // Filter out frames loaded from different domains.
+	      var tabHost = extractHost(sender.tab.url);
+	      var requestHost = extractHost(request.url);
+	      if (tabHost != null && requestHost != null && tabHost == requestHost) {
+		      if (!plugin.sendPage(request.url, request.page)) {
+		        console.log("Failed to send page: " + plugin.getErrorMessage());
+		        console.log("Background thread status: " + plugin.getBackgroundThreadStatus());
+		      }
 	      }
 	      sendResponse({});
 	    }
