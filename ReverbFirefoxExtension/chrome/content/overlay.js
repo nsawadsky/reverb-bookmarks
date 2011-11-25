@@ -9,10 +9,7 @@ var ca_ubc_cs_reverb = {
       this.prefsService = Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefService)  
           .getBranch("extensions.cs.ubc.ca.reverb.");  
       this.prefsService.QueryInterface(Components.interfaces.nsIPrefBranch2);  
-      this.prefsService.addObserver("", this, false);  
       
-      this.updateIgnoredAddresses();
-
       Components.utils.import("resource://gre/modules/ctypes.jsm");
       Components.utils.import("resource://gre/modules/AddonManager.jsm");
       
@@ -32,34 +29,18 @@ var ca_ubc_cs_reverb = {
       }
     },
     
-    observe: function(subject, topic, data) {  
-      if (topic != "nsPref:changed") {  
-        return;  
-      }  
-    
-      switch(data) {  
-        case "ignoredAddresses":
-          this.ignoredAddressesChanged = true;
-      }  
-    },
- 
     getIgnoredAddresses: function() {
-      if (this.ignoredAddressesChanged) {
-        this.ignoredAddressesChanged = false;
-        this.updateIgnoredAddresses();
+      var prefString = this.prefsService.getCharPref("ignoredAddresses");
+      if (prefString == null) {
+        return null;
       }
-      return this.ignoredAddresses;
-    },
-    
-    updateIgnoredAddresses: function() {
-      var prefString = this.prefsService.getCharPref("ignoredAddresses").toLowerCase();
-      var tempIgnoredAddresses = prefString.split(',');
+      prefString = prefString.toLowerCase();
+      var ignoredAddresses = prefString.split(',');
       
-      for (var i = 0; i < tempIgnoredAddresses.length; i++) {
-        tempIgnoredAddresses[i] = tempIgnoredAddresses[i].replace(" ", "");
-        this.consoleService.logStringMessage("Ignored address: " + tempIgnoredAddresses[i]);
+      for (var i = 0; i < ignoredAddresses.length; i++) {
+        ignoredAddresses[i] = ignoredAddresses[i].replace(" ", "");
       }
-      this.ignoredAddresses = tempIgnoredAddresses;
+      return ignoredAddresses;
     },
     
    finishInit: function(extensionLibPath) {
@@ -111,8 +92,8 @@ var ca_ubc_cs_reverb = {
         }
       }
       
-      var tempIgnoredAddresses = this.getIgnoredAddresses();
-      if (tempIgnoredAddresses == null || tempIgnoredAddresses.indexOf(topHost) == -1) {
+      var ignoredAddresses = this.getIgnoredAddresses();
+      if (ignoredAddresses == null || ignoredAddresses.indexOf(topHost) == -1) {
         setTimeout(function() { ca_ubc_cs_reverb.onPageLoadTimerCallback(win, win.location.href); }, 5000);
       }
     },
