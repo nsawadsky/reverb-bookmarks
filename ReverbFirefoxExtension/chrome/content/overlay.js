@@ -92,7 +92,9 @@ var ca_ubc_cs_reverb = {
         }
       }
       
-      setTimeout(function() { ca_ubc_cs_reverb.onPageLoadTimerCallback(win, win.location.href); }, 5000);
+      var href = win.location.href;
+      
+      setTimeout(function() { ca_ubc_cs_reverb.onPageLoadTimerCallback(win, href); }, 5000);
     },
     
     onPageLoadTimerCallback: function(win, href) {

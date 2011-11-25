@@ -19,7 +19,9 @@ var reverb = {
         }
       }
       
-      setTimeout(function() { reverb.onPageLoadTimerCallback(win, win.location.href); }, 5000);
+      var href = win.location.href;
+      
+      setTimeout(function() { reverb.onPageLoadTimerCallback(win, href); }, 5000);
 
     },
     
