@@ -51,7 +51,6 @@ function initializePlugin() {
             // Filter out frames loaded from different domains.
             var tabHost = extractHost(sender.tab.url);
             var requestHost = extractHost(request.url);
-            // Filter out frames loaded from different domains.
             if (tabHost != null && requestHost != null && tabHost == requestHost) {
               var ignoredAddresses = getIgnoredAddresses();
               if (ignoredAddresses == null || ignoredAddresses.indexOf(tabHost) == -1) {
