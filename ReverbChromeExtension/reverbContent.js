@@ -1,33 +1,34 @@
 var reverb = {
     startTimer: function(win) {
-      var doc = win.document;
+      var doc = win.document; 
       
       // Ensure we filter out images.
-      if (doc.nodeName != "#document") { return; }
+      if (doc.nodeName != "#document") { 
+        return; 
+      }
 
-      var href = win.location.href;
+      // Filter out frames which are hidden.
+      if (win.frameElement != null) {
+        if (win.frameElement.style.visibility == "hidden" || win.frameElement.style.display == "none" ||
+            win.frameElement.getAttribute("aria-hidden") == "true") {
+          return;
+        }
+      }
       
-      setTimeout(function() { reverb.onPageLoadTimerCallback(win, href); }, 5000);
+      setTimeout(function() { reverb.onPageLoadTimerCallback(win, win.location.href); }, 5000);
 
     },
     
     onPageLoadTimerCallback: function(win, href) {
-      if (win.location.href != href) {
-        // This catches cases where the tab has been closed, the back button was hit, or a new page was opened in the tab.
-        // If the browser window has been closed, the timer never fires.
-      } else {
-        this.sendWindowContent(win);
-      }
-    },
-    
-    sendWindowContent: function(win) {
       var doc = win.document;
-      if (doc == null) {
+      // This catches cases where the tab has been closed, the back button was hit, or a new page was opened in the tab.
+      // If the browser window has been closed, the timer never fires.
+      if (win.closed || win.location.href != href || doc == null) {
         return;
-      }
+      } 
       chrome.extension.sendRequest({url: win.location.href, page: doc.documentElement.innerHTML});
     },
-
+    
 };
 
 reverb.startTimer(window); 

@@ -89,41 +89,46 @@ var ca_ubc_cs_reverb = {
       var win = doc.defaultView;
       
       // Ensure we filter out images.
-      if (doc.nodeName != "#document") { return; }
+      if (doc.nodeName != "#document") { 
+        return; 
+      }
 
-      var href = win.location.href;
-      var topHost = win.top.location.host;
+      if (win.location.protocol == "about:") {
+        return;
+      }
       
-      if (win.location.host == topHost) {
-        var tempIgnoredAddresses = this.getIgnoredAddresses();
-        if (tempIgnoredAddresses == null || tempIgnoredAddresses.indexOf(topHost) == -1) {
-          setTimeout(function() { ca_ubc_cs_reverb.onPageLoadTimerCallback(win, href); }, 5000);
+      // Filter out frames from different origins.
+      var topHost = win.top.location.host;
+      if (win.location.host != topHost) {
+        return;
+      }
+      
+      // Filter out frames which are hidden.
+      if (win.frameElement != null) {
+        if (win.frameElement.style.visibility == "hidden" || win.frameElement.style.display == "none" ||
+            win.frameElement.getAttribute("aria-hidden") == "true") {
+          return;
         }
+      }
+      
+      var tempIgnoredAddresses = this.getIgnoredAddresses();
+      if (tempIgnoredAddresses == null || tempIgnoredAddresses.indexOf(topHost) == -1) {
+        setTimeout(function() { ca_ubc_cs_reverb.onPageLoadTimerCallback(win, win.location.href); }, 5000);
       }
     },
     
     onPageLoadTimerCallback: function(win, href) {
-      if (win.location.href != href) {
-        // This catches cases where the tab has been closed, the back button was hit, or a new page was opened in the tab.
-        // If the browser window has been closed, the timer never fires.
-      } else {
-        if (this.sendPage != null) {
-          this.sendWindowContent(win);
-        }
+      var doc = win.document;
+      // This catches cases where the tab has been closed, the back button was hit, or a new page was opened in the tab.
+      // If the browser window has been closed, the timer never fires.
+      if (win.closed || win.location.href != href || doc == null) {
+        return;
+      } 
+      if (this.sendPage != null) {
+        this.sendPage(win.location.href, doc.documentElement.innerHTML);
       }
     },
     
-    sendWindowContent: function(win) {
-      if (win.location.protocol == "about:") {
-        return;
-      }
-      var doc = win.document;
-      if (doc == null) {
-        return;
-      }
-      this.sendPage(win.location.href, doc.documentElement.innerHTML);
-    },
-
     onMenuItemCommand: function() {
       window.open("chrome://reverb/content/reverb.xul", "", "chrome");
     }
