@@ -42,20 +42,16 @@ function initializePlugin() {
   chrome.extension.onRequest.addListener(
       function(request, sender, sendResponse) {
         if (request.action == "updatePageContent") {
-          // Filter out frames loaded from different domains.
-          var tabHost = extractHost(sender.tab.url);
-          var requestHost = extractHost(request.url);
-          if (tabHost != null && requestHost != null && tabHost == requestHost) {
-            if (!plugin.sendPage(request.url, request.page)) {
-              console.log("Failed to send page: " + plugin.getErrorMessage());
-              console.log("Background thread status: " + plugin.getBackgroundThreadStatus());
-            }
-          }
+           if (!plugin.sendPage(request.url, request.page)) {
+             console.log("Failed to send page: " + plugin.getErrorMessage());
+             console.log("Background thread status: " + plugin.getBackgroundThreadStatus());
+           }
           sendResponse({});
         } else if (request.action == "checkIndexPage") {
             // Filter out frames loaded from different domains.
             var tabHost = extractHost(sender.tab.url);
             var requestHost = extractHost(request.url);
+            // Filter out frames loaded from different domains.
             if (tabHost != null && requestHost != null && tabHost == requestHost) {
               var ignoredAddresses = getIgnoredAddresses();
               if (ignoredAddresses == null || ignoredAddresses.indexOf(tabHost) == -1) {
