@@ -1,6 +1,25 @@
 <html>
 <embed type="application/x-reverb" id="reverbPlugin"></embed>
+<script type="text/javascript" src="fancy-settings/source/lib/store.js"></script>
 <script>
+var settings = new Store("settings", {
+  "ignoredAddresses": "www.google.com, www.google.ca"
+});
+
+function getIgnoredAddresses() {
+  var prefString = settings.get("ignoredAddresses");
+  if (prefString == null) {
+    return null;
+  }
+  prefString = prefString.toLowerCase();
+  var ignoredAddresses = prefString.split(',');
+  
+  for (var i = 0; i < ignoredAddresses.length; i++) {
+    ignoredAddresses[i] = ignoredAddresses[i].replace(" ", "");
+  }
+  return ignoredAddresses;
+}
+
 function extractHost(url) {
   var regexp = /^[^\:]+\:\/\/([^\/]+)/;
   var matches = url.match(regexp);
@@ -11,29 +30,43 @@ function extractHost(url) {
 }
 
 function initializePlugin() {
-	var plugin = document.getElementById("reverbPlugin");
-	if (plugin == null) {
-	  console.log("Failed to get plugin reference");
-	  return;
-	}
-	if (!plugin.startBackgroundThread()) {
-	  console.log("Failed to start background thread: " + plugin.getErrorMessage());
-	  return;
-	}
-	chrome.extension.onRequest.addListener(
-	    function(request, sender, sendResponse) {
-	      // Filter out frames loaded from different domains.
-	      var tabHost = extractHost(sender.tab.url);
-	      var requestHost = extractHost(request.url);
-	      if (tabHost != null && requestHost != null && tabHost == requestHost) {
-		      if (!plugin.sendPage(request.url, request.page)) {
-		        console.log("Failed to send page: " + plugin.getErrorMessage());
-		        console.log("Background thread status: " + plugin.getBackgroundThreadStatus());
-		      }
-	      }
-	      sendResponse({});
-	    }
-	);
+  var plugin = document.getElementById("reverbPlugin");
+  if (plugin == null) {
+    console.log("Failed to get plugin reference");
+    return;
+  }
+  if (!plugin.startBackgroundThread()) {
+    console.log("Failed to start background thread: " + plugin.getErrorMessage());
+    return;
+  }
+  chrome.extension.onRequest.addListener(
+      function(request, sender, sendResponse) {
+        if (request.action == "updatePageContent") {
+          // Filter out frames loaded from different domains.
+          var tabHost = extractHost(sender.tab.url);
+          var requestHost = extractHost(request.url);
+          if (tabHost != null && requestHost != null && tabHost == requestHost) {
+            if (!plugin.sendPage(request.url, request.page)) {
+              console.log("Failed to send page: " + plugin.getErrorMessage());
+              console.log("Background thread status: " + plugin.getBackgroundThreadStatus());
+            }
+          }
+          sendResponse({});
+        } else if (request.action == "checkIndexPage") {
+            // Filter out frames loaded from different domains.
+            var tabHost = extractHost(sender.tab.url);
+            var requestHost = extractHost(request.url);
+            if (tabHost != null && requestHost != null && tabHost == requestHost) {
+              var ignoredAddresses = getIgnoredAddresses();
+              if (ignoredAddresses == null || ignoredAddresses.indexOf(tabHost) == -1) {
+                sendResponse({indexPage: true});
+                return;
+              }
+            }
+            sendResponse({indexPage: false});
+        }
+      }
+  );
 }
 initializePlugin();
 </script>
