@@ -7,6 +7,10 @@ var reverb = {
         return; 
       }
 
+      if (win.location.protocol == "about:") {
+        return;
+      }
+      
       // Filter out frames which are hidden.
       if (win.frameElement != null) {
         if (win.frameElement.style.visibility == "hidden" || win.frameElement.style.display == "none" ||
