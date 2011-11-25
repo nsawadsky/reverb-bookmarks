@@ -105,6 +105,10 @@ var ca_ubc_cs_reverb = {
       if (win.closed || win.location.href != href || doc == null) {
         return;
       } 
+      var ignoredAddresses = this.getIgnoredAddresses();
+      if (ignoredAddresses != null && ignoredAddresses.indexOf(win.top.location.host) != -1) {
+        return;
+      }
       if (this.sendPage != null) {
         this.sendPage(win.location.href, doc.documentElement.innerHTML);
       }
