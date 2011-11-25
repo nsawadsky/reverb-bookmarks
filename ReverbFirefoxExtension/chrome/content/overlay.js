@@ -92,10 +92,7 @@ var ca_ubc_cs_reverb = {
         }
       }
       
-      var ignoredAddresses = this.getIgnoredAddresses();
-      if (ignoredAddresses == null || ignoredAddresses.indexOf(topHost) == -1) {
-        setTimeout(function() { ca_ubc_cs_reverb.onPageLoadTimerCallback(win, win.location.href); }, 5000);
-      }
+      setTimeout(function() { ca_ubc_cs_reverb.onPageLoadTimerCallback(win, win.location.href); }, 5000);
     },
     
     onPageLoadTimerCallback: function(win, href) {
