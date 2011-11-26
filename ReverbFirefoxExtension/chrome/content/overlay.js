@@ -78,6 +78,11 @@ var ca_ubc_cs_reverb = {
         return;
       }
       
+      // Filter out frames with same address as parent page.
+      if (win != win.top && win.location.href == win.top.location.href) {
+        return;
+      }
+      
       // Filter out frames from different origins.
       var topHost = win.top.location.host;
       if (win.location.host != topHost) {

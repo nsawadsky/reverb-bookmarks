@@ -48,17 +48,26 @@ function initializePlugin() {
            }
           sendResponse({});
         } else if (request.action == "checkIndexPage") {
+          var result = false;
+          do {
+            // Filter out frames with same address as parent page.
+            if (request.isFrame && sender.tab.url == request.url) {
+              break;
+            }
             // Filter out frames loaded from different domains.
             var tabHost = extractHost(sender.tab.url);
             var requestHost = extractHost(request.url);
-            if (tabHost != null && requestHost != null && tabHost == requestHost) {
-              var ignoredAddresses = getIgnoredAddresses();
-              if (ignoredAddresses == null || ignoredAddresses.indexOf(tabHost) == -1) {
-                sendResponse({indexPage: true});
-                return;
-              }
+            if (tabHost == null || requestHost == null || tabHost != requestHost) {
+              break;
             }
-            sendResponse({indexPage: false});
+	            
+            var ignoredAddresses = getIgnoredAddresses();
+            if (ignoredAddresses != null && ignoredAddresses.indexOf(tabHost) != -1) {
+              break;
+            }
+            result = true;
+          } while (false);
+          sendResponse({indexPage: result});
         }
       }
   );
