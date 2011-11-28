@@ -20,3 +20,4 @@ Bundle-ClassPath: lib/XpNamedPipe.jar,
  lib/jackson-mapper-asl-1.8.5.jar,
  .
 Bundle-NativeCode: lib/XpNamedPipeJni.dll; lib/XpNamedPipeJni_64.dll
+Bundle-Vendor: UBC Software Practices Lab
