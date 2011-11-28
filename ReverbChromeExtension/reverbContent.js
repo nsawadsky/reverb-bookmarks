@@ -19,7 +19,6 @@ var reverb = {
           return;
         }
         if (win.frameElement.tagName == "IFRAME") {
-          console.log("Filtering iframe");
           return;
         }
       }

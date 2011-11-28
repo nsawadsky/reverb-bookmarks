@@ -13,21 +13,40 @@ var ca_ubc_cs_reverb = {
       Components.utils.import("resource://gre/modules/AddonManager.jsm");
       
       // Note that the following is an async call.  After this call completes, this.extensionLib may still not be initialized.
-      AddonManager.getAddonByID("reverb@cs.ubc.ca", function(addon)
-      {
-          var uri = addon.getResourceURI("components/windows/ReverbFirefoxExtensionDll.dll");
-          if (uri instanceof Components.interfaces.nsIFileURL)
-          {
-            ca_ubc_cs_reverb.finishInit(uri.file.path);
-          }
-      });
-      
-      var appcontent = document.getElementById("appcontent");
-      if (appcontent != null) {
-        appcontent.addEventListener("DOMContentLoaded", function(e) { ca_ubc_cs_reverb.onPageLoad(e); }, true);
-      }
+      AddonManager.getAddonByID("reverb@cs.ubc.ca", function(addon) { ca_ubc_cs_reverb.finishInit(addon); });
     },
     
+   finishInit: function(addon) {
+      var uri = addon.getResourceURI("components/windows/ReverbFirefoxExtensionDll.dll");
+      if (! (uri instanceof Components.interfaces.nsIFileURL)) {
+        Components.utils.reportError("Extension DLL not found");
+        return;
+      }
+      this.extensionLib = ctypes.open(uri.file.path);
+      if (this.extensionLib == null) {
+        Components.utils.reportError("Failed to load extension DLL");
+        return;
+      } 
+      this.startBackgroundThread = this.extensionLib.declare("RFD_startBackgroundThread", ctypes.default_abi, ctypes.int32_t);
+      this.stopBackgroundThread = this.extensionLib.declare("RFD_stopBackgroundThread", ctypes.default_abi, ctypes.int32_t);
+      this.sendPage = this.extensionLib.declare("RFD_sendPage", ctypes.default_abi, ctypes.int32_t, ctypes.char.ptr, ctypes.char.ptr);
+      this.getErrorMessage = this.extensionLib.declare("RFD_getErrorMessage", ctypes.default_abi, ctypes.void_t, ctypes.char.array(), ctypes.int32_t);
+      this.getBackgroundThreadStatus = this.extensionLib.declare("RFD_getBackgroundThreadStatus", ctypes.default_abi, ctypes.void_t, ctypes.char.array(), ctypes.int32_t);
+
+      if (!this.startBackgroundThread()) {
+        Components.utils.reportError("Failed to start background thread: " + this.getErrorMessage());
+      }
+
+      var appcontent = document.getElementById("appcontent");
+      appcontent.addEventListener("DOMContentLoaded", function(e) { ca_ubc_cs_reverb.onPageLoad(e); }, true);
+    },
+
+    onUnload: function() {
+    	if (this.extensionLib != null) {
+    	  this.extensionLib.close();
+    	}
+    },
+
     getIgnoredAddresses: function() {
       var ignoredAddresses = this.prefsService.getCharPref("ignoredAddresses");
       if (ignoredAddresses != this.oldIgnoredAddresses) {
@@ -41,25 +60,6 @@ var ca_ubc_cs_reverb = {
       return this.ignoredAddressesArray;
     },
     
-   finishInit: function(extensionLibPath) {
-      this.extensionLib = ctypes.open(extensionLibPath);
-      if (this.extensionLib != null) {
-        this.startBackgroundThread = this.extensionLib.declare("RFD_startBackgroundThread", ctypes.default_abi, ctypes.int32_t);
-        this.stopBackgroundThread = this.extensionLib.declare("RFD_stopBackgroundThread", ctypes.default_abi, ctypes.int32_t);
-        this.sendPage = this.extensionLib.declare("RFD_sendPage", ctypes.default_abi, ctypes.int32_t, ctypes.char.ptr, ctypes.char.ptr);
-        this.getErrorMessage = this.extensionLib.declare("RFD_getErrorMessage", ctypes.default_abi, ctypes.void_t, ctypes.char.array(), ctypes.int32_t);
-        this.getBackgroundThreadStatus = this.extensionLib.declare("RFD_getBackgroundThreadStatus", ctypes.default_abi, ctypes.void_t, ctypes.char.array(), ctypes.int32_t);
-
-        this.startBackgroundThread();
-      }
-    },
-
-    onUnload: function() {
-    	if (this.extensionLib != null) {
-    	  this.extensionLib.close();
-    	}
-    },
-
     onPageLoad: function(event) {
       if (this.privateBrowsingService.privateBrowsingEnabled) {
         return;
@@ -84,7 +84,6 @@ var ca_ubc_cs_reverb = {
           return;
         }
         if (win.frameElement.tagName == "IFRAME") {
-          console.log("Filtering iframe");
           return;
         }
       }
@@ -106,13 +105,10 @@ var ca_ubc_cs_reverb = {
       if (tempIgnoredAddresses != null && tempIgnoredAddresses.indexOf(win.top.location.host) != -1) {
         return;
       }
-      if (this.sendPage != null) {
-        this.sendPage(win.location.href, doc.documentElement.innerHTML);
+      if (!this.sendPage(win.location.href, doc.documentElement.innerHTML)) {
+        Components.utils.reportError("Failed to send page: " + this.getErrorMessage());
+        Components.utils.reportError("Background thread status: " + this.getBackgroundThreadStatus());
       }
     },
-    
-    onMenuItemCommand: function() {
-      window.open("chrome://reverb/content/reverb.xul", "", "chrome");
-    }
 };
 
