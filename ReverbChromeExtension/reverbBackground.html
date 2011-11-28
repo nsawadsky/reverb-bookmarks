@@ -2,22 +2,24 @@
 <embed type="application/x-reverb" id="reverbPlugin"></embed>
 <script type="text/javascript" src="fancy-settings/source/lib/store.js"></script>
 <script>
-var settings = new Store("settings", {
+var GBL_settings = new Store("settings", {
   "ignoredAddresses": "www.google.com, www.google.ca"
 });
 
+var GBL_oldIgnoredAddresses = null;
+var GBL_ignoredAddressesArray = null;
+
 function getIgnoredAddresses() {
-  var prefString = settings.get("ignoredAddresses");
-  if (prefString == null) {
-    return null;
+  var ignoredAddresses = GBL_settings.get("ignoredAddresses");
+  if (ignoredAddresses != GBL_oldIgnoredAddresses) {
+    GBL_oldIgnoredAddresses = ignoredAddresses;
+    GBL_ignoredAddressesArray = ignoredAddresses.toLowerCase().split(',');
+    
+    for (var i = 0; i < GBL_ignoredAddressesArray.length; i++) {
+      GBL_ignoredAddressesArray[i] = GBL_ignoredAddressesArray[i].replace(/^\s+|\s+$/g, "");
+    }
   }
-  prefString = prefString.toLowerCase();
-  var ignoredAddresses = prefString.split(',');
-  
-  for (var i = 0; i < ignoredAddresses.length; i++) {
-    ignoredAddresses[i] = ignoredAddresses[i].replace(" ", "");
-  }
-  return ignoredAddresses;
+  return GBL_ignoredAddressesArray;
 }
 
 function extractHost(url) {
@@ -50,17 +52,9 @@ function initializePlugin() {
         } else if (request.action == "checkIndexPage") {
           var result = false;
           do {
-            // Filter out frames with same address as parent page.
-            if (request.isFrame && sender.tab.url == request.url) {
-              break;
-            }
             // Filter out frames loaded from different domains.
             var tabHost = extractHost(sender.tab.url);
-            var requestHost = extractHost(request.url);
-            if (tabHost == null || requestHost == null || tabHost != requestHost) {
-              break;
-            }
-	            
+
             var ignoredAddresses = getIgnoredAddresses();
             if (ignoredAddresses != null && ignoredAddresses.indexOf(tabHost) != -1) {
               break;

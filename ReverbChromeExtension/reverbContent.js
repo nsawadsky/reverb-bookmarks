@@ -11,10 +11,15 @@ var reverb = {
         return;
       }
       
-      // Filter out frames which are hidden.
-      if (win.frameElement != null) {
-        if (win.frameElement.style.visibility == "hidden" || win.frameElement.style.display == "none" ||
-            win.frameElement.getAttribute("aria-hidden") == "true") {
+      // Filter out all iframes, as well as frames that reside in a different domain from top window.
+      // Note that if the frame/iframe is in a different domain from the top window, Chrome returns 
+      // null for win.top and win.frameElement.
+      if (win != win.top) {
+        if (win.frameElement == null) {
+          return;
+        }
+        if (win.frameElement.tagName == "IFRAME") {
+          console.log("Filtering iframe");
           return;
         }
       }

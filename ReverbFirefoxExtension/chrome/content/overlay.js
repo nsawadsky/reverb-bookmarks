@@ -8,7 +8,6 @@ var ca_ubc_cs_reverb = {
 
       this.prefsService = Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefService)  
           .getBranch("extensions.cs.ubc.ca.reverb.");  
-      this.prefsService.QueryInterface(Components.interfaces.nsIPrefBranch2);  
       
       Components.utils.import("resource://gre/modules/ctypes.jsm");
       Components.utils.import("resource://gre/modules/AddonManager.jsm");
@@ -30,17 +29,16 @@ var ca_ubc_cs_reverb = {
     },
     
     getIgnoredAddresses: function() {
-      var prefString = this.prefsService.getCharPref("ignoredAddresses");
-      if (prefString == null) {
-        return null;
+      var ignoredAddresses = this.prefsService.getCharPref("ignoredAddresses");
+      if (ignoredAddresses != this.oldIgnoredAddresses) {
+        this.oldIgnoredAddresses = ignoredAddresses;
+        this.ignoredAddressesArray = ignoredAddresses.toLowerCase().split(',');
+        
+        for (var i = 0; i < this.ignoredAddressesArray.length; i++) {
+          this.ignoredAddressesArray[i] = this.ignoredAddressesArray[i].replace(/^\s+|\s+$/g, "");
+        }
       }
-      prefString = prefString.toLowerCase();
-      var ignoredAddresses = prefString.split(',');
-      
-      for (var i = 0; i < ignoredAddresses.length; i++) {
-        ignoredAddresses[i] = ignoredAddresses[i].replace(" ", "");
-      }
-      return ignoredAddresses;
+      return this.ignoredAddressesArray;
     },
     
    finishInit: function(extensionLibPath) {
@@ -78,25 +76,20 @@ var ca_ubc_cs_reverb = {
         return;
       }
       
-      // Filter out frames with same address as parent page.
-      if (win != win.top && win.location.href == win.top.location.href) {
-        return;
-      }
-      
-      // Filter out frames from different origins.
-      var topHost = win.top.location.host;
-      if (win.location.host != topHost) {
-        return;
-      }
-      
-      // Filter out frames which are hidden.
-      if (win.frameElement != null) {
-        if (win.frameElement.style.visibility == "hidden" || win.frameElement.style.display == "none" ||
-            win.frameElement.getAttribute("aria-hidden") == "true") {
+      // Filter out all iframes, as well as frames that reside in a different domain from top window.
+      // Note that if the frame/iframe is in a different domain from the top window, Chrome returns 
+      // null for win.top and win.frameElement.
+      if (win != win.top) {
+        if (win.frameElement == null) {
+          return;
+        }
+        if (win.frameElement.tagName == "IFRAME") {
+          console.log("Filtering iframe");
           return;
         }
       }
       
+      // Make sure we capture the *current* value of the window's address. 
       var href = win.location.href;
       
       setTimeout(function() { ca_ubc_cs_reverb.onPageLoadTimerCallback(win, href); }, 5000);
@@ -109,8 +102,8 @@ var ca_ubc_cs_reverb = {
       if (win.closed || win.location.href != href || doc == null) {
         return;
       } 
-      var ignoredAddresses = this.getIgnoredAddresses();
-      if (ignoredAddresses != null && ignoredAddresses.indexOf(win.top.location.host) != -1) {
+      var tempIgnoredAddresses = this.getIgnoredAddresses();
+      if (tempIgnoredAddresses != null && tempIgnoredAddresses.indexOf(win.top.location.host) != -1) {
         return;
       }
       if (this.sendPage != null) {
