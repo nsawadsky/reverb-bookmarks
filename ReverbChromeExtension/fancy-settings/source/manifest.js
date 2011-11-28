@@ -1,7 +1,6 @@
-// SAMPLE
 this.manifest = {
     "name": "Reverb",
-    "icon": "icon.png",
+    "icon": "/icons/reverb-48.png",
     "settings": [
         {
             "tab": "General",

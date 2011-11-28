@@ -8,16 +8,13 @@
     <em:name>Reverb</em:name>
     <em:version>1.0</em:version>
     <em:description>Indexes web pages for quick retrieval inside the IDE.</em:description>
-    <em:creator>Nick Sawadsky</em:creator>
+    <em:creator>UBC Software Practices Lab</em:creator>
+    
     <!-- optional items -->
     <em:contributor></em:contributor>
-    
     <em:homepageURL></em:homepageURL>
-    <!-- em:optionsURL>chrome://sampleext/content/settings.xul</em:optionsURL>
-    <em:aboutURL>chrome://sampleext/content/about.xul</em:aboutURL>
-    <em:iconURL>chrome://sampleext/skin/mainicon.png</em:iconURL>
-    
-    <em:updateURL>http://sampleextension.mozdev.org/update.rdf</em:updateURL-->
+    <em:aboutURL></em:aboutURL>
+    <em:updateURL></em:updateURL>
     
     <!-- Firefox -->
     <em:targetApplication>
