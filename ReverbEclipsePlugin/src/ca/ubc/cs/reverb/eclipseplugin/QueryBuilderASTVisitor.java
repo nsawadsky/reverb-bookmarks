@@ -171,6 +171,7 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
      */
     @Override
     public boolean visit(MethodDeclaration node) {
+        // TODO: Add a query for the declaring type as well?
         if (!nodeOverlaps(node)) {
             return false;
         }
