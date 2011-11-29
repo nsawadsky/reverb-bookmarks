@@ -44,7 +44,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.spi.RootLogger;
 
-import ca.ubc.cs.reverb.indexer.messages.PageInfo;
+import ca.ubc.cs.reverb.indexer.messages.UpdatePageInfoRequest;
 
 public class HistoryClassifier {
     private static Logger log = Logger.getLogger(HistoryClassifier.class);
@@ -390,7 +390,7 @@ public class HistoryClassifier {
             
             try {
                 if (indexerConnection != null) {
-                    PageInfo info = new PageInfo(location.url, doc.outerHtml());
+                    UpdatePageInfoRequest info = new UpdatePageInfoRequest(location.url, doc.outerHtml());
                     for (HistoryVisit visit: locationAndVisits.visits){
                         info.visitTimes.add(visit.visitDate.getTime());
                     }

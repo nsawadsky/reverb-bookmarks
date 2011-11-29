@@ -137,7 +137,7 @@ public:
 private:
     void handlePageContentMessage(boost::shared_ptr<PageContentMessage> msg, XPNP_PipeHandle pipe) {
         Json::Value root;
-        Json::Value& pageInfo = root["message"]["pageInfo"];
+        Json::Value& pageInfo = root["message"]["updatePageInfoRequest"];
         pageInfo["url"] = msg->getUrl();
         pageInfo["html"] = msg->getPageContent();
 

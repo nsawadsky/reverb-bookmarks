@@ -9,7 +9,7 @@ import org.codehaus.jackson.annotate.JsonSubTypes;
                 @JsonSubTypes.Type(value=BatchQueryReply.class, name="batchQueryReply"),
                 @JsonSubTypes.Type(value=DeleteLocationRequest.class, name="deleteLocationRequest"),
                 @JsonSubTypes.Type(value=DeleteLocationReply.class, name="deleteLocationReply"),
-                @JsonSubTypes.Type(value=UpdatePageInfoRequest.class, name="pageInfo"),
+                @JsonSubTypes.Type(value=UpdatePageInfoRequest.class, name="updatePageInfoRequest"),
               })
 public interface IndexerMessage {
 }
