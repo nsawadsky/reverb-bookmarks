@@ -2,6 +2,9 @@ package ca.ubc.cs.reverb.indexer;
 
 import java.io.File;
 
+/**
+ * Class must be thread-safe.
+ */
 public class IndexerConfig {
     private static String LOCAL_APPDATA_ENV_VAR = "LOCALAPPDATA";
     
