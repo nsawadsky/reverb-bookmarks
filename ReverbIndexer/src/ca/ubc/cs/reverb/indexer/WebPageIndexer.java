@@ -2,6 +2,9 @@ package ca.ubc.cs.reverb.indexer;
 
 import java.io.File;
 import java.io.StringReader;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
 
 import org.apache.log4j.Logger;
 import org.apache.lucene.document.Document;
@@ -54,8 +57,10 @@ public class WebPageIndexer {
     
     public void commitChanges() throws IndexerException {
         try {
-            locationsDatabase.commitChanges();
             indexWriter.commit();
+            
+            // Ensure index changes are committed first, since a row in the database can prevent indexing.
+            locationsDatabase.commitChanges();
         } catch (IndexerException e) {
             throw e;
         } catch (Exception e) {
@@ -68,7 +73,9 @@ public class WebPageIndexer {
      */
     public void deleteLocation(DeleteLocationRequest request) throws IndexerException {
         try {
+            // First delete from locations database, since a row in the database can prevent indexing.
             locationsDatabase.deleteLocationInfo(request.url);
+            
             indexWriter.deleteDocuments(new Term(URL_FIELD_NAME, request.url));
             indexWriter.commit();
         } catch (Exception e) {
@@ -78,17 +85,44 @@ public class WebPageIndexer {
     
     /**
      * The update is not committed immediately (a separate call to commitChanges is
-     * necessary).
+     * necessary).  The page will not be indexed at all if it was already indexed once
+     * today.  The page will also not be indexed (but may still be added to the locations
+     * database) if it matches certain filtering criteria.
+     * 
+     * @return true if the page was indexed, false otherwise.
      */
-    public void indexPage(UpdatePageInfoRequest info) throws IndexerException {
+    public boolean indexPage(UpdatePageInfoRequest info) throws IndexerException {
         try {
             String normalizedUrl = normalizeUrl(info.url);
 
-            locationsDatabase.updateLocationInfo(normalizedUrl, info.visitTimes);
-
+            Date lastVisitDate = locationsDatabase.getLastVisitDate(info.url);
+            if (lastVisitDate != null) {
+                Calendar lastVisitCal = GregorianCalendar.getInstance();
+                lastVisitCal.setTime(lastVisitDate);
+                Calendar currTimeCal = GregorianCalendar.getInstance();
+                // If page was already indexed today, do not index again.
+                if (lastVisitCal.get(Calendar.YEAR) == currTimeCal.get(Calendar.YEAR) && 
+                        lastVisitCal.get(Calendar.MONTH) == currTimeCal.get(Calendar.MONTH) &&
+                        lastVisitCal.get(Calendar.DATE) == currTimeCal.get(Calendar.DATE)) {
+                    // Still need to record the additional visit(s).
+                    locationsDatabase.updateLocationInfo(normalizedUrl, info.visitTimes);
+                    return false;
+                }
+            }
+            
             // make a new, empty document
             Document doc = new Document();
     
+            org.jsoup.nodes.Document jsoupDoc = Jsoup.parse(info.html);
+
+            Elements framesets = jsoupDoc.select("frameset");
+            if (framesets.size() > 0) {
+                // Filter out parent frameset pages.  We may still want the child frames, but the frameset parent
+                // does not usually have useful content, and may add redundant results to the index 
+                // (e.g. if title of parent page matches title of a frame).
+                return false;
+            }
+            
             // Add the URL of the page as a field named "url".  Use a
             // field that is indexed (i.e. searchable), but don't tokenize 
             // the field into separate words and don't index term frequency
@@ -97,7 +131,6 @@ public class WebPageIndexer {
             urlField.setOmitTermFreqAndPositions(true);
             doc.add(urlField);
     
-            org.jsoup.nodes.Document jsoupDoc = Jsoup.parse(info.html);
             
             Field titleField = new Field(TITLE_FIELD_NAME, jsoupDoc.title(), Field.Store.YES, Field.Index.ANALYZED);
             titleField.setBoost(3.0F);
@@ -130,6 +163,12 @@ public class WebPageIndexer {
             // we use updateDocument instead to replace the old one matching the exact 
             // URL, if present:
             indexWriter.updateDocument(new Term(URL_FIELD_NAME, normalizedUrl), doc);
+            
+            // Ensure that the locations database is only updated if the page was indexed successfully 
+            // (since a row in the locations database can prevent indexing).
+            locationsDatabase.updateLocationInfo(normalizedUrl, info.visitTimes);
+
+            return true;
         } catch (Exception e) {
             throw new IndexerException("Exception indexing page: " + e);
         }

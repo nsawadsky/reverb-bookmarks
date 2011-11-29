@@ -40,14 +40,6 @@ var reverb = {
       chrome.extension.sendRequest({action: "checkIndexPage", url: win.location.href, isFrame: (win != win.top)}, 
           function(response) {
             if (response.indexPage) {
-              // Filter out parent frameset pages (we may still want the child frames, but the frameset parent
-              // does not usually have useful content).  We perform this check later because it may take some
-              // time.
-              var framesetElements = doc.getElementsByTagName("FRAMESET");
-              if (framesetElements != null && framesetElements.length > 0) {
-                return;
-              }
-              
               chrome.extension.sendRequest({action: "updatePageContent", url: win.location.href, page: doc.documentElement.innerHTML});
             }
           });
