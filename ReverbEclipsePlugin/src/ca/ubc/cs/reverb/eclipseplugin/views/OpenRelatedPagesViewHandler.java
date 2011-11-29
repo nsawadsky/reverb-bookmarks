@@ -15,7 +15,6 @@ import ca.ubc.cs.reverb.eclipseplugin.PluginLogger;
 public class OpenRelatedPagesViewHandler implements IHandler {
     @Override
     public void addHandlerListener(IHandlerListener handlerListener) {
-        // TODO Auto-generated method stub
         
     }
 
