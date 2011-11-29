@@ -9,8 +9,6 @@ import java.util.List;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.part.*;
 import org.eclipse.jface.viewers.*;
-import org.eclipse.swt.events.KeyAdapter;
-import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.jface.action.*;
 import org.eclipse.jface.dialogs.MessageDialog;
@@ -48,6 +46,17 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
             this.batchQueryReply = result;
         }
         
+        public void removeLocation(Location location) {
+            for (QueryResult result: batchQueryReply.queryResults) {
+                for (Location currLocation: result.locations) {
+                    if (currLocation == location) {
+                        result.locations.remove(currLocation);
+                        return;
+                    }
+                }
+            }
+        }
+        
         public void inputChanged(Viewer v, Object oldInput, Object newInput) {
         }
         
@@ -59,13 +68,7 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
                 if (batchQueryReply == null || batchQueryReply.queryResults.isEmpty()) {
                     return new Object[] { NO_RESULTS };
                 } 
-                List<QueryResult> filteredResults = new ArrayList<QueryResult>();
-                for (QueryResult result: batchQueryReply.queryResults) {
-                    if (result.locations != null && !result.locations.isEmpty()) {
-                        filteredResults.add(result);
-                    }
-                }
-                return filteredResults.toArray();
+                return batchQueryReply.queryResults.toArray();
             }
             return getChildren(parent);
         }
@@ -307,7 +310,8 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
 
                                         @Override
                                         public void run() {
-                                            viewer.remove(location);
+                                            contentProvider.removeLocation(location);
+                                            viewer.refresh();
                                         }
                                     });
                                 }

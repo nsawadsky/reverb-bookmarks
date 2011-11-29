@@ -3,6 +3,8 @@ package ca.ubc.cs.reverb.indexer;
 import java.io.IOException;
 
 import org.codehaus.jackson.map.ObjectMapper;
+
+import xpnp.TimeoutException;
 import xpnp.XpNamedPipe;
 
 import org.apache.log4j.Logger;
@@ -45,6 +47,8 @@ public class IndexPipeListener implements Runnable {
     }
    
     private class IndexPipeConnection implements Runnable {
+        private final static int COMMIT_INTERVAL_MSECS = 15000;
+        
         private IndexerConfig config;
         private XpNamedPipe pipe;
         private WebPageIndexer indexer;
@@ -58,31 +62,44 @@ public class IndexPipeListener implements Runnable {
         public void run() {
             try {
                 Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
-                
+                long nextCommitTime = System.currentTimeMillis() + COMMIT_INTERVAL_MSECS;
+
                 ObjectMapper mapper = new ObjectMapper();
                 while (true) {
-                    byte[] data = pipe.readMessage();
-                    UpdatePageInfoRequest info = null;
-                    try {
-                        IndexerMessageEnvelope envelope = mapper.readValue(data, IndexerMessageEnvelope.class);
-                        if (envelope.message == null) {
-                            throw new IndexerException("envelope.message is null");
-                        }
-                        if (!(envelope.message instanceof UpdatePageInfoRequest)) {
-                            throw new IndexerException("Unexpected message content: " + envelope.message.getClass());
-                        }
-                        info = (UpdatePageInfoRequest)envelope.message;
-                    } catch (Exception e) {
-                        log.error("Exception parsing message from index pipe", e);
-                    }
-                    if (info != null) {
-                        log.info("Got page: " + info.url);
+                    long timeToWait = nextCommitTime - System.currentTimeMillis();
+                    if (timeToWait <= 100) {
                         try {
-                            indexer.indexPage(info);
-                        } catch (Exception e) {
-                            log.error("Error indexing page '" + info.url + "'", e);
+                            indexer.commitChanges();
+                        } catch (IndexerException e) {
+                            log.error("Error committing index changes", e);
                         }
+                        nextCommitTime = System.currentTimeMillis() + COMMIT_INTERVAL_MSECS;
+                        timeToWait = COMMIT_INTERVAL_MSECS;
                     }
+                    try {
+                        byte[] data = pipe.readMessage((int)timeToWait);
+                        UpdatePageInfoRequest info = null;
+                        try {
+                            IndexerMessageEnvelope envelope = mapper.readValue(data, IndexerMessageEnvelope.class);
+                            if (envelope.message == null) {
+                                throw new IndexerException("envelope.message is null");
+                            }
+                            if (!(envelope.message instanceof UpdatePageInfoRequest)) {
+                                throw new IndexerException("Unexpected message content: " + envelope.message.getClass());
+                            }
+                            info = (UpdatePageInfoRequest)envelope.message;
+                        } catch (Exception e) {
+                            log.error("Exception parsing message from index pipe", e);
+                        }
+                        if (info != null) {
+                            log.info("Got page: " + info.url);
+                            try {
+                                indexer.indexPage(info);
+                            } catch (IndexerException e) {
+                                log.error("Error indexing page '" + info.url + "'", e);
+                            }
+                        }
+                    } catch (TimeoutException e) { }
                 }
             } catch (IOException e) {
                 log.info("Error reading index pipe", e);
