@@ -6,7 +6,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 
 import ca.ubc.cs.reverb.indexer.messages.IndexerMessage;
 import ca.ubc.cs.reverb.indexer.messages.IndexerMessageEnvelope;
-import ca.ubc.cs.reverb.indexer.messages.PageInfo;
+import ca.ubc.cs.reverb.indexer.messages.UpdatePageInfoRequest;
 
 import xpnp.XpNamedPipe;
 
@@ -33,12 +33,12 @@ public class IndexerConnection {
         }
     }
     
-    public void indexPage(PageInfo info) throws HistoryMinerException {
+    public void indexPage(UpdatePageInfoRequest info) throws HistoryMinerException {
         sendMessage(info);
     }
     
     private void sendMessage(IndexerMessage msg) throws HistoryMinerException {
-        IndexerMessageEnvelope envelope = new IndexerMessageEnvelope(msg);
+        IndexerMessageEnvelope envelope = new IndexerMessageEnvelope(null, msg);
         ObjectMapper mapper = new ObjectMapper();
         byte [] jsonData = null;
         try {
