@@ -52,15 +52,34 @@ public class WebPageIndexer {
         return this.indexWriter;
     }
     
+    public void commitChanges() throws IndexerException {
+        try {
+            locationsDatabase.commitChanges();
+            indexWriter.commit();
+        } catch (IndexerException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IndexerException("Error committing changes: " + e, e);
+        }
+    }
+
+    /**
+     * The delete is committed immediately (along with any pending updates).
+     */
     public void deleteLocation(DeleteLocationRequest request) throws IndexerException {
         try {
             locationsDatabase.deleteLocationInfo(request.url);
             indexWriter.deleteDocuments(new Term(URL_FIELD_NAME, request.url));
+            indexWriter.commit();
         } catch (Exception e) {
             throw new IndexerException("Exception deleting document: " + e, e);
         }
     }
     
+    /**
+     * The update is not committed immediately (a separate call to commitChanges is
+     * necessary).
+     */
     public void indexPage(UpdatePageInfoRequest info) throws IndexerException {
         try {
             String normalizedUrl = normalizeUrl(info.url);
@@ -107,11 +126,10 @@ public class WebPageIndexer {
             Field contentField = new Field(CONTENT_FIELD_NAME, new StringReader(text));
             doc.add(contentField);
     
-            // Existing index (an old copy of this page may have been indexed) so 
+            // An old copy of this page may have been indexed so 
             // we use updateDocument instead to replace the old one matching the exact 
             // URL, if present:
             indexWriter.updateDocument(new Term(URL_FIELD_NAME, normalizedUrl), doc);
-            indexWriter.commit();
         } catch (Exception e) {
             throw new IndexerException("Exception indexing page: " + e);
         }

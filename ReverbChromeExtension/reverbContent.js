@@ -11,6 +11,13 @@ var reverb = {
         return;
       }
       
+      // Filter out parent frameset pages (we may still want the child frames, but the frameset parent
+      // does not usually have useful content).
+      var framesetElements = doc.getElementsByTagName("FRAMESET");
+      if (framesetElements != null && framesetElements.length > 0) {
+        return;
+      }
+      
       // Filter out all iframes, as well as frames that reside in a different domain from top window.
       // Note that if the frame/iframe is in a different domain from the top window, Chrome returns 
       // null for win.top and win.frameElement.

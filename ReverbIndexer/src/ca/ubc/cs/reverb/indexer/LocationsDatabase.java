@@ -25,6 +25,7 @@ public class LocationsDatabase {
     
     private IndexerConfig config;
     private Connection connection;
+    private boolean hasChanges = false;
 
     public LocationsDatabase(IndexerConfig config) throws IndexerException {
         this.config = config;
@@ -35,6 +36,7 @@ public class LocationsDatabase {
         }
         try {
             connection = DriverManager.getConnection(JDBC_SQLITE + config.getLocationsDatabasePath());
+            connection.setAutoCommit(false);
         } catch (SQLException e) {
             throw new IndexerException("Exception connecting to locations database: " + e, e);
         }
@@ -79,16 +81,38 @@ public class LocationsDatabase {
         return results;
     }
     
+    /**
+     * The delete is committed immediately (along with any pending updates).
+     */
     public synchronized void deleteLocationInfo(String url) throws IndexerException { 
         try {
+            commitChanges();
+            
             Statement stmt = connection.createStatement();
             String update = "DELETE FROM locations WHERE (url = '" + url + "')";
             stmt.executeUpdate(update);
-        } catch (SQLException e) {
+            
+            connection.commit();
+        } catch (Exception e) {
             throw new IndexerException("Error deleting location info: " + e);
         }
     }
     
+    public synchronized void commitChanges() throws IndexerException {
+        try {
+            if (hasChanges) {
+                connection.commit();
+                hasChanges = false;
+            }
+        } catch (SQLException e) {
+            throw new IndexerException("Exception committing changes: " + e, e);
+        }
+    }
+    
+    /**
+     * Note that the change is not committed immediately.  A separate call to commitChanges
+     * is required.
+     */
     public synchronized void updateLocationInfo(String url, List<Long> visitTimes) throws IndexerException { 
         try {
             long currentTime = new Date().getTime();
@@ -134,7 +158,7 @@ public class LocationsDatabase {
             prep.setFloat(5, frecencyBoost);
             
             prep.execute();
-            
+            hasChanges = true;
         } catch (SQLException e) {
             throw new IndexerException("Error updating location info: " + e, e);
         } 
@@ -148,7 +172,6 @@ public class LocationsDatabase {
             
             ResultSet rs = stmt.executeQuery(query);
             if (!rs.next()) {
-                connection.setAutoCommit(false);
                 
                 try {
                     stmt = connection.createStatement();
@@ -170,9 +193,6 @@ public class LocationsDatabase {
                 } catch (SQLException e) {
                     connection.rollback();
                     throw e;
-                }
-                finally {
-                    connection.setAutoCommit(true);
                 }
             }
         } catch (SQLException e) {
