@@ -11,13 +11,6 @@ var reverb = {
         return;
       }
       
-      // Filter out parent frameset pages (we may still want the child frames, but the frameset parent
-      // does not usually have useful content).
-      var framesetElements = doc.getElementsByTagName("FRAMESET");
-      if (framesetElements != null && framesetElements.length > 0) {
-        return;
-      }
-      
       // Filter out all iframes, as well as frames that reside in a different domain from top window.
       // Note that if the frame/iframe is in a different domain from the top window, Chrome returns 
       // null for win.top and win.frameElement.
@@ -42,10 +35,19 @@ var reverb = {
       // If the browser window has been closed, the timer never fires.
       if (win.closed || win.location.href != href || doc == null) {
         return;
-      } 
+      }
+      
       chrome.extension.sendRequest({action: "checkIndexPage", url: win.location.href, isFrame: (win != win.top)}, 
           function(response) {
             if (response.indexPage) {
+              // Filter out parent frameset pages (we may still want the child frames, but the frameset parent
+              // does not usually have useful content).  We perform this check later because it may take some
+              // time.
+              var framesetElements = doc.getElementsByTagName("FRAMESET");
+              if (framesetElements != null && framesetElements.length > 0) {
+                return;
+              }
+              
               chrome.extension.sendRequest({action: "updatePageContent", url: win.location.href, page: doc.documentElement.innerHTML});
             }
           });

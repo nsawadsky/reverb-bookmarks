@@ -298,7 +298,7 @@ public class WebPageSearcher {
         public String url;
         public String title;
         public float luceneScore;
-        public float frecencyBoost;
+        public float frecencyBoost = 1.0F;
     }
         
     protected class HitInfo {
@@ -315,14 +315,11 @@ public class WebPageSearcher {
         public List<IndexerQuery> queries = new ArrayList<IndexerQuery>();
         public float bestIndividualScore;
         public IndexerQuery bestQuery;
-        public float frecencyBoost;
+        public float frecencyBoost = 1.0F;
         public float combinedScore;
         
         public float getOverallScore() {
-            if (frecencyBoost > 0.0) {
-                return frecencyBoost * combinedScore;
-            }
-            return combinedScore;
+            return frecencyBoost * combinedScore;
         }
     }
 

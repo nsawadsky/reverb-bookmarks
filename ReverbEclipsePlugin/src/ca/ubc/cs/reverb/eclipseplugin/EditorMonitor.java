@@ -37,7 +37,7 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener 
     
     private static EditorMonitor instance = new EditorMonitor();
     private boolean isStarted = false;
-    private long lastRefreshTime = INVALID_TIME;
+    private long lastRequestRefreshTime = INVALID_TIME;
     private IndexerConnection indexerConnection;
     private IWorkbenchPage workbenchPage;
     
@@ -152,10 +152,14 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener 
         handleNavigationEvent();
     }
 
-    public void requestRefresh() {
+    public void requestRefresh(boolean immediate) {
         // Ensure that an update will be sent.
         lastTextViewer = null;
-        startRefreshTimer();
+        if (immediate) {
+            doRefresh();
+        } else {
+            startRefreshTimer();
+        }
     }
     
     private void doRefresh() {
@@ -236,29 +240,29 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener 
             @Override
             public void run() {
                 boolean restart = false;
-                if (lastRefreshTime != this.startTime) {
-                    int newDelay = (int)(lastRefreshTime + REFRESH_DELAY_MSECS - System.currentTimeMillis());
+                if (lastRequestRefreshTime != this.startTime) {
+                    int newDelay = (int)(lastRequestRefreshTime + REFRESH_DELAY_MSECS - System.currentTimeMillis());
                     if (newDelay >= 100) {
                         // Refresh requested since this timer was started, restart the timer.
                         restart = true;
-                        this.startTime = lastRefreshTime;
+                        this.startTime = lastRequestRefreshTime;
                         PlatformUI.getWorkbench().getDisplay().timerExec(newDelay, this);
                     }
                 }
                 if (!restart) {
-                    lastRefreshTime = INVALID_TIME;
+                    lastRequestRefreshTime = INVALID_TIME;
                     doRefresh();
                 }
             }
         }
         
         long currentTime = System.currentTimeMillis();
-        if (lastRefreshTime == INVALID_TIME || ((currentTime - lastRefreshTime) > (5 * REFRESH_DELAY_MSECS))) {
-            lastRefreshTime = System.currentTimeMillis();
-            TimerCallback callback = new TimerCallback(lastRefreshTime);
+        if (lastRequestRefreshTime == INVALID_TIME || ((currentTime - lastRequestRefreshTime) > (5 * REFRESH_DELAY_MSECS))) {
+            lastRequestRefreshTime = System.currentTimeMillis();
+            TimerCallback callback = new TimerCallback(lastRequestRefreshTime);
             PlatformUI.getWorkbench().getDisplay().timerExec(REFRESH_DELAY_MSECS, callback);
         } else {
-            lastRefreshTime = System.currentTimeMillis();
+            lastRequestRefreshTime = System.currentTimeMillis();
         }
     }
 
