@@ -59,7 +59,8 @@ public class WebPageIndexer {
         try {
             indexWriter.commit();
             
-            // Ensure index changes are committed first, since a row in the database can prevent indexing.
+            // Ensure index changes are committed first, since a row in the database can prevent indexing
+            // for up to a day.
             locationsDatabase.commitChanges();
         } catch (IndexerException e) {
             throw e;
@@ -73,7 +74,8 @@ public class WebPageIndexer {
      */
     public void deleteLocation(DeleteLocationRequest request) throws IndexerException {
         try {
-            // First delete from locations database, since a row in the database can prevent indexing.
+            // First delete from locations database, since a row in the database can prevent indexing
+            // for up to a day.
             locationsDatabase.deleteLocationInfo(request.url);
             
             indexWriter.deleteDocuments(new Term(URL_FIELD_NAME, request.url));
@@ -165,7 +167,7 @@ public class WebPageIndexer {
             indexWriter.updateDocument(new Term(URL_FIELD_NAME, normalizedUrl), doc);
             
             // Ensure that the locations database is only updated if the page was indexed successfully 
-            // (since a row in the locations database can prevent indexing).
+            // (since a row in the locations database can prevent indexing for up to a day).
             locationsDatabase.updateLocationInfo(normalizedUrl, info.visitTimes);
 
             return true;

@@ -84,7 +84,6 @@ public class LocationsDatabase {
      * The delete is committed immediately (along with any pending updates).
      */
     public synchronized void deleteLocationInfo(String url) throws IndexerException { 
-        commitChanges();
         try {
             Statement stmt = connection.createStatement();
             String update = "DELETE FROM locations WHERE (url = '" + escapeForSQL(url) + "')";
