@@ -23,6 +23,9 @@ import org.jsoup.select.Elements;
 import ca.ubc.cs.reverb.indexer.messages.DeleteLocationRequest;
 import ca.ubc.cs.reverb.indexer.messages.UpdatePageInfoRequest;
 
+/**
+ * This class is thread-safe, because of the thread-safety of LocationsDatabase and IndexWriter.
+ */
 public class WebPageIndexer {
     private static Logger log = Logger.getLogger(WebPageIndexer.class);
     
@@ -60,7 +63,11 @@ public class WebPageIndexer {
             indexWriter.commit();
             
             // Ensure index changes are committed first, since a row in the database can prevent indexing
-            // for up to a day.
+            // for up to a day.  
+            // Rare interleavings of commitChanges, deleteLocation, and indexPage
+            // could still result in a page being absent from the index, but not indexable for up to a day.
+            // We accept this risk to avoid the performance hit of synchronizing these three
+            // methods (especially commitChanges).
             locationsDatabase.commitChanges();
         } catch (IndexerException e) {
             throw e;
@@ -76,6 +83,10 @@ public class WebPageIndexer {
         try {
             // First delete from locations database, since a row in the database can prevent indexing
             // for up to a day.
+            // Rare interleavings of commitChanges, deleteLocation, and indexPage
+            // could still result in a page being absent from the index, but not indexable for up to a day.
+            // We accept this risk to avoid the performance hit of synchronizing these three
+            // methods (especially commitChanges).
             locationsDatabase.deleteLocationInfo(request.url);
             
             indexWriter.deleteDocuments(new Term(URL_FIELD_NAME, request.url));
@@ -168,6 +179,10 @@ public class WebPageIndexer {
             
             // Ensure that the locations database is only updated if the page was indexed successfully 
             // (since a row in the locations database can prevent indexing for up to a day).
+            // Rare interleavings of commitChanges, deleteLocation, and indexPage
+            // could still result in a page being absent from the index, but not indexable for up to a day.
+            // We accept this risk to avoid the performance hit of synchronizing these three
+            // methods (especially commitChanges).
             locationsDatabase.updateLocationInfo(normalizedUrl, info.visitTimes);
 
             return true;
