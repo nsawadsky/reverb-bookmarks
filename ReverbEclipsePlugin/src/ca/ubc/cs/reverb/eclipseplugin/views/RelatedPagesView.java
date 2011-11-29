@@ -229,11 +229,11 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
 
         EditorMonitor.getDefault().start(getSite().getPage());
         EditorMonitor.getDefault().addListener(this);
-        EditorMonitor.getDefault().requestRefresh();
+        EditorMonitor.getDefault().requestRefresh(false);
    }
 
     public void updateView() {
-        EditorMonitor.getDefault().requestRefresh();
+        EditorMonitor.getDefault().requestRefresh(true);
     }
     
     /**
@@ -259,7 +259,7 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
     private Action createUpdateViewAction() {
         Action updateViewAction = new Action() {
             public void run() {
-                EditorMonitor.getDefault().requestRefresh();
+                EditorMonitor.getDefault().requestRefresh(true);
             }
         };
         updateViewAction.setText("Update Links");

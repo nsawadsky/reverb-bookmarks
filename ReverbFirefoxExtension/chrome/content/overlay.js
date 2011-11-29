@@ -76,13 +76,6 @@ var ca_ubc_cs_reverb = {
         return;
       }
       
-      // Filter out parent frameset pages (we may still want the child frames, but the frameset parent
-      // does not usually have useful content).
-      var framesetElements = doc.getElementsByTagName("FRAMESET");
-      if (framesetElements != null && framesetElements.length > 0) {
-        return;
-      }
-      
       // Filter out all iframes, as well as frames that reside in a different domain from top window.
       // Note that if the frame/iframe is in a different domain from the top window, Chrome returns 
       // null for win.top and win.frameElement.
@@ -112,6 +105,15 @@ var ca_ubc_cs_reverb = {
       if (tempIgnoredAddresses != null && tempIgnoredAddresses.indexOf(win.top.location.host) != -1) {
         return;
       }
+      
+      // Filter out parent frameset pages (we may still want the child frames, but the frameset parent
+      // does not usually have useful content).  We perform this check later because it may take some
+      // time.
+      var framesetElements = doc.getElementsByTagName("FRAMESET");
+      if (framesetElements != null && framesetElements.length > 0) {
+        return;
+      }
+      
       if (!this.sendPage(win.location.href, doc.documentElement.innerHTML)) {
         Components.utils.reportError("Failed to send page: " + this.getErrorMessage());
         Components.utils.reportError("Background thread status: " + this.getBackgroundThreadStatus());
