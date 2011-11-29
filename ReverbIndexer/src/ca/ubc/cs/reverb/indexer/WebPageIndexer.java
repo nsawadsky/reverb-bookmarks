@@ -24,7 +24,8 @@ import ca.ubc.cs.reverb.indexer.messages.DeleteLocationRequest;
 import ca.ubc.cs.reverb.indexer.messages.UpdatePageInfoRequest;
 
 /**
- * This class is thread-safe, because of the thread-safety of LocationsDatabase and IndexWriter.
+ * This class is thread-safe, because of the thread-safety of IndexerConfig, LocationsDatabase 
+ * and IndexWriter.
  */
 public class WebPageIndexer {
     private static Logger log = Logger.getLogger(WebPageIndexer.class);
