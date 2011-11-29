@@ -25,7 +25,6 @@ public class LocationsDatabase {
     
     private IndexerConfig config;
     private Connection connection;
-    private boolean hasChanges = false;
 
     public LocationsDatabase(IndexerConfig config) throws IndexerException {
         this.config = config;
@@ -102,10 +101,7 @@ public class LocationsDatabase {
     
     public synchronized void commitChanges() throws IndexerException {
         try {
-            if (hasChanges) {
-                connection.commit();
-                hasChanges = false;
-            }
+            connection.commit();
         } catch (SQLException e1) {
             try { 
                 connection.rollback(); 
@@ -184,7 +180,6 @@ public class LocationsDatabase {
             prep.setFloat(5, frecencyBoost);
             
             prep.execute();
-            hasChanges = true;
             
             return lastVisitDate;
         } catch (SQLException e) {
