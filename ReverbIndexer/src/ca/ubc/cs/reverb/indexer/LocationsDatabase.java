@@ -60,7 +60,7 @@ public class LocationsDatabase {
                 } else {
                     query.append(", '");
                 }
-                query.append(url);
+                query.append(escapeForSQL(url));
                 query.append("'");
             }
             query.append(")");
@@ -85,16 +85,18 @@ public class LocationsDatabase {
      * The delete is committed immediately (along with any pending updates).
      */
     public synchronized void deleteLocationInfo(String url) throws IndexerException { 
+        commitChanges();
         try {
-            commitChanges();
-            
             Statement stmt = connection.createStatement();
-            String update = "DELETE FROM locations WHERE (url = '" + url + "')";
+            String update = "DELETE FROM locations WHERE (url = '" + escapeForSQL(url) + "')";
             stmt.executeUpdate(update);
             
             connection.commit();
-        } catch (Exception e) {
-            throw new IndexerException("Error deleting location info: " + e);
+        } catch (SQLException e1) {
+            try { 
+                connection.rollback(); 
+            } catch (SQLException e2) { }
+            throw new IndexerException("Error deleting location info: " + e1, e1);
         }
     }
     
@@ -104,22 +106,45 @@ public class LocationsDatabase {
                 connection.commit();
                 hasChanges = false;
             }
+        } catch (SQLException e1) {
+            try { 
+                connection.rollback(); 
+            } catch (SQLException e2) { }
+            throw new IndexerException("Exception committing changes: " + e1, e1);
+        }
+    }
+    
+    public synchronized Date getLastVisitDate(String url) throws IndexerException {
+        try {
+            Statement stmt = connection.createStatement();
+    
+            String query = "SELECT last_visit_time FROM locations WHERE url = '" + escapeForSQL(url) + "'";
+            ResultSet rs = stmt.executeQuery(query);
+            if (rs.next()) {
+                long lastVisitTime = rs.getLong(1);
+                return new Date(lastVisitTime);
+            }
+            return null;
         } catch (SQLException e) {
-            throw new IndexerException("Exception committing changes: " + e, e);
+            throw new IndexerException("Error getting last visit date for url '" + url + "': " + e, e); 
         }
     }
     
     /**
      * Note that the change is not committed immediately.  A separate call to commitChanges
      * is required.
+     * 
+     * @return The last visit date previously stored in the database, or null if no row existed.
      */
-    public synchronized void updateLocationInfo(String url, List<Long> visitTimes) throws IndexerException { 
+    public synchronized Date updateLocationInfo(String url, List<Long> visitTimes) throws IndexerException { 
         try {
             long currentTime = new Date().getTime();
             if (visitTimes == null || visitTimes.size() == 0) {
                 visitTimes = new ArrayList<Long>();
                 visitTimes.add(currentTime);
             }
+            
+            Date lastVisitDate = null;
 
             int visitCount = 0;
             float frecencyBoost = 0.0F;
@@ -127,12 +152,13 @@ public class LocationsDatabase {
             
             Statement stmt = connection.createStatement();
     
-            String query = "SELECT id, last_visit_time, visit_count, frecency_boost FROM locations WHERE url = '" + url + "'";
+            String query = "SELECT id, last_visit_time, visit_count, frecency_boost FROM locations WHERE url = '" + escapeForSQL(url) + "'";
             ResultSet rs = stmt.executeQuery(query);
             if (rs.next()) {
                 id = rs.getLong(1);
                 
                 long lastVisitTime = rs.getLong(2);
+                lastVisitDate = new Date(lastVisitTime);
                 visitCount = rs.getInt(3);
                 frecencyBoost = rs.getFloat(4);
                 
@@ -159,9 +185,15 @@ public class LocationsDatabase {
             
             prep.execute();
             hasChanges = true;
+            
+            return lastVisitDate;
         } catch (SQLException e) {
             throw new IndexerException("Error updating location info: " + e, e);
         } 
+    }
+    
+    private String escapeForSQL(String str) {
+        return str.replace("'", "''");
     }
     
     private synchronized void createLocationsTableIfNecessary() throws IndexerException {
@@ -190,9 +222,11 @@ public class LocationsDatabase {
                     stmt.executeUpdate(update);
                     
                     connection.commit();
-                } catch (SQLException e) {
-                    connection.rollback();
-                    throw e;
+                } catch (SQLException e1) {
+                    try {
+                        connection.rollback();
+                    } catch (SQLException e2) { }
+                    throw e1;
                 }
             }
         } catch (SQLException e) {

@@ -47,7 +47,7 @@ public class IndexPipeListener implements Runnable {
     }
    
     private class IndexPipeConnection implements Runnable {
-        private final static int COMMIT_INTERVAL_MSECS = 15000;
+        private final static int COMMIT_INTERVAL_MSECS = 30000;
         
         private IndexerConfig config;
         private XpNamedPipe pipe;

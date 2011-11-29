@@ -106,14 +106,6 @@ var ca_ubc_cs_reverb = {
         return;
       }
       
-      // Filter out parent frameset pages (we may still want the child frames, but the frameset parent
-      // does not usually have useful content).  We perform this check later because it may take some
-      // time.
-      var framesetElements = doc.getElementsByTagName("FRAMESET");
-      if (framesetElements != null && framesetElements.length > 0) {
-        return;
-      }
-      
       if (!this.sendPage(win.location.href, doc.documentElement.innerHTML)) {
         Components.utils.reportError("Failed to send page: " + this.getErrorMessage());
         Components.utils.reportError("Background thread status: " + this.getBackgroundThreadStatus());
