@@ -77,8 +77,9 @@ var ca_ubc_cs_reverb = {
       }
       
       // Filter out all iframes, as well as frames that reside in a different domain from top window.
-      // Note that if the frame/iframe is in a different domain from the top window, Chrome returns 
-      // null for win.top and win.frameElement.
+      // For all frames and iframes, Chrome returns null for win.top.
+      // If the frame/iframe is in a different domain from the top window, Chrome returns 
+      // null for win.frameElement and logs an error message in the console.
       if (win != win.top) {
         if (win.frameElement == null) {
           return;
