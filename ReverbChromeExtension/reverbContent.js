@@ -30,13 +30,17 @@ var reverb = {
 
     },
     
-    onPageLoadTimerCallback: function(win, href) {
+    onPageLoadTimerCallback: function(win, oldHref) {
       var doc = win.document;
-      // This catches cases where the tab has been closed, the back button was hit, or a new page was opened in the tab.
+      // The following lines catch cases where the tab has been closed, the back button was hit, or a new page was opened in the tab.
       // If the browser window has been closed, the timer never fires.
-      if (win.closed || win.location.href != href || doc == null) {
+      if (win.closed || doc == null) {
         return;
       }
+      
+      if (this.removeFragment(win.location.href) != this.removeFragment(oldHref)) {
+        return;
+      } 
       
       chrome.extension.sendRequest({action: "checkIndexPage", url: win.location.href, isFrame: (win != win.top)}, 
           function(response) {
@@ -45,6 +49,12 @@ var reverb = {
             }
           });
     },
+    
+    removeFragment: function(url) {
+      var hashIndex = url.lastIndexOf("#");
+      hashIndex = (hashIndex == -1 ? url.length : hashIndex);
+      return url.substring(0, hashIndex);
+    }
     
 };
 
