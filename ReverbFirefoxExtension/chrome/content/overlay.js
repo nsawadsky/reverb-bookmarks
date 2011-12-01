@@ -95,13 +95,18 @@ var ca_ubc_cs_reverb = {
       setTimeout(function() { ca_ubc_cs_reverb.onPageLoadTimerCallback(win, href); }, 5000);
     },
     
-    onPageLoadTimerCallback: function(win, href) {
+    onPageLoadTimerCallback: function(win, oldHref) {
       var doc = win.document;
-      // This catches cases where the tab has been closed, the back button was hit, or a new page was opened in the tab.
+      // The following lines catch cases where the tab has been closed, the back button was hit, or a new page was opened in the tab.
       // If the browser window has been closed, the timer never fires.
-      if (win.closed || win.location.href != href || doc == null) {
+      if (win.closed || doc == null) {
+        return;
+      }
+      
+      if (this.removeFragment(win.location.href) != this.removeFragment(oldHref)) {
         return;
       } 
+      
       var tempIgnoredAddresses = this.getIgnoredAddresses();
       if (tempIgnoredAddresses != null && tempIgnoredAddresses.indexOf(win.top.location.host) != -1) {
         return;
@@ -112,5 +117,12 @@ var ca_ubc_cs_reverb = {
         Components.utils.reportError("Background thread status: " + this.getBackgroundThreadStatus());
       }
     },
+
+    removeFragment: function(url) {
+      var hashIndex = url.lastIndexOf("#");
+      hashIndex = (hashIndex == -1 ? url.length : hashIndex);
+      return url.substring(0, hashIndex);
+    }
+    
 };
 
