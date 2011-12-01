@@ -24,6 +24,7 @@ var reverb = {
         }
       }
       
+      // Make sure we capture the *current* value of the window's address. 
       var href = win.location.href;
       
       setTimeout(function() { reverb.onPageLoadTimerCallback(win, href); }, 5000);
