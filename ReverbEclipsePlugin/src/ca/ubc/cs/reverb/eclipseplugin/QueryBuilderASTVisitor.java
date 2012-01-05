@@ -358,7 +358,7 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
         addToQueryElements(typeQueryElement);
         
         // The other (perhaps more common) way to reference a static member is with the containing class
-        // as a qualifer.  This form is quite selective, so for this query we do not add the fully qualified
+        // as a qualifier.  This form is quite selective, so for this query we do not add the fully qualified
         // type name or package.
         QueryElement memberReferenceElement = new QueryElement(typeInfo.fullyQualifiedName, 
                 typeInfo.className + "." + memberIdentifier, typeInfo.className);
@@ -397,9 +397,10 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
             return null;
         }
         
-        // If the type name is selective enough, add it on its own to the query.
+        // If the type name is selective enough, allow it to match on its own.
         if (!nameNeedsResolution(info.className)) {
-            return new QueryElement(info.fullyQualifiedName, info.className, info.className);
+            return new QueryElement(info.fullyQualifiedName, 
+                    "(" + info.className + " OR " + info.fullyQualifiedName + ")", info.className);
         }
         return typeInfoToQueryElement(info); 
     }
@@ -409,7 +410,7 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
         // Note that our tokenizer will remove the trailing ".*" from package imports, so 
         // pkgName alone will match such imports.
         QueryElement result = new QueryElement(typeInfo.fullyQualifiedName, 
-                "(" + typeInfo.fullyQualifiedName + " OR " + typeInfo.packageName + ")", typeInfo.className);
+                "(" + typeInfo.fullyQualifiedName + " OR (" + typeInfo.packageName + " AND " + typeInfo.className + "))", typeInfo.className);
         result.addOptionalQuery(typeInfo.className, null);
         return result;
     }
