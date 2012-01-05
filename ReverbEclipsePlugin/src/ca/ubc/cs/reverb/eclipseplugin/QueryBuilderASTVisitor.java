@@ -406,7 +406,7 @@ public class QueryBuilderASTVisitor extends ASTVisitor {
     }
     
     private QueryElement typeInfoToQueryElement(TypeInfo typeInfo) {
-        // Require that results also contain either the fully-qualified type name, or the package name.
+        // Require that results also contain either the fully-qualified type name, or the package name and the class name.
         // Note that our tokenizer will remove the trailing ".*" from package imports, so 
         // pkgName alone will match such imports.
         QueryElement result = new QueryElement(typeInfo.fullyQualifiedName, 
