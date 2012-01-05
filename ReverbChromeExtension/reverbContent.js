@@ -1,4 +1,4 @@
-var reverb = {
+var reverbContent = {
     startTimer: function(win) {
       var doc = win.document; 
       
@@ -27,7 +27,7 @@ var reverb = {
       // Make sure we capture the *current* value of the window's address. 
       var href = win.location.href;
       
-      setTimeout(function() { reverb.onPageLoadTimerCallback(win, href); }, 5000);
+      setTimeout(function() { reverbContent.onPageLoadTimerCallback(win, href); }, 5000);
 
     },
     
@@ -43,7 +43,7 @@ var reverb = {
         return;
       } 
       
-      chrome.extension.sendRequest({action: "checkIndexPage", url: win.location.href, isFrame: (win != win.top)}, 
+      chrome.extension.sendRequest({action: "checkIndexPage", url: win.location.href}, 
           function(response) {
             if (response.indexPage) {
               chrome.extension.sendRequest({action: "updatePageContent", url: win.location.href, page: doc.documentElement.innerHTML});
@@ -59,5 +59,5 @@ var reverb = {
     
 };
 
-reverb.startTimer(window); 
+reverbContent.startTimer(window); 
 

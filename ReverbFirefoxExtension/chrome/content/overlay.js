@@ -2,6 +2,10 @@ window.addEventListener("load", function(e) { ca_ubc_cs_reverb.onLoad(e); }, fal
 window.addEventListener("unload", function(e) { ca_ubc_cs_reverb.onUnload(e); }, false);
 
 var ca_ubc_cs_reverb = {
+    MAX_INDEX_HISTORY_LENGTH: 100,
+
+    indexedAddresses: new Array(),
+
     onLoad: function() {
       this.consoleService = Components.classes["@mozilla.org/consoleservice;1"].getService(Components.interfaces.nsIConsoleService);
       this.privateBrowsingService = Components.classes["@mozilla.org/privatebrowsing;1"].getService(Components.interfaces.nsIPrivateBrowsingService);
@@ -47,6 +51,30 @@ var ca_ubc_cs_reverb = {
     	}
     },
 
+    getLastIndexTime: function(address) {
+      address = this.removeFragment(address);
+      for (var i = 0; i < this.indexedAddresses.length; i++) {
+        if (this.indexedAddresses[i].address == address) {
+          return this.indexedAddresses[i].indexTime;
+        }
+      }  
+      return null;
+    },
+    
+    addToIndexHistory: function(address) {
+      address = this.removeFragment(address);
+      for (var i = 0; i < this.indexedAddresses.length; i++) {
+        if (this.indexedAddresses[i].address == address) {
+          this.indexedAddresses.splice(i, 1);
+          break;
+        }
+      }
+      this.indexedAddresses.push({address: address, indexTime: new Date()});
+      if (this.indexedAddresses.length > this.MAX_INDEX_HISTORY_LENGTH) {
+        this.indexedAddresses.shift();
+      }
+    },
+    
     getIgnoredAddresses: function() {
       var ignoredAddresses = this.prefsService.getCharPref("ignoredAddresses");
       if (ignoredAddresses != this.oldIgnoredAddresses) {
@@ -112,7 +140,15 @@ var ca_ubc_cs_reverb = {
         return;
       }
       
-      if (!this.sendPage(win.location.href, doc.documentElement.innerHTML)) {
+      var lastIndexTime = this.getLastIndexTime(win.location.href);
+      if (lastIndexTime != null && 
+          (new Date().getTime() - lastIndexTime.getTime() < 24 * 60 * 60 * 1000)) {
+        return;
+      }
+      
+      if (this.sendPage(win.location.href, doc.documentElement.innerHTML)) {
+        this.addToIndexHistory(win.location.href);
+      } else {
         Components.utils.reportError("Failed to send page: " + this.getErrorMessage());
         Components.utils.reportError("Background thread status: " + this.getBackgroundThreadStatus());
       }

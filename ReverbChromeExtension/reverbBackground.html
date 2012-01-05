@@ -2,71 +2,113 @@
 <embed type="application/x-reverb" id="reverbPlugin"></embed>
 <script type="text/javascript" src="fancy-settings/source/lib/store.js"></script>
 <script>
-var GBL_settings = new Store("settings", {
-  "ignoredAddresses": "www.google.com, www.google.ca"
-});
+var reverb = {
+  settings: new Store("settings", {
+    "ignoredAddresses": "www.google.com, www.google.ca"
+  }),
 
-var GBL_oldIgnoredAddresses = null;
-var GBL_ignoredAddressesArray = null;
+  MAX_INDEX_HISTORY_LENGTH: 100,
 
-function getIgnoredAddresses() {
-  var ignoredAddresses = GBL_settings.get("ignoredAddresses");
-  if (ignoredAddresses != GBL_oldIgnoredAddresses) {
-    GBL_oldIgnoredAddresses = ignoredAddresses;
-    GBL_ignoredAddressesArray = ignoredAddresses.toLowerCase().split(',');
-    
-    for (var i = 0; i < GBL_ignoredAddressesArray.length; i++) {
-      GBL_ignoredAddressesArray[i] = GBL_ignoredAddressesArray[i].replace(/^\s+|\s+$/g, "");
-    }
-  }
-  return GBL_ignoredAddressesArray;
+  indexedAddresses: new Array(),
+
+  getLastIndexTime: function(address) {
+    address = this.removeFragment(address);
+	  for (var i = 0; i < this.indexedAddresses.length; i++) {
+	    if (this.indexedAddresses[i].address == address) {
+	      return this.indexedAddresses[i].indexTime;
+	    }
+	  }  
+	  return null;
+	},
+	
+	addToIndexHistory: function(address) {
+	  address = this.removeFragment(address);
+	  for (var i = 0; i < this.indexedAddresses.length; i++) {
+	    if (this.indexedAddresses[i].address == address) {
+	      this.indexedAddresses.splice(i, 1);
+	      break;
+	    }
+	  }
+	  this.indexedAddresses.push({address: address, indexTime: new Date()});
+	  if (this.indexedAddresses.length > this.MAX_INDEX_HISTORY_LENGTH) {
+	    this.indexedAddresses.shift();
+	  }
+	},
+	
+	getIgnoredAddresses: function() {
+	  var ignoredAddresses = this.settings.get("ignoredAddresses");
+	  if (ignoredAddresses != this.oldIgnoredAddresses) {
+	    this.oldIgnoredAddresses = ignoredAddresses;
+	    this.ignoredAddressesArray = ignoredAddresses.toLowerCase().split(',');
+	    
+	    for (var i = 0; i < this.ignoredAddressesArray.length; i++) {
+	      this.ignoredAddressesArray[i] = this.ignoredAddressesArray[i].replace(/^\s+|\s+$/g, "");
+	    }
+	  }
+	  return this.ignoredAddressesArray;
+	},
+	
+	extractHost: function(url) {
+	  var regexp = /^[^\:]+\:\/\/([^\/]+)/;
+	  var matches = url.match(regexp);
+	  if (matches == null) {
+	    return null;
+	  }
+	  return matches[1];
+	},
+	
+  removeFragment: function(url) {
+    var hashIndex = url.lastIndexOf("#");
+    hashIndex = (hashIndex == -1 ? url.length : hashIndex);
+    return url.substring(0, hashIndex);
+  },
+  
+	initializePlugin: function() {
+	  var plugin = document.getElementById("reverbPlugin");
+	  if (plugin == null) {
+	    console.log("Failed to get plugin reference");
+	    return;
+	  }
+	  if (!plugin.startBackgroundThread()) {
+	    console.log("Failed to start background thread: " + plugin.getErrorMessage());
+	    return;
+	  }
+	  chrome.extension.onRequest.addListener(
+	      function(request, sender, sendResponse) {
+	        if (request.action == "updatePageContent") {
+	           if (plugin.sendPage(request.url, request.page)) {
+	             reverb.addToIndexHistory(request.url);
+	           } else {
+	             console.log("Failed to send page: " + plugin.getErrorMessage());
+	             console.log("Background thread status: " + plugin.getBackgroundThreadStatus());
+	           } 
+	          sendResponse({});
+	        } else if (request.action == "checkIndexPage") {
+	          var result = false;
+	          do {
+	            // Filter out frames loaded from different domains.
+	            var tabHost = reverb.extractHost(sender.tab.url);
+	
+	            var ignoredAddresses = reverb.getIgnoredAddresses();
+	            if (ignoredAddresses != null && ignoredAddresses.indexOf(tabHost) != -1) {
+	              break;
+	            }
+	            
+	            var lastIndexTime = reverb.getLastIndexTime(request.url);
+	            if (lastIndexTime != null && 
+	                (new Date().getTime() - lastIndexTime.getTime() < 24 * 60 * 60 * 1000)) {
+	              break;
+	            }
+	            
+	            result = true;
+	          } while (false);
+	          sendResponse({indexPage: result});
+	        }
+	      }
+	  );
+	},
 }
 
-function extractHost(url) {
-  var regexp = /^[^\:]+\:\/\/([^\/]+)/;
-  var matches = url.match(regexp);
-  if (matches == null) {
-    return null;
-  }
-  return matches[1];
-}
-
-function initializePlugin() {
-  var plugin = document.getElementById("reverbPlugin");
-  if (plugin == null) {
-    console.log("Failed to get plugin reference");
-    return;
-  }
-  if (!plugin.startBackgroundThread()) {
-    console.log("Failed to start background thread: " + plugin.getErrorMessage());
-    return;
-  }
-  chrome.extension.onRequest.addListener(
-      function(request, sender, sendResponse) {
-        if (request.action == "updatePageContent") {
-           if (!plugin.sendPage(request.url, request.page)) {
-             console.log("Failed to send page: " + plugin.getErrorMessage());
-             console.log("Background thread status: " + plugin.getBackgroundThreadStatus());
-           }
-          sendResponse({});
-        } else if (request.action == "checkIndexPage") {
-          var result = false;
-          do {
-            // Filter out frames loaded from different domains.
-            var tabHost = extractHost(sender.tab.url);
-
-            var ignoredAddresses = getIgnoredAddresses();
-            if (ignoredAddresses != null && ignoredAddresses.indexOf(tabHost) != -1) {
-              break;
-            }
-            result = true;
-          } while (false);
-          sendResponse({indexPage: result});
-        }
-      }
-  );
-}
-
-initializePlugin();
+reverb.initializePlugin();
 </script>
 </html>
