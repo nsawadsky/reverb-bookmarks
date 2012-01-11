@@ -4,7 +4,8 @@ window.addEventListener("unload", function(e) { ca_ubc_cs_reverb.onUnload(e); },
 var ca_ubc_cs_reverb = {
     MAX_INDEX_HISTORY_LENGTH: 100,
 
-    indexedAddresses: new Array(),
+    indexedAddressesArray: new Array(),
+    indexedAddressesMap: new Object(),
 
     onLoad: function() {
       this.consoleService = Components.classes["@mozilla.org/consoleservice;1"].getService(Components.interfaces.nsIConsoleService);
@@ -53,28 +54,34 @@ var ca_ubc_cs_reverb = {
 
     getLastIndexTime: function(address) {
       address = this.removeFragment(address);
-      for (var i = 0; i < this.indexedAddresses.length; i++) {
-        if (this.indexedAddresses[i].address == address) {
-          return this.indexedAddresses[i].indexTime;
+      var existing = this.indexedAddressesMap[address];
+      if (existing != null) {
+        return existing.indexTime;
         }
-      }  
       return null;
-    },
-    
+      },
+  
     addToIndexHistory: function(address) {
       address = this.removeFragment(address);
-      for (var i = 0; i < this.indexedAddresses.length; i++) {
-        if (this.indexedAddresses[i].address == address) {
-          this.indexedAddresses.splice(i, 1);
-          break;
+      var existing = this.indexedAddressesMap[address];
+      if (existing != null) {
+        for (var i = 0; i < this.indexedAddressesArray.length; i++) {
+          if (this.indexedAddressesArray[i].address == address) {
+            this.indexedAddressesArray.splice(i, 1);
+            break;
+          }
         }
+        delete this.indexedAddressesMap[address];
       }
-      this.indexedAddresses.push({address: address, indexTime: new Date()});
-      if (this.indexedAddresses.length > this.MAX_INDEX_HISTORY_LENGTH) {
-        this.indexedAddresses.shift();
+      var newEntry = {address: address, indexTime: new Date()};
+      this.indexedAddressesArray.push(newEntry);
+      this.indexedAddressesMap[address] = newEntry;
+      if (this.indexedAddressesArray.length > this.MAX_INDEX_HISTORY_LENGTH) {
+        var toDelete = this.indexedAddressesArray.shift();
+        delete this.indexedAddressesMap[toDelete.address];
       }
     },
-    
+
     getIgnoredAddresses: function() {
       var ignoredAddresses = this.prefsService.getCharPref("ignoredAddresses");
       if (ignoredAddresses != this.oldIgnoredAddresses) {
