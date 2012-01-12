@@ -21,6 +21,8 @@ import ca.ubc.cs.reverb.eclipseplugin.IndexerConnectionCallback;
 import ca.ubc.cs.reverb.eclipseplugin.PluginActivator;
 import ca.ubc.cs.reverb.eclipseplugin.PluginLogger;
 import ca.ubc.cs.reverb.indexer.messages.BatchQueryReply;
+import ca.ubc.cs.reverb.indexer.messages.CodeQueryReply;
+import ca.ubc.cs.reverb.indexer.messages.CodeQueryResult;
 import ca.ubc.cs.reverb.indexer.messages.DeleteLocationRequest;
 import ca.ubc.cs.reverb.indexer.messages.IndexerMessage;
 import ca.ubc.cs.reverb.indexer.messages.IndexerQuery;
@@ -39,15 +41,15 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
 
     class ViewContentProvider implements IStructuredContentProvider, 
             ITreeContentProvider {
-        private BatchQueryReply batchQueryReply;
+        private CodeQueryReply codeQueryReply;
         private final static String NO_RESULTS = "No results available.";
         
-        public void setQueryResult(BatchQueryReply result) {
-            this.batchQueryReply = result;
+        public void setQueryReply(CodeQueryReply reply) {
+            this.codeQueryReply = reply;
         }
         
         public void removeLocation(Location location) {
-            for (QueryResult result: batchQueryReply.queryResults) {
+            for (CodeQueryResult result: codeQueryReply.queryResults) {
                 for (Location currLocation: result.locations) {
                     if (currLocation == location) {
                         result.locations.remove(currLocation);
@@ -65,10 +67,10 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
         
         public Object[] getElements(Object parent) {
             if (parent.equals(getViewSite())) {
-                if (batchQueryReply == null || batchQueryReply.queryResults.isEmpty()) {
+                if (codeQueryReply == null || codeQueryReply.queryResults.isEmpty()) {
                     return new Object[] { NO_RESULTS };
                 } 
-                return batchQueryReply.queryResults.toArray();
+                return codeQueryReply.queryResults.toArray();
             }
             return getChildren(parent);
         }
@@ -77,8 +79,8 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
             if (child instanceof QueryResult) {
                 return null;
             }
-            if (batchQueryReply != null && child instanceof Location) {
-                for (QueryResult result: batchQueryReply.queryResults) {
+            if (codeQueryReply != null && child instanceof Location) {
+                for (CodeQueryResult result: codeQueryReply.queryResults) {
                     for (Location location: result.locations) {
                         if (location == child) {
                             return result;
@@ -140,7 +142,6 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
         }
         
         public Image getImage(Object obj) {
-            String imageKey = ISharedImages.IMG_OBJ_FILE;
             if (obj instanceof QueryResult) {
                 return PluginActivator.getDefault().getSearchImage();
             } else if (obj instanceof Location) {
@@ -250,8 +251,12 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
     }
     
     @Override
-    public void onBatchQueryResult(BatchQueryReply result) {
-        contentProvider.setQueryResult(result);
+    public void onBatchQueryReply(BatchQueryReply result) {
+    }
+    
+    @Override 
+    public void onCodeQueryReply(CodeQueryReply reply) {
+        contentProvider.setQueryReply(reply);
         viewer.refresh();
         viewer.expandAll();
     }

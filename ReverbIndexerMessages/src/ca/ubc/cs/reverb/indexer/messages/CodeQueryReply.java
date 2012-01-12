@@ -1,13 +1,16 @@
 package ca.ubc.cs.reverb.indexer.messages;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public class CodeQueryReply implements IndexerMessage {
-    public CodeQueryReply() { }
-    
-    public CodeQueryReply(List<CodeQueryResult> results) {
-        this.results = results;
+public class CodeQueryReply extends IndexerReply {
+    public CodeQueryReply() {
     }
     
-    public List<CodeQueryResult> results;
+    public CodeQueryReply(boolean errorOccurred, String errorMessage) {
+        super(errorOccurred, errorMessage);
+    }
+
+    public List<CodeQueryResult> queryResults = new ArrayList<CodeQueryResult>();
+
 }
