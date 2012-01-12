@@ -29,6 +29,8 @@ import org.eclipse.ui.PlatformUI;
 
 import ca.ubc.cs.reverb.indexer.messages.BatchQueryReply;
 import ca.ubc.cs.reverb.indexer.messages.BatchQueryRequest;
+import ca.ubc.cs.reverb.indexer.messages.CodeQueryReply;
+import ca.ubc.cs.reverb.indexer.messages.CodeQueryRequest;
 import ca.ubc.cs.reverb.indexer.messages.IndexerQuery;
 
 public class EditorMonitor implements IPartListener, MouseListener, KeyListener {
@@ -215,16 +217,16 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener 
         parser.setResolveBindings(true);
         parser.setStatementsRecovery(true);
         CompilationUnit compileUnit = (CompilationUnit)parser.createAST(null);
-        QueryBuilderASTVisitor visitor = new QueryBuilderASTVisitor(compileUnit.getAST(), topPosition, bottomPosition);
+        CodeElementExtractor visitor = new CodeElementExtractor(compileUnit.getAST(), topPosition, bottomPosition);
         compileUnit.accept(visitor);
         
-        final BatchQueryReply result = indexerConnection.sendBatchQueryRequest(new BatchQueryRequest(visitor.getQueries()), 20000);
+        final CodeQueryReply reply = indexerConnection.sendCodeQueryRequest(new CodeQueryRequest(visitor.getCodeElements()), 20000);
         
         PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
 
             @Override
             public void run() {
-                notifyListeners(result);
+                notifyListeners(reply);
             }
         });
     }
@@ -314,14 +316,14 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener 
         return (ICompilationUnit)javaElement;
     }
     
-    private void notifyListeners(BatchQueryReply result) {
+    private void notifyListeners(CodeQueryReply reply) {
         List<EditorMonitorListener> listenersCopy = null;
         synchronized (listeners) {
             listenersCopy = new ArrayList<EditorMonitorListener>(listeners);
         }
         for (EditorMonitorListener listener: listenersCopy) {
             try {
-                listener.onBatchQueryResult(result);
+                listener.onCodeQueryReply(reply);
             } catch (Throwable t) {
                 getLogger().logError("Listener threw exception", t);
             }

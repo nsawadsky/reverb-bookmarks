@@ -32,10 +32,10 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import ca.ubc.cs.reverb.indexer.messages.IndexerQuery;
+import ca.ubc.cs.reverb.indexer.messages.CodeElement;
 
 @RunWith(Parameterized.class)
-public class QueryBuilderASTVisitorTest {
+public class CodeElementExtractorTest {
     private JsonNode testData;
     private String testFileName;
     
@@ -46,9 +46,7 @@ public class QueryBuilderASTVisitorTest {
                 { "src/testpackage/TypeRefs.java" }, 
                 { "src/testpackage/ComplexTypeRefs.java" }, 
                 { "src/testpackage/Enumdecl.java" },
-                { "src/testpackage/EnumdeclNores.java" },
                 { "src/testpackage/Classdecl.java" },
-                { "src/testpackage/ClassdeclNores.java" },
                 { "src/testpackage/Methoddecl.java" },
                 { "src/testpackage/MethodInvoc.java" },
                 { "src/testpackage/PrimitiveRefs.java" },
@@ -56,13 +54,13 @@ public class QueryBuilderASTVisitorTest {
                 });
     }
     
-    public QueryBuilderASTVisitorTest(String testFileName) throws JsonParseException, IOException {
+    public CodeElementExtractorTest(String testFileName) throws JsonParseException, IOException {
         this.testFileName = testFileName;
     }
     
     @Before
     public void setup() throws JsonParseException, IOException {
-        InputStream testDataStream = QueryBuilderASTVisitorTest.class.getResourceAsStream("QueryBuilderASTVisitorTestData.json");
+        InputStream testDataStream = CodeElementExtractorTest.class.getResourceAsStream("CodeElementExtractorTestData.json");
 
         JsonFactory factory = new JsonFactory();
         JsonParser parser = factory.createJsonParser(testDataStream);
@@ -84,13 +82,13 @@ public class QueryBuilderASTVisitorTest {
         parser.setResolveBindings(true);
         parser.setStatementsRecovery(true);
         CompilationUnit compileUnit = (CompilationUnit)parser.createAST(null);
-        QueryBuilderASTVisitor visitor = new QueryBuilderASTVisitor(compileUnit.getAST(), 0, 10000);
-        compileUnit.accept(visitor);
+        CodeElementExtractor extractor = new CodeElementExtractor(compileUnit.getAST(), 0, 10000);
+        compileUnit.accept(extractor);
         
-        List<IndexerQuery> queries = visitor.getQueries();
+        List<CodeElement> elements = extractor.getCodeElements();
 
         JsonNode expected = getExpectedResult(testFileName);
-        assertEquals("formatted actual: " + getJsonString(queries), expected, getJsonNode(queries));
+        assertEquals("formatted actual: " + getJsonString(elements), expected, getJsonNode(elements));
 
     }
     

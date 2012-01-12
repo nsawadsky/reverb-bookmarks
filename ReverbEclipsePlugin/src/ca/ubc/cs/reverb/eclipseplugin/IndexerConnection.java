@@ -10,6 +10,8 @@ import org.codehaus.jackson.map.ObjectMapper;
 
 import ca.ubc.cs.reverb.indexer.messages.BatchQueryReply;
 import ca.ubc.cs.reverb.indexer.messages.BatchQueryRequest;
+import ca.ubc.cs.reverb.indexer.messages.CodeQueryReply;
+import ca.ubc.cs.reverb.indexer.messages.CodeQueryRequest;
 import ca.ubc.cs.reverb.indexer.messages.DeleteLocationReply;
 import ca.ubc.cs.reverb.indexer.messages.DeleteLocationRequest;
 import ca.ubc.cs.reverb.indexer.messages.IndexerMessage;
@@ -41,6 +43,14 @@ public class IndexerConnection implements Runnable {
     
     public void stop() throws IOException {
         pipe.stop();
+    }
+    
+    public CodeQueryReply sendCodeQueryRequest(CodeQueryRequest request, int timeoutMsecs) throws IOException, InterruptedException {
+        IndexerReply reply = sendRequest(request, timeoutMsecs);
+        if (! (reply instanceof CodeQueryReply)) {
+            throw new IOException("Unexpected reply message type: " + reply.getClass());
+        }
+        return (CodeQueryReply)reply;
     }
     
     public BatchQueryReply sendBatchQueryRequest(BatchQueryRequest request, int timeoutMsecs) throws IOException, InterruptedException {
