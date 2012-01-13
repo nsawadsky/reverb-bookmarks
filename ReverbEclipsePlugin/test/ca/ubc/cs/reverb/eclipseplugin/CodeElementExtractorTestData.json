@@ -4,44 +4,37 @@
       "elementType" : "TYPE_DECL",
       "packageName" : "testpackage",
       "className" : "FieldRefs",
-      "memberName" : null,
-      "fullyQualifiedName" : "testpackage.FieldRefs"
+      "memberName" : null
     }, {
       "elementType" : "STATIC_FIELD_REF",
       "packageName" : "testpackage",
       "className" : "Fielddecls",
-      "memberName" : "FIELDDECLS_CONSTANT_1",
-      "fullyQualifiedName" : "testpackage.Fielddecls"
+      "memberName" : "FIELDDECLS_CONSTANT_1"
     }, {
       "elementType" : "STATIC_FIELD_REF",
       "packageName" : "testpackage",
       "className" : "Fielddecls",
-      "memberName" : "FIELDDECLS_CONSTANT_2",
-      "fullyQualifiedName" : "testpackage.Fielddecls"
+      "memberName" : "FIELDDECLS_CONSTANT_2"
     }, {
       "elementType" : "TYPE_REF",
       "packageName" : "testpackage",
       "className" : "Enumvaluedecls",
-      "memberName" : null,
-      "fullyQualifiedName" : "testpackage.Enumvaluedecls"
+      "memberName" : null
     }, {
       "elementType" : "STATIC_FIELD_REF",
       "packageName" : "testpackage",
       "className" : "Enumvaluedecls",
-      "memberName" : "ENUM_VALUE_1",
-      "fullyQualifiedName" : "testpackage.Enumvaluedecls"
+      "memberName" : "ENUM_VALUE_1"
     }, {
       "elementType" : "STATIC_FIELD_REF",
       "packageName" : "testpackage",
       "className" : "Enumvaluedecls",
-      "memberName" : "ENUM_VALUE_2",
-      "fullyQualifiedName" : "testpackage.Enumvaluedecls"
+      "memberName" : "ENUM_VALUE_2"
     }, {
       "elementType" : "STATIC_FIELD_REF",
       "packageName" : "testpackage",
       "className" : "Fielddecls.Innerclassdecl",
-      "memberName" : "FIELDDECLS_CONSTANT_1",
-      "fullyQualifiedName" : "testpackage.Fielddecls.Innerclassdecl"
+      "memberName" : "FIELDDECLS_CONSTANT_1"
     } ],
     
     "src/testpackage/TypeRefs.java":
@@ -49,38 +42,32 @@
       "elementType" : "TYPE_DECL",
       "packageName" : "testpackage",
       "className" : "TypeRefs",
-      "memberName" : null,
-      "fullyQualifiedName" : "testpackage.TypeRefs"
+      "memberName" : null
     }, {
       "elementType" : "TYPE_REF",
       "packageName" : "java.io",
       "className" : "File",
-      "memberName" : null,
-      "fullyQualifiedName" : "java.io.File"
+      "memberName" : null
     }, {
       "elementType" : "TYPE_REF",
       "packageName" : "java.net",
       "className" : "ServerSocket",
-      "memberName" : null,
-      "fullyQualifiedName" : "java.net.ServerSocket"
+      "memberName" : null
     }, {
       "elementType" : "TYPE_REF",
       "packageName" : "testpackage",
       "className" : "Classdecl",
-      "memberName" : null,
-      "fullyQualifiedName" : "testpackage.Classdecl"
+      "memberName" : null
     }, {
       "elementType" : "TYPE_REF",
       "packageName" : "testpackage",
       "className" : "Classdecl.Innerclassdecl",
-      "memberName" : null,
-      "fullyQualifiedName" : "testpackage.Classdecl.Innerclassdecl"
+      "memberName" : null
     }, {
       "elementType" : "TYPE_REF",
       "packageName" : "testpackage",
       "className" : "ClassdeclNores",
-      "memberName" : null,
-      "fullyQualifiedName" : "testpackage.ClassdeclNores"
+      "memberName" : null
     } ],
     
     "src/testpackage/ComplexTypeRefs.java":
@@ -88,26 +75,22 @@
       "elementType" : "TYPE_DECL",
       "packageName" : "testpackage",
       "className" : "ComplexTypeRefs",
-      "memberName" : null,
-      "fullyQualifiedName" : "testpackage.ComplexTypeRefs"
+      "memberName" : null
     }, {
       "elementType" : "TYPE_REF",
       "packageName" : "java.util",
       "className" : "List",
-      "memberName" : null,
-      "fullyQualifiedName" : "java.util.List"
+      "memberName" : null
     }, {
       "elementType" : "TYPE_REF",
       "packageName" : "java.io",
       "className" : "File",
-      "memberName" : null,
-      "fullyQualifiedName" : "java.io.File"
+      "memberName" : null
     }, {
       "elementType" : "TYPE_REF",
       "packageName" : "java.util",
       "className" : "UUID",
-      "memberName" : null,
-      "fullyQualifiedName" : "java.util.UUID"
+      "memberName" : null
     } ],
         
     "src/testpackage/Enumdecl.java":
@@ -115,8 +98,7 @@
       "elementType" : "TYPE_DECL",
       "packageName" : "testpackage",
       "className" : "Enumdecl",
-      "memberName" : null,
-      "fullyQualifiedName" : "testpackage.Enumdecl"
+      "memberName" : null
     } ],
 
     "src/testpackage/Classdecl.java":
@@ -124,14 +106,12 @@
       "elementType" : "TYPE_DECL",
       "packageName" : "testpackage",
       "className" : "Classdecl",
-      "memberName" : null,
-      "fullyQualifiedName" : "testpackage.Classdecl"
+      "memberName" : null
     }, {
       "elementType" : "TYPE_DECL",
       "packageName" : "testpackage",
       "className" : "Classdecl.Innerclassdecl",
-      "memberName" : null,
-      "fullyQualifiedName" : "testpackage.Classdecl.Innerclassdecl"
+      "memberName" : null
     } ],
    
     "src/testpackage/Methoddecl.java":
@@ -139,56 +119,47 @@
       "elementType" : "TYPE_DECL",
       "packageName" : "testpackage",
       "className" : "Methoddecl",
-      "memberName" : null,
-      "fullyQualifiedName" : "testpackage.Methoddecl"
+      "memberName" : null
     }, {
       "elementType" : "TYPE_REF",
       "packageName" : "testpackage",
       "className" : "Derivedclassdecl",
-      "memberName" : null,
-      "fullyQualifiedName" : "testpackage.Derivedclassdecl"
+      "memberName" : null
     }, {
       "elementType" : "TYPE_REF",
       "packageName" : "testpackage",
       "className" : "Interfacedecl",
-      "memberName" : null,
-      "fullyQualifiedName" : "testpackage.Interfacedecl"
+      "memberName" : null
     }, {
       "elementType" : "TYPE_REF",
       "packageName" : "testpackage",
       "className" : "InterfacedeclNores",
-      "memberName" : null,
-      "fullyQualifiedName" : "testpackage.InterfacedeclNores"
+      "memberName" : null
     }, {
       "elementType" : "METHOD_DECL",
       "packageName" : "testpackage",
       "className" : "InterfacedeclNores",
-      "memberName" : "interfacedeclNoresMethod",
-      "fullyQualifiedName" : "testpackage.InterfacedeclNores"
+      "memberName" : "interfacedeclNoresMethod"
     }, {
       "elementType" : "METHOD_DECL",
       "packageName" : "testpackage",
       "className" : "Interfacedecl",
-      "memberName" : "interfaceDeclMethod",
-      "fullyQualifiedName" : "testpackage.Interfacedecl"
+      "memberName" : "interfaceDeclMethod"
     }, {
       "elementType" : "METHOD_DECL",
       "packageName" : "testpackage",
       "className" : "Derivedclassdecl",
-      "memberName" : "derivedclassdeclMethod",
-      "fullyQualifiedName" : "testpackage.Derivedclassdecl"
+      "memberName" : "derivedclassdeclMethod"
     }, {
       "elementType" : "METHOD_DECL",
       "packageName" : "testpackage",
       "className" : "Baseclassdecl",
-      "memberName" : "baseclassdeclMethod",
-      "fullyQualifiedName" : "testpackage.Baseclassdecl"
+      "memberName" : "baseclassdeclMethod"
     }, {
       "elementType" : "METHOD_DECL",
       "packageName" : "testpackage",
       "className" : "Baseinterfacedecl",
-      "memberName" : "baseinterfacedeclMethod",
-      "fullyQualifiedName" : "testpackage.Baseinterfacedecl"
+      "memberName" : "baseinterfacedeclMethod"
     } ],
     
     "src/testpackage/MethodInvoc.java":
@@ -196,56 +167,47 @@
       "elementType" : "TYPE_DECL",
       "packageName" : "testpackage",
       "className" : "MethodInvoc",
-      "memberName" : null,
-      "fullyQualifiedName" : "testpackage.MethodInvoc"
+      "memberName" : null
     }, {
       "elementType" : "TYPE_REF",
       "packageName" : "testpackage",
       "className" : "Methoddecl",
-      "memberName" : null,
-      "fullyQualifiedName" : "testpackage.Methoddecl"
+      "memberName" : null
     }, {
       "elementType" : "METHOD_CALL",
       "packageName" : "testpackage",
       "className" : "Methoddecl",
-      "memberName" : "methoddeclMethod",
-      "fullyQualifiedName" : "testpackage.Methoddecl"
+      "memberName" : "methoddeclMethod"
     }, {
       "elementType" : "METHOD_CALL",
       "packageName" : "testpackage",
       "className" : "Methoddecl",
-      "memberName" : "baseclassdeclMethod",
-      "fullyQualifiedName" : "testpackage.Methoddecl"
+      "memberName" : "baseclassdeclMethod"
     }, {
       "elementType" : "STATIC_METHOD_CALL",
       "packageName" : "testpackage",
       "className" : "Methoddecl",
-      "memberName" : "staticMethod",
-      "fullyQualifiedName" : "testpackage.Methoddecl"
+      "memberName" : "staticMethod"
     }, {
       "elementType" : "TYPE_REF",
       "packageName" : "testpackage",
       "className" : "MethoddeclNores",
-      "memberName" : null,
-      "fullyQualifiedName" : "testpackage.MethoddeclNores"
+      "memberName" : null
     }, {
       "elementType" : "METHOD_CALL",
       "packageName" : "testpackage",
       "className" : "MethoddeclNores",
-      "memberName" : "methoddeclNoresMethod",
-      "fullyQualifiedName" : "testpackage.MethoddeclNores"
+      "memberName" : "methoddeclNoresMethod"
     }, {
       "elementType" : "TYPE_REF",
       "packageName" : null,
       "className" : "UnknownType",
-      "memberName" : null,
-      "fullyQualifiedName" : null
+      "memberName" : null
     }, {
       "elementType" : "METHOD_CALL",
       "packageName" : null,
       "className" : null,
-      "memberName" : "methoddeclNores",
-      "fullyQualifiedName" : null
+      "memberName" : "methoddeclNores"
     } ],
     
     "src/testpackage/PrimitiveRefs.java":
@@ -253,8 +215,7 @@
       "elementType" : "TYPE_DECL",
       "packageName" : "testpackage",
       "className" : "PrimitiveRefs",
-      "memberName" : null,
-      "fullyQualifiedName" : "testpackage.PrimitiveRefs"
+      "memberName" : null
     } ],
     
     "src/testpackage/AnnotationRefs.java":
@@ -262,25 +223,21 @@
       "elementType" : "TYPE_DECL",
       "packageName" : "testpackage",
       "className" : "AnnotationRefs",
-      "memberName" : null,
-      "fullyQualifiedName" : "testpackage.AnnotationRefs"
+      "memberName" : null
     }, {
       "elementType" : "TYPE_REF",
       "packageName" : "testpackage",
       "className" : "Baseclassdecl",
-      "memberName" : null,
-      "fullyQualifiedName" : "testpackage.Baseclassdecl"
+      "memberName" : null
     }, {
       "elementType" : "TYPE_REF",
       "packageName" : "testpackage",
       "className" : "Annotationdecl",
-      "memberName" : null,
-      "fullyQualifiedName" : "testpackage.Annotationdecl"
+      "memberName" : null
     }, {
       "elementType" : "METHOD_DECL",
       "packageName" : "testpackage",
       "className" : "Baseclassdecl",
-      "memberName" : "baseclassdeclMethod",
-      "fullyQualifiedName" : "testpackage.Baseclassdecl"
+      "memberName" : "baseclassdeclMethod"
     } ]      
 }

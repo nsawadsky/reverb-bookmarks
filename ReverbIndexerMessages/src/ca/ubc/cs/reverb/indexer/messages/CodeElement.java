@@ -11,32 +11,10 @@ public class CodeElement {
         this.memberName = memberName;
     }
 
-    public String getFullyQualifiedName() {
-        if (packageName == null || className == null) {
-            return null;
-        }
-        return packageName + "." + className;
-    }
-    
     public CodeElementType elementType;
     public String packageName;
     public String className;
     public String memberName;
-
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result
-                + ((className == null) ? 0 : className.hashCode());
-        result = prime * result
-                + ((elementType == null) ? 0 : elementType.hashCode());
-        result = prime * result
-                + ((memberName == null) ? 0 : memberName.hashCode());
-        result = prime * result
-                + ((packageName == null) ? 0 : packageName.hashCode());
-        return result;
-    }
 
     @Override
     public boolean equals(Object obj) {

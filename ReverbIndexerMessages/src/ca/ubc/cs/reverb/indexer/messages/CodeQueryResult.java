@@ -7,13 +7,11 @@ public class CodeQueryResult {
     public CodeQueryResult() {
     }
     
-    public CodeQueryResult(List<CodeElement> codeElements, List<Location> locations, String displayText) {
-        this.codeElements = codeElements;
+    public CodeQueryResult(List<Location> locations, String displayText) {
         this.locations = locations;
         this.displayText = displayText;
     }
     
-    public List<CodeElement> codeElements = new ArrayList<CodeElement>();
     public List<Location> locations = new ArrayList<Location>();
     public String displayText;
 }
