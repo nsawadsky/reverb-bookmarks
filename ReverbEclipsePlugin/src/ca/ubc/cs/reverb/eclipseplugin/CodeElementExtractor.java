@@ -317,7 +317,7 @@ public class CodeElementExtractor extends ASTVisitor {
             return null;
         }
         
-        if (SKIP_TYPES.contains(element.getFullyQualifiedName())) {
+        if (SKIP_TYPES.contains(getFullyQualifiedName(element))) {
             return null;
         }
         
@@ -342,6 +342,13 @@ public class CodeElementExtractor extends ASTVisitor {
         }
         String className = fullyQualifiedName.substring(pkgName.length()+1);
         return new CodeElement(elementType, pkgName, className, null);
+    }
+    
+    private String getFullyQualifiedName(CodeElement element) {
+        if (element.packageName == null || element.className == null) {
+            return null;
+        }
+        return element.packageName + "." + element.className;
     }
     
     /**

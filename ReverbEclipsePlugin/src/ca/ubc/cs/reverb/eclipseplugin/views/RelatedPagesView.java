@@ -3,8 +3,6 @@ package ca.ubc.cs.reverb.eclipseplugin.views;
 
 import java.awt.Desktop;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.part.*;
@@ -20,14 +18,11 @@ import ca.ubc.cs.reverb.eclipseplugin.EditorMonitorListener;
 import ca.ubc.cs.reverb.eclipseplugin.IndexerConnectionCallback;
 import ca.ubc.cs.reverb.eclipseplugin.PluginActivator;
 import ca.ubc.cs.reverb.eclipseplugin.PluginLogger;
-import ca.ubc.cs.reverb.indexer.messages.BatchQueryReply;
 import ca.ubc.cs.reverb.indexer.messages.CodeQueryReply;
 import ca.ubc.cs.reverb.indexer.messages.CodeQueryResult;
 import ca.ubc.cs.reverb.indexer.messages.DeleteLocationRequest;
 import ca.ubc.cs.reverb.indexer.messages.IndexerMessage;
-import ca.ubc.cs.reverb.indexer.messages.IndexerQuery;
 import ca.ubc.cs.reverb.indexer.messages.Location;
-import ca.ubc.cs.reverb.indexer.messages.QueryResult;
 
 public class RelatedPagesView extends ViewPart implements EditorMonitorListener {
 
@@ -76,7 +71,7 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
         }
         
         public Object getParent(Object child) {
-            if (child instanceof QueryResult) {
+            if (child instanceof CodeQueryResult) {
                 return null;
             }
             if (codeQueryReply != null && child instanceof Location) {
@@ -93,14 +88,14 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
         }
         
         public Object [] getChildren(Object parent) {
-            if (parent instanceof QueryResult) {
-                return ((QueryResult)parent).locations.toArray();
+            if (parent instanceof CodeQueryResult) {
+                return ((CodeQueryResult)parent).locations.toArray();
             }
             return new Object[0];
         }
         
         public boolean hasChildren(Object parent) {
-            return (parent instanceof QueryResult && !((QueryResult)parent).locations.isEmpty());
+            return (parent instanceof CodeQueryResult && !((CodeQueryResult)parent).locations.isEmpty());
         }
     }
     
@@ -113,27 +108,9 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
         }
 
         public String getText(Object obj) {
-            if (obj instanceof QueryResult) {
-                QueryResult result = (QueryResult)obj;
-                List<String> keywords = new ArrayList<String>();
-                for (IndexerQuery query: result.indexerQueries) {
-                    String[] words = query.queryClientInfo.split(" ");
-                    if (words != null) {
-                        for (String word: words) {
-                            if (!keywords.contains(word)) {
-                                keywords.add(word);
-                            }
-                        }
-                    }
-                }
-                StringBuilder display = new StringBuilder();
-                for (int i = 0; i < keywords.size(); i++) {
-                    if (i > 0) {
-                        display.append(" ");
-                    }
-                    display.append(keywords.get(i));
-                }
-                return display.toString();
+            if (obj instanceof CodeQueryResult) {
+                CodeQueryResult result = (CodeQueryResult)obj;
+                return result.displayText;
             } else if (obj instanceof Location) {
                 Location loc = (Location)obj;
                 return String.format("%s (%.1f,%.1f,%.1f)", loc.title, loc.luceneScore, loc.frecencyBoost, loc.overallScore);
@@ -142,7 +119,7 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
         }
         
         public Image getImage(Object obj) {
-            if (obj instanceof QueryResult) {
+            if (obj instanceof CodeQueryResult) {
                 return PluginActivator.getDefault().getSearchImage();
             } else if (obj instanceof Location) {
                 return PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_OBJ_FILE);
@@ -248,10 +225,6 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
     public void dispose() {
         super.dispose();
         EditorMonitor.getDefault().removeListener(this);
-    }
-    
-    @Override
-    public void onBatchQueryReply(BatchQueryReply result) {
     }
     
     @Override 
