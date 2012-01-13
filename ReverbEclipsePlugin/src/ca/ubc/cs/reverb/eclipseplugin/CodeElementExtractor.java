@@ -260,7 +260,7 @@ public class CodeElementExtractor extends ASTVisitor {
                 annotationType = annotationBinding.getAnnotationType();
             }
             
-            CodeElement element = getCodeElement(CodeElementType.TYPE_REF, annotationBinding.getAnnotationType(), identifier);
+            CodeElement element = getCodeElement(CodeElementType.TYPE_REF, annotationType, identifier);
             if (element != null) { 
                 addToCodeElements(element);
             }
