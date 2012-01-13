@@ -251,14 +251,18 @@ public class CodeElementExtractor extends ASTVisitor {
     }
     
     private boolean visitAnnotation(Annotation node) {
-        // TODO: If annotation type name is selective enough on its own, do not need type binding? 
         if (nodeOverlaps(node)) {
+            String identifier = node.getTypeName().getFullyQualifiedName();
+            
+            ITypeBinding annotationType = null;
             IAnnotationBinding annotationBinding = node.resolveAnnotationBinding();
             if (annotationBinding != null) {
-                CodeElement element = getCodeElement(CodeElementType.TYPE_REF, annotationBinding.getAnnotationType(), null);
-                if (element != null) { 
-                    addToCodeElements(element);
-                }
+                annotationType = annotationBinding.getAnnotationType();
+            }
+            
+            CodeElement element = getCodeElement(CodeElementType.TYPE_REF, annotationBinding.getAnnotationType(), identifier);
+            if (element != null) { 
+                addToCodeElements(element);
             }
             return true;
         } 
