@@ -7,12 +7,20 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.log4j.Logger;
+
 import ca.ubc.cs.reverb.indexer.messages.CodeElement;
+import ca.ubc.cs.reverb.indexer.messages.CodeElementError;
 import ca.ubc.cs.reverb.indexer.messages.CodeElementType;
 import ca.ubc.cs.reverb.indexer.messages.IndexerQuery;
 
 public class QueryBuilder {
+    private static Logger log = Logger.getLogger(QueryBuilder.class);
+    
     private List<QueryElementsForKey> queryElementsByKey = null;
+    private List<CodeElementError> errorElements = null;
+    private List<IndexerQuery> queries = null;
+    private List<CodeElement> codeElements = null;
     
     /**
      * Define a pattern which matches identifiers which are "selective" -- i.e. unlikely to match
@@ -32,15 +40,19 @@ public class QueryBuilder {
     
     private final static Pattern SELECTIVE_IDENTIFIER = Pattern.compile(IDENTIFIER_PATTERN);
     
-    public QueryBuilder() { }
+    public QueryBuilder(List<CodeElement> codeElements) {
+        this.codeElements = codeElements;
+    }
     
-    public List<IndexerQuery> getQueries(List<CodeElement> codeElements) {
+    public void buildQueries() {
+        errorElements = new ArrayList<CodeElementError>();
+        
         queryElementsByKey = new ArrayList<QueryElementsForKey>();
         for (CodeElement codeElement: codeElements) {
             addQueryElementsForCodeElement(codeElement);
         }
         
-        List<IndexerQuery> queries = new ArrayList<IndexerQuery>();
+        queries = new ArrayList<IndexerQuery>();
         for (QueryElementsForKey queryElementsForKey: queryElementsByKey) {
             List<QueryElement> elementList = queryElementsForKey.queryElements;
             List<QueryElement> mergedList = new ArrayList<QueryElement>();
@@ -80,82 +92,94 @@ public class QueryBuilder {
             }
             queries.add(new IndexerQuery(query.toString(), display.toString()));
         }
-        return queries;
+    }
+    
+    public List<IndexerQuery> getQueries() {
+        return this.queries;
+    }
+    
+    public List<CodeElementError> getErrorElements() {
+        return this.errorElements;
     }
     
     private void addQueryElementsForCodeElement(CodeElement codeElement) {
-        switch (codeElement.elementType) {
-        case TYPE_DECL:
-        case TYPE_REF:
-        {
-            QueryElement queryElement = getTypeQueryElement(codeElement);
-            if (queryElement != null) {
-                addToQueryElements(queryElement);
+        try {
+            switch (codeElement.elementType) {
+            case TYPE_DECL:
+            case TYPE_REF:
+            {
+                addToQueryElements(getTypeQueryElement(codeElement));
+                break;
             }
-            break;
-        }
-        case METHOD_DECL:
-        case METHOD_CALL:
-        {
-            if (codeElement.memberName != null) {
-                QueryElement queryElement = getTypeQueryElement(codeElement);
-                if (queryElement != null) {
-                    queryElement.addOptionalQuery(codeElement.memberName, codeElement.memberName);
-                    addToQueryElements(queryElement);
-                } else if (!nameNeedsResolution(codeElement.memberName)) {
-                    // If type information is not available, but the method name itself is selective enough,
-                    // then include just the method name in the query.
-                    addToQueryElements(new QueryElement(codeElement.memberName, 
-                            codeElement.memberName, codeElement.memberName));
+            case METHOD_DECL:
+            case METHOD_CALL:
+            {
+                if (codeElement.memberName == null) {
+                    throw new IndexerException("Method decl or method call element missing member name");
                 }
+                if (codeElement.packageName == null && codeElement.className == null) {
+                    if (!nameNeedsResolution(codeElement.memberName)) {
+                        // If type information is not available, but the method name itself is selective enough,
+                        // then include just the method name in the query.
+                        addToQueryElements(new QueryElement(codeElement.memberName, 
+                                codeElement.memberName, codeElement.memberName));
+                    } else {
+                        throw new IndexerException("Code element member name not selective enough to be used on its own");
+                    }
+                }
+                QueryElement queryElement = getTypeQueryElement(codeElement);
+                queryElement.addOptionalQuery(codeElement.memberName, codeElement.memberName);
+                addToQueryElements(queryElement);
+                break;
             }
-            break;
-        }
-        case STATIC_FIELD_REF:
-        case STATIC_METHOD_CALL: 
-        {
-            if (codeElement.memberName != null) {
-                // Static methods and fields may be referenced without any qualifiers in two cases: if the class
-                // containing the member has been imported with "import static", or if we inherit from (or 
-                // implement) the containing class.  This query tries to capture these two cases.
-                QueryElement typeQueryElement = getTypeQueryElement(codeElement);
-                if (typeQueryElement != null) {
+            case STATIC_FIELD_REF:
+            case STATIC_METHOD_CALL: 
+            {
+                if (codeElement.className == null || codeElement.memberName == null) {
+                    throw new IndexerException("Static member reference element missing class name or member name");
+                }
+                try {
+                    // Static methods and fields may be referenced without any qualifiers in two cases: if the class
+                    // containing the member has been imported with "import static", or if we inherit from (or 
+                    // implement) the containing class.  This query tries to capture these two cases.
+                    QueryElement typeQueryElement = getTypeQueryElement(codeElement);
                     typeQueryElement.addOptionalQuery(codeElement.memberName, null);
                     // We do not add static field names to the displayed query.
                     if (codeElement.elementType == CodeElementType.STATIC_METHOD_CALL) {
                         typeQueryElement.addDisplayText(codeElement.memberName);
                     }
                     addToQueryElements(typeQueryElement);
-                }
+                } catch (IndexerException e) { }
                     
-                if (codeElement.className != null) {
-                    // The other (perhaps more common) way to reference a static member is with the containing class
-                    // as a qualifier.  This form is quite selective, so for this query we do not add the fully qualified
-                    // type name or package.
-                    String key = codeElement.className;
-                    if (codeElement.packageName != null) {
-                        key = getFullyQualifiedName(codeElement);
-                    }
-                    QueryElement qualifiedRef = new QueryElement(
-                            key, codeElement.className + "." + codeElement.memberName,
-                            codeElement.className);
-                    // We do not add static field names to the displayed query.
-                    if (codeElement.elementType == CodeElementType.STATIC_METHOD_CALL) {
-                        qualifiedRef.addDisplayText(codeElement.memberName);
-                    }
-                    addToQueryElements(qualifiedRef);
+                // The other (perhaps more common) way to reference a static member is with the containing class
+                // as a qualifier.  This form is quite selective, so for this query we do not add the fully qualified
+                // type name or package.
+                String key = codeElement.className;
+                if (codeElement.packageName != null) {
+                    key = getFullyQualifiedName(codeElement);
                 }
+                QueryElement qualifiedRef = new QueryElement(
+                        key, codeElement.className + "." + codeElement.memberName,
+                        codeElement.className);
+                // We do not add static field names to the displayed query.
+                if (codeElement.elementType == CodeElementType.STATIC_METHOD_CALL) {
+                    qualifiedRef.addDisplayText(codeElement.memberName);
+                }
+                addToQueryElements(qualifiedRef);
+                break;
             }
-            break;
-        }
-        default: 
-        {
-            break;
-        }
+            default: 
+            {
+                throw new IndexerException("Unknown code element type: " + codeElement.elementType);
+            }
+            }
+        } catch (IndexerException e) {
+            errorElements.add(new CodeElementError(codeElement, e.toString()));
+            log.info("Code element could not be used to build query: " + codeElement, e);
         }
     }
     
-    private QueryElement getTypeQueryElement(CodeElement codeElement) {
+    private QueryElement getTypeQueryElement(CodeElement codeElement) throws IndexerException {
         if (codeElement.packageName != null && codeElement.className != null) {
             String fullyQualifiedName = getFullyQualifiedName(codeElement);
             if (!nameNeedsResolution(codeElement.className)) {
@@ -170,10 +194,13 @@ public class QueryBuilder {
             QueryElement result = new QueryElement(fullyQualifiedName, requiredQuery, codeElement.className);
             result.addOptionalQuery(codeElement.className, null);
             return result;
-        } else if (codeElement.className != null && !nameNeedsResolution(codeElement.className)) {
-            return new QueryElement(codeElement.className, codeElement.className, codeElement.className);
+        } else if (codeElement.className != null) {
+            if (!nameNeedsResolution(codeElement.className)) {
+                return new QueryElement(codeElement.className, codeElement.className, codeElement.className);
+            }
+            throw new IndexerException("Code element class name not selective enough to be used without package name");
         } 
-        return null;
+        throw new IndexerException("Code element missing class name");
     }
     
     /**
