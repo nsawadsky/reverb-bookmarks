@@ -44,5 +44,11 @@ public class CodeElement {
             return false;
         return true;
     }
+    
+    @Override
+    public String toString() {
+        return "CodeElement: type=" + elementType + ", package=" + packageName +
+                ", class=" + className +", member=" + memberName;
+    }
 
 }

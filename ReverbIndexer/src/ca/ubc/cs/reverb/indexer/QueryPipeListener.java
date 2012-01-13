@@ -1,6 +1,8 @@
 package ca.ubc.cs.reverb.indexer;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.codehaus.jackson.map.ObjectMapper;
 import xpnp.XpNamedPipe;
@@ -10,10 +12,15 @@ import org.apache.lucene.index.IndexReader;
 
 import ca.ubc.cs.reverb.indexer.messages.BatchQueryReply;
 import ca.ubc.cs.reverb.indexer.messages.BatchQueryRequest;
+import ca.ubc.cs.reverb.indexer.messages.CodeQueryReply;
+import ca.ubc.cs.reverb.indexer.messages.CodeQueryRequest;
+import ca.ubc.cs.reverb.indexer.messages.CodeQueryResult;
 import ca.ubc.cs.reverb.indexer.messages.DeleteLocationRequest;
 import ca.ubc.cs.reverb.indexer.messages.DeleteLocationReply;
 import ca.ubc.cs.reverb.indexer.messages.IndexerMessageEnvelope;
+import ca.ubc.cs.reverb.indexer.messages.IndexerQuery;
 import ca.ubc.cs.reverb.indexer.messages.IndexerReply;
+import ca.ubc.cs.reverb.indexer.messages.QueryResult;
 
 
 public class QueryPipeListener implements Runnable {
@@ -96,6 +103,8 @@ public class QueryPipeListener implements Runnable {
                             handleBatchQueryRequest(envelope.clientRequestId, (BatchQueryRequest)envelope.message);
                         } else if (envelope.message instanceof DeleteLocationRequest) {
                             handleDeleteLocationRequest(envelope.clientRequestId, (DeleteLocationRequest)envelope.message);
+                        } else if (envelope.message instanceof CodeQueryRequest) {
+                            handleCodeQueryRequest(envelope.clientRequestId, (CodeQueryRequest)envelope.message);
                         } else {
                             throw new IndexerException("Unexpected message content: " + envelope.message.getClass());
                         }
@@ -120,6 +129,41 @@ public class QueryPipeListener implements Runnable {
                 reply.errorMessage = e.toString();
             }
             sendReply(clientRequestId, reply);
+        }
+        
+        private void handleCodeQueryRequest(String clientRequestId, CodeQueryRequest codeQuery) throws IndexerException {
+            CodeQueryReply codeQueryReply = null;
+            try {
+                QueryBuilder builder = new QueryBuilder(codeQuery.codeElements);
+                builder.buildQueries();
+                BatchQueryReply batchQueryReply = searcher.performSearch(
+                        builder.getQueries());
+                codeQueryReply = new CodeQueryReply();
+                codeQueryReply.errorElements = builder.getErrorElements();
+                for (QueryResult result: batchQueryReply.queryResults) {
+                    List<String> allKeywords = new ArrayList<String>();
+                    for (IndexerQuery indexerQuery: result.indexerQueries) {
+                        String[] queryKeywords = indexerQuery.queryClientInfo.split(" ");
+                        for (String keyword: queryKeywords) {
+                            if (!allKeywords.contains(keyword)) {
+                                allKeywords.add(keyword);
+                            }
+                        }
+                    }
+                    StringBuilder displayText = new StringBuilder();
+                    for (String keyword: allKeywords) {
+                        if (displayText.length() > 0) {
+                            displayText.append(" ");
+                        }
+                        displayText.append(keyword);
+                    }
+                    codeQueryReply.queryResults.add(
+                            new CodeQueryResult(result.locations, displayText.toString()));
+                }
+            } catch (IndexerException e) {
+                codeQueryReply = new CodeQueryReply(true, e.toString());
+            }
+            sendReply(clientRequestId, codeQueryReply);
         }
         
         private void handleBatchQueryRequest(String clientRequestId, BatchQueryRequest query) throws IndexerException {

@@ -12,5 +12,5 @@ public class CodeQueryReply extends IndexerReply {
     }
 
     public List<CodeQueryResult> queryResults = new ArrayList<CodeQueryResult>();
-
+    public List<CodeElementError> errorElements = new ArrayList<CodeElementError>();
 }
