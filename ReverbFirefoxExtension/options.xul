@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+
+<vbox xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">  
+  <setting type="string" pref="extensions.cs.ubc.ca.reverb.ignoredAddresses" title="Ignored Sites" 
+    desc="Web site addresses which will not be indexed.  Use commas to separate addresses." />  
+</vbox>

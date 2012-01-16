@@ -1,0 +1,21 @@
+
+syntax: regexp
+^target$
+syntax: regexp
+^fullpage\.html$
+syntax: regexp
+^page\.txt$
+syntax: regexp
+^release/HistoryAnalyzer$
+syntax: regexp
+^release/HistoryAnalyzer_64$
+syntax: regexp
+^release/HistoryAnalyzer_Linux$
+syntax: regexp
+^release/HistoryAnalyzer_Linux_64$
+syntax: regexp
+^release/HistoryAnalyzer_Mac$
+syntax: regexp
+^release/HistoryAnalyzer_Mac_64$
+syntax: glob
+release/*.zip
