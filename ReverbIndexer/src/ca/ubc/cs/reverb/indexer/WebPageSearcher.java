@@ -213,11 +213,12 @@ public class WebPageSearcher {
                     resultList.add(new Hit(url, title, scoreDoc.score));
                     urls.add(url);
                 }
-                Map<String, Float> frecencyBoosts = locationsDatabase.getFrecencyBoosts(urls);
+                Map<String, LocationInfo> locationInfos = locationsDatabase.getLocationInfos(urls);
                 for (Hit location: resultList) {
-                    Float frecencyBoost = frecencyBoosts.get(location.url);
-                    if (frecencyBoost != null) {
-                        location.frecencyBoost = frecencyBoost;
+                    LocationInfo locationInfo = locationInfos.get(location.url);
+                    if (locationInfo != null) {
+                        location.frecencyBoost = locationInfo.frecencyBoost;
+                        location.isJavadoc = locationInfo.isJavadoc;
                     }
                 }
                 return resultList;
@@ -299,6 +300,7 @@ public class WebPageSearcher {
         public String title;
         public float luceneScore;
         public float frecencyBoost = 1.0F;
+        public boolean isJavadoc = false;
     }
         
     protected class HitInfo {
