@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.CharBuffer;
 import java.util.Arrays;
 import java.util.UUID;
 
@@ -19,6 +18,8 @@ public class IndexerConfig {
     private String locationsDatabasePath;
     
     private String settingsPath;
+    
+    private String studyDataLogFilePath;
     
     private String userId;
     
@@ -39,6 +40,14 @@ public class IndexerConfig {
         }
         locationsDatabasePath = dataPath + File.separator + "locations.sqlite";
         
+        String logsFolderPath = basePath + File.separator + "logs";
+        File logsFolder = new File(logsFolderPath);
+        if (!logsFolder.exists()) {
+            if (!logsFolder.mkdirs()) {
+                throw new IndexerException("Could not create directory '" + logsFolderPath + "'");
+            }
+        }
+        studyDataLogFilePath = logsFolderPath + File.separator + "studydata.txt";
         try {
             initializeUserId();
         } catch (Exception e) {
@@ -62,6 +71,10 @@ public class IndexerConfig {
         return locationsDatabasePath;
     }
 
+    public String getStudyDataLogFilePath() {
+        return studyDataLogFilePath;
+    }
+    
     public String getUserId() {
         return userId;
     }
@@ -72,7 +85,9 @@ public class IndexerConfig {
         if (!userIdFile.exists()) {
             File settingsDir = new File(settingsPath);
             if (!settingsDir.exists()) {
-                settingsDir.mkdirs();
+                if (!settingsDir.mkdirs()) {
+                    throw new IndexerException("Could not create directory '" + settingsPath + "'");
+                }
             }
             UUID uuid = UUID.randomUUID();
             FileWriter writer = new FileWriter(userIdFile);
