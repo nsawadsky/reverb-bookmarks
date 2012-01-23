@@ -14,5 +14,5 @@ public enum StudyEventType {
     /**
      * Click on recommendation in IDE plugin.
      */
-    TOOL_VISIT
+    RECOMMENDATION_CLICK
 }
