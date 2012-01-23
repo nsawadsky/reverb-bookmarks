@@ -32,6 +32,9 @@ public class StudyDataCollector implements Runnable {
     
     private static Logger log = Logger.getLogger(StudyDataCollector.class);
     
+    /**
+     * Used to synchronize access to the log file.
+     */
     private Object fileLock = new Object();
     
     private Object eventsLock = new Object();
@@ -55,7 +58,11 @@ public class StudyDataCollector implements Runnable {
                 Thread.sleep(LOG_FLUSH_INTERVAL_SECS * 1000);
             } catch (InterruptedException e) {
             }
-            flushEventsToFile();
+            try {
+                flushEventsToFile();
+            } catch (IOException e) {
+                // This exception is logged by flushEventsToFile().
+            }
         }
         
     }
@@ -66,45 +73,12 @@ public class StudyDataCollector implements Runnable {
         }
     }
     
-    public void flushEventsToFile() {
-        try {
-            List<StudyDataEvent> eventsToFlush = null;
-            synchronized (eventsLock) {
-                eventsToFlush = events;
-                events = new ArrayList<StudyDataEvent>();
-            }
-            if (eventsToFlush.size() > 0) {
-                try {
-                    synchronized (fileLock) {
-                        File logFile = new File(config.getStudyDataLogFilePath());
-                        BufferedWriter writer = new BufferedWriter(new FileWriter(logFile));
-                        try {
-                            for (StudyDataEvent event: eventsToFlush) {
-                                writeEvent(writer, event);
-                            }
-                            writer.flush();
-                            events.clear();
-                        } finally {
-                            writer.close();
-                        }
-                    }
-                } catch (Exception e) {
-                    synchronized(eventsLock) {
-                        eventsToFlush.addAll(events);
-                        events = eventsToFlush;
-                    }
-                }
-            }
-        } catch (Exception e) {
-            log.error("Error writing to study data log file: " + e, e);
-        }
-    }
-    
     public void pushDataToServer() throws IndexerException {
-        File zipFile = null;
-        HttpClient httpClient = null;
-        try {
-            synchronized(fileLock) {
+        // Block updates to the file while we are trying to upload it.
+        synchronized(fileLock) {
+            File zipFile = null;
+            HttpClient httpClient = null;
+            try {
                 flushEventsToFile();
                 
                 File logFile = new File(config.getStudyDataLogFilePath());
@@ -155,22 +129,60 @@ public class StudyDataCollector implements Runnable {
                 }
             }
         } catch (Exception e) {
-            error = e;
+            throw new IndexerException("Error while trying to push data to server: " + e, e);
         } finally {
             if (zipFile != null) { zipFile.delete(); }
             if (httpClient !=null) { httpClient.getConnectionManager().shutdown(); }
         }
     }
     
+    private void flushEventsToFile() throws IOException {
+        List<StudyDataEvent> eventsToFlush = null;
+        try {
+            synchronized (eventsLock) {
+                // Remove the events to be flushed from the event list.
+                eventsToFlush = events;
+                events = new ArrayList<StudyDataEvent>();
+            }
+            if (eventsToFlush.size() > 0) {
+                synchronized (fileLock) {
+                    File logFile = new File(config.getStudyDataLogFilePath());
+                    BufferedWriter writer = new BufferedWriter(new FileWriter(logFile));
+                    try {
+                        for (StudyDataEvent event: eventsToFlush) {
+                            writeEvent(writer, event);
+                        }
+                    } finally {
+                        writer.close();
+                        events.clear();
+                    }
+                }
+            }
+        } catch (IOException e) {
+            synchronized(eventsLock) {
+                // An error occurred -- re-add the events to the event list.
+                if (eventsToFlush != null) {
+                    eventsToFlush.addAll(events);
+                    events = eventsToFlush;
+                }
+            }
+            log.error("Error writing to study data log file", e);
+            throw e;
+        }
+    }
+    
     private void writeEvent(BufferedWriter writer, StudyDataEvent event) throws IOException {
-        writer.write(RECORD_SEPARATOR);
-        writer.newLine();
+        switch (event.eventType) {
+        case StudyEventType.
+        }
         for (Field field: event.getFields()) {
             writer.write(field.fieldName);
             writer.write("=");
-            writer.write(field.fieldName);
+            writer.write(field.fieldValue);
             writer.newLine();
         }
+        writer.write(RECORD_SEPARATOR);
+        writer.newLine();
     }
     
 }
