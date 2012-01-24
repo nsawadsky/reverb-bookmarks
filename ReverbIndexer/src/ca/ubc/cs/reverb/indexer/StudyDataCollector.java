@@ -2,12 +2,17 @@ package ca.ubc.cs.reverb.indexer;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -22,25 +27,27 @@ import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.log4j.Logger;
 
-import ca.ubc.cs.reverb.indexer.StudyDataEvent.Field;
-
 public class StudyDataCollector implements Runnable {
-    private final static int LOG_FLUSH_INTERVAL_SECS = 30;
-    private final static String RECORD_SEPARATOR = "=======================================================";
-    private final static String UPLOAD_URL = "https://www.cs.ubc.ca/~nicks/reverb/uploader.php";
-    private final static String FILE_INPUT_NAME = "uploadedFile";
-    
     private static Logger log = Logger.getLogger(StudyDataCollector.class);
     
+    private final static int LOG_FLUSH_INTERVAL_SECS = 30;
+    private final static String UPLOAD_URL = "https://www.cs.ubc.ca/~nicks/reverb/uploader.php";
+    private final static String FILE_INPUT_FIELD_NAME = "uploadedFile";
+    private final static String LOG_FILE_STEM = "studydata-";
+    private final static String LOG_FILE_EXTENSION = ".txt";
+    private final static int MAX_LOG_FILE_BYTES = 2 * 1024 * 1024; // 2 MB
+    
+    private static Pattern LOG_FILE_NAME_PATTERN = Pattern.compile(LOG_FILE_STEM + "([0-9]+)\\.txt");
+    
     /**
-     * Used to synchronize access to the log file.
+     * Access to log files must be synchronized on this reference.  If both events and fileLock must
+     * be locked, must make sure to acquire fileLock first.
      */
     private Object fileLock = new Object();
     
-    private Object eventsLock = new Object();
-    
     /**
-     * Access must be synchronized on the eventsLock reference.
+     * Access must be synchronized on the events reference.  If both events and fileLock must
+     * be locked, must make sure to acquire fileLock first.
      */
     private List<StudyDataEvent> events = new ArrayList<StudyDataEvent>();
     
@@ -59,7 +66,7 @@ public class StudyDataCollector implements Runnable {
             } catch (InterruptedException e) {
             }
             try {
-                flushEventsToFile();
+                flushEventsToFile(false);
             } catch (IOException e) {
                 // This exception is logged by flushEventsToFile().
             }
@@ -68,7 +75,7 @@ public class StudyDataCollector implements Runnable {
     }
 
     public void logEvent(StudyDataEvent event) {
-        synchronized(eventsLock) {
+        synchronized(events) {
             events.add(event);
         }
     }
@@ -79,7 +86,7 @@ public class StudyDataCollector implements Runnable {
             File zipFile = null;
             HttpClient httpClient = null;
             try {
-                flushEventsToFile();
+                flushEventsToFile(true);
                 
                 File logFile = new File(config.getStudyDataLogFilePath());
                 byte[] data = new byte[(int)logFile.length()];
@@ -136,53 +143,102 @@ public class StudyDataCollector implements Runnable {
         }
     }
     
-    private void flushEventsToFile() throws IOException {
-        List<StudyDataEvent> eventsToFlush = null;
-        try {
-            synchronized (eventsLock) {
-                // Remove the events to be flushed from the event list.
-                eventsToFlush = events;
-                events = new ArrayList<StudyDataEvent>();
-            }
-            if (eventsToFlush.size() > 0) {
-                synchronized (fileLock) {
-                    File logFile = new File(config.getStudyDataLogFilePath());
-                    BufferedWriter writer = new BufferedWriter(new FileWriter(logFile));
+    private void flushEventsToFile(boolean forceCreateNewFile) throws IOException {
+        synchronized (fileLock) {
+            try {
+                List<StudyDataEvent> eventsToFlush = new ArrayList<StudyDataEvent>();
+                synchronized (events) {
+                    // Remove the events to be flushed from the event list.
+                    eventsToFlush.addAll(events);
+                    events.clear();
+                }
+                if (eventsToFlush.size() > 0) {
+                    LogFileInfo currentLogFileInfo = getCurrentLogFileInfo();
+                    BufferedWriter writer = new BufferedWriter(new FileWriter(currentLogFileInfo.logFile));
                     try {
                         for (StudyDataEvent event: eventsToFlush) {
                             writeEvent(writer, event);
                         }
                     } finally {
                         writer.close();
-                        events.clear();
+                    }
+                    if (forceCreateNewFile || currentLogFileInfo.logFile.length() >= MAX_LOG_FILE_BYTES) {
+                        createNewLogFile(currentLogFileInfo);
                     }
                 }
+            } catch (IOException e) {
+                log.error("Error writing to study data log file", e);
+                throw e;
             }
-        } catch (IOException e) {
-            synchronized(eventsLock) {
-                // An error occurred -- re-add the events to the event list.
-                if (eventsToFlush != null) {
-                    eventsToFlush.addAll(events);
-                    events = eventsToFlush;
-                }
+        }
+    }
+    
+    private void createNewLogFile(LogFileInfo currentLogFileInfo) throws IOException {
+        synchronized (fileLock) {
+            File newFile = getLogFilePath(currentLogFileInfo.logFileIndex + 1);
+            if (!newFile.createNewFile()) {
+                throw new IOException("Failed to create file: " + newFile.getAbsolutePath());
             }
-            log.error("Error writing to study data log file", e);
-            throw e;
         }
     }
     
     private void writeEvent(BufferedWriter writer, StudyDataEvent event) throws IOException {
-        switch (event.eventType) {
-        case StudyEventType.
-        }
-        for (Field field: event.getFields()) {
-            writer.write(field.fieldName);
-            writer.write("=");
-            writer.write(field.fieldValue);
-            writer.newLine();
-        }
-        writer.write(RECORD_SEPARATOR);
+        String line = Long.toString(event.timestamp) + 
+                ", " + event.eventType.getShortName() + 
+                ", " + event.locationId + 
+                ", " + Integer.toString(event.isJavadoc ? 1 : 0);
+        writer.write(line);
         writer.newLine();
+    }
+    
+    private LogFileInfo getCurrentLogFileInfo() {
+        List<LogFileInfo> logFiles = getLogFileInfos();
+        if (logFiles.isEmpty()) {
+            return new LogFileInfo(getLogFilePath(1), 1);
+        }
+        return logFiles.get(logFiles.size()-1);
+    }
+
+    private File getLogFilePath(int index) {
+        return new File(config.getStudyDataLogFolderPath() + File.separator + 
+                LOG_FILE_STEM + Integer.toString(index) + LOG_FILE_EXTENSION);
+    }
+    
+    /**
+     * Get existing log files, in ascending order (most recent last).
+     */
+    private List<LogFileInfo> getLogFileInfos() {
+        File logFolder = new File(config.getStudyDataLogFolderPath());
+        final List<LogFileInfo> result = new ArrayList<LogFileInfo>();
+        logFolder.listFiles(new FileFilter() {
+            @Override
+            public boolean accept(File file) {
+                Matcher matcher = LOG_FILE_NAME_PATTERN.matcher(file.getName());
+                if (matcher.matches() && matcher.group(1) != null) {
+                    result.add(new LogFileInfo(file, Integer.parseInt(matcher.group(1))));
+                }
+                return false;
+            }
+        });
+        Collections.sort(result, new Comparator<LogFileInfo>() {
+
+            @Override
+            public int compare(LogFileInfo file1, LogFileInfo file2) {
+                return new Integer(file1.logFileIndex).compareTo(file2.logFileIndex);
+            }
+            
+        });
+        return result;
+    }
+    
+    private class LogFileInfo {
+        public File logFile;
+        public int logFileIndex;
+
+        public LogFileInfo(File logFile, int logFileIndex) {
+            this.logFile = logFile;
+            this.logFileIndex = logFileIndex;
+        }
     }
     
 }
