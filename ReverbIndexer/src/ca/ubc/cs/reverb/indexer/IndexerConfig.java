@@ -19,7 +19,7 @@ public class IndexerConfig {
     
     private String settingsPath;
     
-    private String studyDataLogFilePath;
+    private String studyDataLogFolderPath;
     
     private String userId;
     
@@ -40,14 +40,13 @@ public class IndexerConfig {
         }
         locationsDatabasePath = dataPath + File.separator + "locations.sqlite";
         
-        String logsFolderPath = basePath + File.separator + "logs";
-        File logsFolder = new File(logsFolderPath);
-        if (!logsFolder.exists()) {
-            if (!logsFolder.mkdirs()) {
-                throw new IndexerException("Could not create directory '" + logsFolderPath + "'");
+        studyDataLogFolderPath = basePath + File.separator + "logs";
+        File logFolder = new File(studyDataLogFolderPath);
+        if (!logFolder.exists()) {
+            if (!logFolder.mkdirs()) {
+                throw new IndexerException("Could not create directory '" + studyDataLogFolderPath + "'");
             }
         }
-        studyDataLogFilePath = logsFolderPath + File.separator + "studydata.txt";
         try {
             initializeUserId();
         } catch (Exception e) {
@@ -71,8 +70,8 @@ public class IndexerConfig {
         return locationsDatabasePath;
     }
 
-    public String getStudyDataLogFilePath() {
-        return studyDataLogFilePath;
+    public String getStudyDataLogFolderPath() {
+        return studyDataLogFolderPath;
     }
     
     public String getUserId() {
