@@ -35,7 +35,7 @@ public class StudyDataCollector implements Runnable {
     private final static String FILE_INPUT_FIELD_NAME = "uploadedFile";
     private final static String LOG_FILE_STEM = "studydata-";
     private final static String LOG_FILE_EXTENSION = ".txt";
-    private final static int MAX_LOG_FILE_BYTES = 2 * 1024 * 1024; // 2 MB
+    private final static int MAX_LOG_FILE_SIZE_BYTES = 2 * 1024 * 1024; // 2 MB
     
     private static Pattern LOG_FILE_NAME_PATTERN = Pattern.compile(LOG_FILE_STEM + "([0-9]+)\\.txt");
     
@@ -152,8 +152,8 @@ public class StudyDataCollector implements Runnable {
                     eventsToFlush.addAll(events);
                     events.clear();
                 }
+                LogFileInfo currentLogFileInfo = getCurrentLogFileInfo();
                 if (eventsToFlush.size() > 0) {
-                    LogFileInfo currentLogFileInfo = getCurrentLogFileInfo();
                     BufferedWriter writer = new BufferedWriter(new FileWriter(currentLogFileInfo.logFile));
                     try {
                         for (StudyDataEvent event: eventsToFlush) {
@@ -162,9 +162,10 @@ public class StudyDataCollector implements Runnable {
                     } finally {
                         writer.close();
                     }
-                    if (forceCreateNewFile || currentLogFileInfo.logFile.length() >= MAX_LOG_FILE_BYTES) {
-                        createNewLogFile(currentLogFileInfo);
-                    }
+                }
+                long fileSize = currentLogFileInfo.logFile.length();
+                if ((fileSize > 0 && forceCreateNewFile) || fileSize >= MAX_LOG_FILE_SIZE_BYTES) {
+                    createNewLogFile(currentLogFileInfo);
                 }
             } catch (IOException e) {
                 log.error("Error writing to study data log file", e);
