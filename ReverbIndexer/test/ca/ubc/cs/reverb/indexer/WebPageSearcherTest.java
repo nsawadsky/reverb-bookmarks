@@ -48,7 +48,7 @@ public class WebPageSearcherTest {
             protected IndexSearcher getNewIndexSearcher() { return null; }
             
             @Override
-            protected List<Hit> performSearch(IndexSearcher searcher, String queryString, int maxResults, Date now) throws IndexerException {
+            protected List<Hit> performSearch(IndexSearcher searcher, String queryString, int maxResults, long now) throws IndexerException {
                 List<Hit> result = new ArrayList<Hit>();
                 if (queryString == "QueryA") {
                     result.add(new Hit("UrlA_A", "UrlA_A", 2.0F, 1.0F));
@@ -77,7 +77,7 @@ public class WebPageSearcherTest {
             protected IndexSearcher getNewIndexSearcher() { return null; }
             
             @Override
-            protected List<Hit> performSearch(IndexSearcher searcher, String queryString, int maxResults, Date now) throws IndexerException {
+            protected List<Hit> performSearch(IndexSearcher searcher, String queryString, int maxResults, long now) throws IndexerException {
                 List<Hit> result = new ArrayList<Hit>();
                 if (queryString == "QueryA") {
                     Hit hit = new Hit("UrlA_A", "UrlA_A", 3.0F, 1.0F);
@@ -107,7 +107,7 @@ public class WebPageSearcherTest {
             protected IndexSearcher getNewIndexSearcher() { return null; }
             
             @Override
-            protected List<Hit> performSearch(IndexSearcher searcher, String queryString, int maxResults, Date now) throws IndexerException {
+            protected List<Hit> performSearch(IndexSearcher searcher, String queryString, int maxResults, long now) throws IndexerException {
                 List<Hit> result = new ArrayList<Hit>();
                 if (queryString == "QueryA") {
                     result.add(new Hit("UrlA_A", "UrlA_A", 4.0F, 1.0F));
@@ -139,7 +139,7 @@ public class WebPageSearcherTest {
             protected IndexSearcher getNewIndexSearcher() { return null; }
             
             @Override
-            protected List<Hit> performSearch(IndexSearcher searcher, String queryString, int maxResults, Date now) throws IndexerException {
+            protected List<Hit> performSearch(IndexSearcher searcher, String queryString, int maxResults, long now) throws IndexerException {
                 List<Hit> result = new ArrayList<Hit>();
                 if (queryString == "QueryA") {
                     result.add(new Hit("http://www.test.com/docs/1.2.3/TestFirstDifferent/1.2/rest", "TestFirstDifferent", 1.0F, 2.0F));
