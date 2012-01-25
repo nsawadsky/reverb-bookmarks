@@ -6,6 +6,7 @@ public class StudyDataEvent {
         this.eventType = eventType;
         this.locationId = info.id;
         this.isJavadoc = info.isJavadoc;
+        this.isCodeRelated = info.isCodeRelated;
         this.lastVisitTime = info.lastVisitTime;
         this.visitCount = info.visitCount;
         this.storedFrecencyBoost = info.storedFrecencyBoost;
@@ -20,12 +21,14 @@ public class StudyDataEvent {
     public float storedFrecencyBoost;
     public float frecencyBoost;
     public boolean isJavadoc;
+    public boolean isCodeRelated;
     
     public String getLogLine() {
         return Long.toString(timestamp) + 
                 ", " + eventType.getShortName() + 
                 ", " + locationId + 
                 ", " + (isJavadoc ? 1 : 0) +
+                ", " + (isCodeRelated ? 1 : 0) +
                 ", " + lastVisitTime +
                 ", " + visitCount + 
                 ", " + String.format("%.3f", storedFrecencyBoost) + 

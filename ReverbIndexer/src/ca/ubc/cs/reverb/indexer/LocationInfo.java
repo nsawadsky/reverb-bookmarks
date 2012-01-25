@@ -4,13 +4,14 @@ public class LocationInfo {
     public final static float MAX_FRECENCY_BOOST = 5.0F;
     
     public LocationInfo(long id, String url, long lastVisitTime,
-            int visitCount, float frecencyBoost, boolean isJavadoc) {
+            int visitCount, float frecencyBoost, boolean isJavadoc, boolean isCodeRelated) {
         this.id = id;
         this.url = url;
         this.lastVisitTime = lastVisitTime;
         this.visitCount = visitCount;
         this.storedFrecencyBoost = frecencyBoost;
         this.isJavadoc = isJavadoc;
+        this.isCodeRelated = isCodeRelated;
     }
 
     public long id = 0;
@@ -22,6 +23,7 @@ public class LocationInfo {
      */
     public float storedFrecencyBoost = 0.0F;
     public boolean isJavadoc = false;
+    public boolean isCodeRelated = false;
     
     public float getFrecencyBoost(long now) {
         float result = storedFrecencyBoost * (float)Math.exp(LocationsDatabase.FRECENCY_DECAY * (now - lastVisitTime));
