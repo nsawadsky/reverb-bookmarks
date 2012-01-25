@@ -21,6 +21,8 @@ import ca.ubc.cs.reverb.indexer.messages.IndexerMessageEnvelope;
 import ca.ubc.cs.reverb.indexer.messages.IndexerQuery;
 import ca.ubc.cs.reverb.indexer.messages.IndexerReply;
 import ca.ubc.cs.reverb.indexer.messages.QueryResult;
+import ca.ubc.cs.reverb.indexer.messages.UploadLogsReply;
+import ca.ubc.cs.reverb.indexer.messages.UploadLogsRequest;
 
 
 public class QueryPipeListener implements Runnable {
@@ -109,6 +111,8 @@ public class QueryPipeListener implements Runnable {
                             handleDeleteLocationRequest(envelope.clientRequestId, (DeleteLocationRequest)envelope.message);
                         } else if (envelope.message instanceof CodeQueryRequest) {
                             handleCodeQueryRequest(envelope.clientRequestId, (CodeQueryRequest)envelope.message);
+                        } else if (envelope.message instanceof UploadLogsRequest) {
+                            handleUploadLogsRequest(envelope.clientRequestId, (UploadLogsRequest)envelope.message);
                         } else {
                             throw new IndexerException("Unexpected message content: " + envelope.message.getClass());
                         }
@@ -122,6 +126,17 @@ public class QueryPipeListener implements Runnable {
             } finally {
                 pipe.close();
             }
+        }
+        
+        private void handleUploadLogsRequest(String clientRequestId, UploadLogsRequest request) throws IndexerException {
+            UploadLogsReply reply = new UploadLogsReply();
+            try {
+                collector.pushDataToServer();
+            } catch (IndexerException e) {
+                reply.errorOccurred = true;
+                reply.errorMessage = e.toString();
+            }
+            sendReply(clientRequestId, reply);
         }
         
         private void handleDeleteLocationRequest(String clientRequestId, DeleteLocationRequest request) throws IndexerException {
