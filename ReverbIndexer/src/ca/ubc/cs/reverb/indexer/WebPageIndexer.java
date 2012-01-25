@@ -44,10 +44,12 @@ public class WebPageIndexer {
     private IndexerConfig config;
     private IndexWriter indexWriter;
     private LocationsDatabase locationsDatabase;
+    private StudyDataCollector collector;
     
-    public WebPageIndexer(IndexerConfig config, LocationsDatabase locationsDatabase) throws IndexerException {
+    public WebPageIndexer(IndexerConfig config, LocationsDatabase locationsDatabase, StudyDataCollector collector) throws IndexerException {
         this.config = config;
         this.locationsDatabase = locationsDatabase;
+        this.collector = collector;
 
         try {
             Directory index = FSDirectory.open(new File(config.getIndexPath()));
@@ -114,19 +116,26 @@ public class WebPageIndexer {
      */
     public boolean indexPage(UpdatePageInfoRequest info) throws IndexerException {
         try {
+            Date now = new Date();
+            
             String normalizedUrl = normalizeUrl(info.url);
 
-            Date lastVisitDate = locationsDatabase.getLastVisitDate(info.url);
-            if (lastVisitDate != null) {
+            LocationInfo currLocationInfo = locationsDatabase.getLocationInfo(normalizedUrl);
+            if (currLocationInfo != null) {
                 Calendar lastVisitCal = GregorianCalendar.getInstance();
-                lastVisitCal.setTime(lastVisitDate);
+                lastVisitCal.setTimeInMillis(currLocationInfo.lastVisitTime);
                 Calendar currTimeCal = GregorianCalendar.getInstance();
                 // If page was already indexed today, do not index again.
                 if (lastVisitCal.get(Calendar.YEAR) == currTimeCal.get(Calendar.YEAR) && 
                         lastVisitCal.get(Calendar.MONTH) == currTimeCal.get(Calendar.MONTH) &&
                         lastVisitCal.get(Calendar.DATE) == currTimeCal.get(Calendar.DATE)) {
                     // Still need to record the additional visit(s).
-                    locationsDatabase.updateLocationInfo(normalizedUrl, info.visitTimes, null);
+                    LocationInfo updated = locationsDatabase.updateLocationInfo(normalizedUrl, info.visitTimes, null);
+                    // Only record non-batch updates in the study data log
+                    if (info.visitTimes == null || info.visitTimes.isEmpty()) {
+                        collector.logEvent(new StudyDataEvent(now.getTime(), StudyEventType.BROWSER_VISIT, updated, 
+                                updated.getFrecencyBoost(now.getTime())));
+                    }
                     return false;
                 }
             }
@@ -193,7 +202,12 @@ public class WebPageIndexer {
             // could still result in a page being absent from the index, but not indexable for up to a day.
             // We accept this risk to avoid the performance hit of synchronizing these three
             // methods (especially commitChanges).
-            locationsDatabase.updateLocationInfo(normalizedUrl, info.visitTimes, isJavadoc);
+            LocationInfo updated = locationsDatabase.updateLocationInfo(normalizedUrl, info.visitTimes, isJavadoc);
+            // Only record non-batch updates in the study data log
+            if (info.visitTimes == null || info.visitTimes.isEmpty()) {
+                collector.logEvent(new StudyDataEvent(now.getTime(), StudyEventType.BROWSER_VISIT, updated,
+                        updated.getFrecencyBoost(now.getTime())));
+            }
 
             return true;
         } catch (Exception e) {

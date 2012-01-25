@@ -36,18 +36,21 @@ public class IndexerService {
             
             configLucene();
             
+            StudyDataCollector collector = new StudyDataCollector(config);
+            collector.start();
+            
             LocationsDatabase locationsDatabase = new LocationsDatabase(config);
-            WebPageIndexer indexer = new WebPageIndexer(config, locationsDatabase);
+            WebPageIndexer indexer = new WebPageIndexer(config, locationsDatabase, collector);
             
             Map<String, String> parsed = parseArgs(args);
             String query = parsed.get("-query");
             if (query != null) {
-                runQuery(config, indexer, locationsDatabase, query);
+                runQuery(config, indexer, locationsDatabase, collector, query);
             } else {
                 
                 IndexPipeListener indexPipeListener = new IndexPipeListener(config, indexer);
                 
-                QueryPipeListener queryPipeListener = new QueryPipeListener(config, indexer, locationsDatabase);
+                QueryPipeListener queryPipeListener = new QueryPipeListener(config, indexer, locationsDatabase, collector);
                 
                 indexPipeListener.start();
                 queryPipeListener.start();
@@ -60,7 +63,8 @@ public class IndexerService {
         }
     }
 
-    private void runQuery(IndexerConfig config, WebPageIndexer indexer, LocationsDatabase locationsDatabase, String query) throws IndexerException {
+    private void runQuery(IndexerConfig config, WebPageIndexer indexer, LocationsDatabase locationsDatabase, 
+            StudyDataCollector collector, String query) throws IndexerException {
         SharedIndexReader indexReader;
         try {
             // IndexReader is thread-safe, share it for efficiency.
@@ -69,7 +73,7 @@ public class IndexerService {
             throw new IndexerException("Error creating IndexReader: " + e, e);
         }
 
-        WebPageSearcher searcher = new WebPageSearcher(config, indexReader, locationsDatabase);
+        WebPageSearcher searcher = new WebPageSearcher(config, indexReader, locationsDatabase, null);
         
         List<IndexerQuery> queries = new ArrayList<IndexerQuery>();
         queries.add(new IndexerQuery(query, query));

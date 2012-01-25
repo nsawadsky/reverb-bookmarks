@@ -1,7 +1,9 @@
 {
     "testFilterGroupAndReorder":
     {
-      "batchQueryResult" : {
+      "batchQueryReply" : {
+        "errorOccurred": false,
+        "errorMessage": null,
         "queryResults" : [ {
           "indexerQueries" : [ {
             "queryString" : "QueryB",
@@ -11,13 +13,13 @@
             "url" : "UrlB_B",
             "title" : "UrlB_B",
             "luceneScore" : 3.0,
-            "frecencyBoost" : 0.0,
+            "frecencyBoost" : 1.0,
             "overallScore" : 3.0
           }, {
             "url" : "UrlB_A",
             "title" : "UrlB_A",
             "luceneScore" : 1.0,
-            "frecencyBoost" : 0.0,
+            "frecencyBoost" : 1.0,
             "overallScore" : 1.0
           } ]
         }, {
@@ -29,7 +31,7 @@
             "url" : "UrlA_A",
             "title" : "UrlA_A",
             "luceneScore" : 2.0,
-            "frecencyBoost" : 0.0,
+            "frecencyBoost" : 1.0,
             "overallScore" : 2.0
           } ]
         } ]
@@ -38,7 +40,9 @@
     
     "testFrecencyBoost":
     {
-      "batchQueryResult" : {
+      "batchQueryReply" : {
+        "errorOccurred": false,
+        "errorMessage": null,
         "queryResults" : [ {
           "indexerQueries" : [ {
             "queryString" : "QueryB",
@@ -69,7 +73,9 @@
     
     "testMerge":
     {
-      "batchQueryResult" : {
+      "batchQueryReply" : {
+        "errorOccurred": false,
+        "errorMessage": null,
         "queryResults" : [ {
           "indexerQueries" : [ {
             "queryString" : "QueryA",
@@ -82,19 +88,19 @@
             "url" : "UrlA_A",
             "title" : "UrlA_A",
             "luceneScore" : 4.0,
-            "frecencyBoost" : 0.0,
+            "frecencyBoost" : 1.0,
             "overallScore" : 4.0
           }, {
             "url" : "UrlB_A",
             "title" : "UrlB_A",
             "luceneScore" : 3.1,
-            "frecencyBoost" : 0.0,
+            "frecencyBoost" : 1.0,
             "overallScore" : 3.1
           }, {
             "url" : "UrlB_B",
             "title" : "UrlB_B",
             "luceneScore" : 3.0,
-            "frecencyBoost" : 0.0,
+            "frecencyBoost" : 1.0,
             "overallScore" : 3.0
           } ]
         }, {
@@ -106,13 +112,13 @@
             "url" : "UrlC_A",
             "title" : "UrlC_A",
             "luceneScore" : 1.1,
-            "frecencyBoost" : 0.0,
+            "frecencyBoost" : 1.0,
             "overallScore" : 1.1
           }, {
             "url" : "UrlC_B",
             "title" : "UrlC_B",
             "luceneScore" : 1.0,
-            "frecencyBoost" : 0.0,
+            "frecencyBoost" : 1.0,
             "overallScore" : 1.0
           } ]
         } ]
@@ -121,7 +127,9 @@
     
     "testCompactHitInfos": 
     {
-      "batchQueryResult" : {
+      "batchQueryReply" : {
+        "errorOccurred": false,
+        "errorMessage": null,
         "queryResults" : [ {
           "indexerQueries" : [ {
             "queryString" : "QueryA",
