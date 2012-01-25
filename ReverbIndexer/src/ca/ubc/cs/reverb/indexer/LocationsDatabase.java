@@ -138,13 +138,15 @@ public class LocationsDatabase {
      * 
      * @return The updated location info.
      */
-    public synchronized LocationInfo updateLocationInfo(String url, List<Long> visitTimes, Boolean isJavadoc,
-            Date now) throws IndexerException { 
+    public synchronized LocationInfo updateLocationInfo(String url, List<Long> inputVisitTimes, Boolean isJavadoc,
+            long currentTime) throws IndexerException { 
         try {
-            long currentTime = now.getTime();
-            if (visitTimes == null || visitTimes.size() == 0) {
+            List<Long> visitTimes = null;
+            if (inputVisitTimes == null || inputVisitTimes.size() == 0) {
                 visitTimes = new ArrayList<Long>();
                 visitTimes.add(currentTime);
+            } else {
+                visitTimes = new ArrayList<Long>(inputVisitTimes);
             }
             Collections.sort(visitTimes);
             

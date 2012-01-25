@@ -63,7 +63,7 @@ public class WebPageSearcher {
     }
     
     public BatchQueryReply performSearch(List<IndexerQuery> inputQueries) throws IndexerException {
-        Date now = new Date();
+        long now = new Date().getTime();
         
         IndexSearcher indexSearcher = getNewIndexSearcher();
         
@@ -158,7 +158,7 @@ public class WebPageSearcher {
             for (MergedQueryResult mergedResult: nextMergedResults) {
                 for (HitInfo info: mergedResult.hits) {
                     collector.logEvent(new RecommendationEvent(
-                            now.getTime(), info.hit.locationInfo, info.frecencyBoost, info.combinedScore,
+                            now, info.hit.locationInfo, info.frecencyBoost, info.combinedScore,
                             info.getOverallScore()));
                 }
             }
@@ -214,7 +214,7 @@ public class WebPageSearcher {
         }
     }
     
-    protected List<Hit> performSearch(IndexSearcher searcher, String queryString, int maxResults, Date now) throws IndexerException {
+    protected List<Hit> performSearch(IndexSearcher searcher, String queryString, int maxResults, long now) throws IndexerException {
         try {
             Query query = parser.parse(queryString);
             
@@ -238,7 +238,7 @@ public class WebPageSearcher {
                         hitsToRemove.add(hit); 
                     } else {
                         hit.locationInfo = locationInfo;
-                        hit.frecencyBoost = locationInfo.getFrecencyBoost(now.getTime());
+                        hit.frecencyBoost = locationInfo.getFrecencyBoost(now);
                     }
                 }
                 resultList.removeAll(hitsToRemove);

@@ -116,7 +116,7 @@ public class WebPageIndexer {
      */
     public boolean indexPage(UpdatePageInfoRequest info) throws IndexerException {
         try {
-            Date now = new Date();
+            long now = new Date().getTime();
             
             String normalizedUrl = normalizeUrl(info.url);
 
@@ -143,8 +143,8 @@ public class WebPageIndexer {
                 LocationInfo updated = locationsDatabase.updateLocationInfo(normalizedUrl, info.visitTimes, null, now);
                 // Only record non-batch updates in the study data log
                 if (info.visitTimes == null || info.visitTimes.isEmpty()) {
-                    collector.logEvent(new StudyDataEvent(now.getTime(), StudyEventType.BROWSER_VISIT, updated, 
-                            updated.storedFrecencyBoost));
+                    collector.logEvent(new StudyDataEvent(now, StudyEventType.BROWSER_VISIT, updated, 
+                            updated.getFrecencyBoost(now)));
                 }
                 return false;
             }
@@ -214,8 +214,8 @@ public class WebPageIndexer {
             LocationInfo updated = locationsDatabase.updateLocationInfo(normalizedUrl, info.visitTimes, isJavadoc, now);
             // Only record non-batch updates in the study data log
             if (info.visitTimes == null || info.visitTimes.isEmpty()) {
-                collector.logEvent(new StudyDataEvent(now.getTime(), StudyEventType.BROWSER_VISIT, updated,
-                        updated.storedFrecencyBoost));
+                collector.logEvent(new StudyDataEvent(now, StudyEventType.BROWSER_VISIT, updated,
+                        updated.getFrecencyBoost(now)));
             }
 
             return true;
