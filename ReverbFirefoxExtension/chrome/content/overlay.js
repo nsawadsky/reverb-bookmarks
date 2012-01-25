@@ -147,13 +147,14 @@ var ca_ubc_cs_reverb = {
         return;
       }
       
+      var omitContent = false;
       var lastIndexTime = this.getLastIndexTime(win.location.href);
       if (lastIndexTime != null && 
           (new Date().getTime() - lastIndexTime.getTime() < 24 * 60 * 60 * 1000)) {
-        return;
+        omitContent = true;
       }
       
-      if (this.sendPage(win.location.href, doc.documentElement.innerHTML)) {
+      if (this.sendPage(win.location.href, (omitContent ? "" : doc.documentElement.innerHTML))) {
         this.addToIndexHistory(win.location.href);
       } else {
         Components.utils.reportError("Failed to send page: " + this.getErrorMessage());

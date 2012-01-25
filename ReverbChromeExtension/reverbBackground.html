@@ -98,6 +98,7 @@ var reverb = {
               sendResponse({});
             } else if (request.action == "checkIndexPage") {
               var result = false;
+              var omitContent = false;
               do {
                 // Filter out frames loaded from different domains.
                 var tabHost = reverb.extractHost(sender.tab.url);
@@ -110,12 +111,12 @@ var reverb = {
                 var lastIndexTime = reverb.getLastIndexTime(request.url);
                 if (lastIndexTime != null && 
                     (new Date().getTime() - lastIndexTime.getTime() < 24 * 60 * 60 * 1000)) {
-                  break;
+                  omitContent = true;
                 }
               
                 result = true;
               } while (false);
-              sendResponse({indexPage: result});
+              sendResponse({indexPage: result, omitContent: omitContent});
             }
           }
       );

@@ -120,24 +120,33 @@ public class WebPageIndexer {
             
             String normalizedUrl = normalizeUrl(info.url);
 
-            LocationInfo currLocationInfo = locationsDatabase.getLocationInfo(normalizedUrl);
-            if (currLocationInfo != null) {
-                Calendar lastVisitCal = GregorianCalendar.getInstance();
-                lastVisitCal.setTimeInMillis(currLocationInfo.lastVisitTime);
-                Calendar currTimeCal = GregorianCalendar.getInstance();
-                // If page was already indexed today, do not index again.
-                if (lastVisitCal.get(Calendar.YEAR) == currTimeCal.get(Calendar.YEAR) && 
-                        lastVisitCal.get(Calendar.MONTH) == currTimeCal.get(Calendar.MONTH) &&
-                        lastVisitCal.get(Calendar.DATE) == currTimeCal.get(Calendar.DATE)) {
-                    // Still need to record the additional visit(s).
-                    LocationInfo updated = locationsDatabase.updateLocationInfo(normalizedUrl, info.visitTimes, null);
-                    // Only record non-batch updates in the study data log
-                    if (info.visitTimes == null || info.visitTimes.isEmpty()) {
-                        collector.logEvent(new StudyDataEvent(now.getTime(), StudyEventType.BROWSER_VISIT, updated, 
-                                updated.getFrecencyBoost(now.getTime())));
+            // If page was already indexed today, do not index again.
+            boolean alreadyIndexedToday = (info.html == null || info.html.isEmpty());
+            
+            if (!alreadyIndexedToday) {
+                LocationInfo currLocationInfo = locationsDatabase.getLocationInfo(normalizedUrl);
+                if (currLocationInfo != null) {
+                    Calendar lastVisitCal = GregorianCalendar.getInstance();
+                    lastVisitCal.setTimeInMillis(currLocationInfo.lastVisitTime);
+                    Calendar currTimeCal = GregorianCalendar.getInstance();
+
+                    if (lastVisitCal.get(Calendar.YEAR) == currTimeCal.get(Calendar.YEAR) && 
+                            lastVisitCal.get(Calendar.MONTH) == currTimeCal.get(Calendar.MONTH) &&
+                            lastVisitCal.get(Calendar.DATE) == currTimeCal.get(Calendar.DATE)) {
+                        alreadyIndexedToday = true;
                     }
-                    return false;
                 }
+            }
+            
+            if (alreadyIndexedToday) {
+                // Still need to record the additional visit(s).
+                LocationInfo updated = locationsDatabase.updateLocationInfo(normalizedUrl, info.visitTimes, null, now);
+                // Only record non-batch updates in the study data log
+                if (info.visitTimes == null || info.visitTimes.isEmpty()) {
+                    collector.logEvent(new StudyDataEvent(now.getTime(), StudyEventType.BROWSER_VISIT, updated, 
+                            updated.storedFrecencyBoost));
+                }
+                return false;
             }
             
             // make a new, empty document
@@ -202,11 +211,11 @@ public class WebPageIndexer {
             // could still result in a page being absent from the index, but not indexable for up to a day.
             // We accept this risk to avoid the performance hit of synchronizing these three
             // methods (especially commitChanges).
-            LocationInfo updated = locationsDatabase.updateLocationInfo(normalizedUrl, info.visitTimes, isJavadoc);
+            LocationInfo updated = locationsDatabase.updateLocationInfo(normalizedUrl, info.visitTimes, isJavadoc, now);
             // Only record non-batch updates in the study data log
             if (info.visitTimes == null || info.visitTimes.isEmpty()) {
                 collector.logEvent(new StudyDataEvent(now.getTime(), StudyEventType.BROWSER_VISIT, updated,
-                        updated.getFrecencyBoost(now.getTime())));
+                        updated.storedFrecencyBoost));
             }
 
             return true;

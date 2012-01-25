@@ -43,43 +43,6 @@ public class LocationsDatabase {
         createLocationsTableIfNecessary();
     }
     
-    public synchronized Map<String, Float> getFrecencyBoosts(List<String> urls) throws IndexerException {
-        Map<String, Float> results = new HashMap<String, Float>();
-        if (urls.size() == 0) {
-            return results;
-        }
-        try {
-            Date now = new Date();
-            Statement stmt = connection.createStatement();
-            
-            StringBuilder query = new StringBuilder("SELECT url, last_visit_time, visit_count, frecency_boost FROM locations WHERE url IN ('");
-            boolean isFirst = true;
-            for (String url: urls) {
-                if (isFirst) {
-                    isFirst = false;
-                } else {
-                    query.append(", '");
-                }
-                query.append(escapeForSQL(url));
-                query.append("'");
-            }
-            query.append(")");
-            ResultSet rs = stmt.executeQuery(query.toString());
-            while (rs.next()) {
-                String url = rs.getString(1);
-                long lastVisitTime = rs.getLong(2);
-                //int visitCount = rs.getInt(3);
-                
-                Float frecencyBoost = rs.getFloat(4);
-                
-                results.put(url, frecencyBoost);
-            }
-        } catch (SQLException e) {
-            throw new IndexerException("Error getting frecency boosts: " + e, e);
-        } 
-        return results;
-    }
-    
     public synchronized Map<String, LocationInfo> getLocationInfos(List<String> urls) throws IndexerException {
         Map<String, LocationInfo> results = new HashMap<String, LocationInfo>();
         if (urls.size() == 0) {
@@ -175,9 +138,10 @@ public class LocationsDatabase {
      * 
      * @return The updated location info.
      */
-    public synchronized LocationInfo updateLocationInfo(String url, List<Long> visitTimes, Boolean isJavadoc) throws IndexerException { 
+    public synchronized LocationInfo updateLocationInfo(String url, List<Long> visitTimes, Boolean isJavadoc,
+            Date now) throws IndexerException { 
         try {
-            long currentTime = new Date().getTime();
+            long currentTime = now.getTime();
             if (visitTimes == null || visitTimes.size() == 0) {
                 visitTimes = new ArrayList<Long>();
                 visitTimes.add(currentTime);

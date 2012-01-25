@@ -168,7 +168,7 @@ public class StudyDataCollector implements Runnable {
                 }
                 LogFileInfo currentLogFileInfo = getCurrentLogFileInfo();
                 if (eventsToFlush.size() > 0) {
-                    BufferedWriter writer = new BufferedWriter(new FileWriter(currentLogFileInfo.logFile));
+                    BufferedWriter writer = new BufferedWriter(new FileWriter(currentLogFileInfo.logFile, true));
                     try {
                         for (StudyDataEvent event: eventsToFlush) {
                             writeEvent(writer, event);

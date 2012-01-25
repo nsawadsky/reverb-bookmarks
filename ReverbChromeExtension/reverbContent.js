@@ -46,7 +46,8 @@ var reverbContent = {
       chrome.extension.sendRequest({action: "checkIndexPage", url: win.location.href}, 
           function(response) {
             if (response.indexPage) {
-              chrome.extension.sendRequest({action: "updatePageContent", url: win.location.href, page: doc.documentElement.innerHTML});
+              chrome.extension.sendRequest({action: "updatePageContent", url: win.location.href, 
+                page: (response.omitContent ? "" : doc.documentElement.innerHTML)});
             }
           });
     },
