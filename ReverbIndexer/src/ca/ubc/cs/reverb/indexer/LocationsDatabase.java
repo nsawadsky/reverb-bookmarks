@@ -192,7 +192,7 @@ public class LocationsDatabase {
             }
             
             StringBuilder update = new StringBuilder("INSERT OR REPLACE INTO locations (id, url, last_visit_time, visit_count, frecency_boost, is_javadoc, is_code_related) VALUES " +
-                    "(?, ?, ?, ?, ?, ?)");
+                    "(?, ?, ?, ?, ?, ?, ?)");
             
             PreparedStatement prep = connection.prepareStatement(update.toString());
             if (id != -1) {
