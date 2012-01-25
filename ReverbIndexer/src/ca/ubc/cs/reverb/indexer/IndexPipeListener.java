@@ -97,7 +97,11 @@ public class IndexPipeListener implements Runnable {
                         log.error("Exception parsing message from index pipe", e);
                     }
                     if (info != null) {
-                        log.info("Got page: " + info.url);
+                        if (info.html == null || info.html.isEmpty()) {
+                            log.info("Got page with empty html: " + info.url);
+                        } else {
+                            log.info("Got page: " + info.url);
+                        }
                         try {
                             indexer.indexPage(info);
                         } catch (IndexerException e) {
