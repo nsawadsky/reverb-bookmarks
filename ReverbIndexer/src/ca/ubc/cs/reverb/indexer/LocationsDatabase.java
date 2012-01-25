@@ -52,7 +52,7 @@ public class LocationsDatabase {
             Date now = new Date();
             Statement stmt = connection.createStatement();
             
-            StringBuilder query = new StringBuilder("SELECT id, url, last_visit_time, visit_count, frecency_boost, is_javadoc FROM locations WHERE url IN ('");
+            StringBuilder query = new StringBuilder("SELECT id, url, last_visit_time, visit_count, frecency_boost, is_javadoc, is_code_related FROM locations WHERE url IN ('");
             boolean isFirst = true;
             for (String url: urls) {
                 if (isFirst) {
@@ -74,7 +74,9 @@ public class LocationsDatabase {
                 Float frecencyBoost = rs.getFloat(5);
                 
                 boolean isJavadoc = (rs.getInt(6) != 0);
-                results.put(url, new LocationInfo(id, url, lastVisitTime, visitCount, frecencyBoost, isJavadoc));
+                boolean isCodeRelated = (rs.getInt(7) != 0);
+                
+                results.put(url, new LocationInfo(id, url, lastVisitTime, visitCount, frecencyBoost, isJavadoc, isCodeRelated));
             }
         } catch (SQLException e) {
             throw new IndexerException("Error getting frecency boosts: " + e, e);
@@ -138,7 +140,7 @@ public class LocationsDatabase {
      * 
      * @return The updated location info.
      */
-    public synchronized LocationInfo updateLocationInfo(String url, List<Long> inputVisitTimes, Boolean isJavadoc,
+    public synchronized LocationInfo updateLocationInfo(String url, List<Long> inputVisitTimes, Boolean isJavadoc, Boolean isCodeRelated,
             long currentTime) throws IndexerException { 
         try {
             List<Long> visitTimes = null;
@@ -156,10 +158,11 @@ public class LocationsDatabase {
             float frecencyBoost = 0.0F;
             long id = -1;
             boolean prevIsJavadoc = false;
+            boolean prevIsCodeRelated = false;
             
             Statement stmt = connection.createStatement();
     
-            String query = "SELECT id, last_visit_time, visit_count, frecency_boost, is_javadoc FROM locations WHERE url = '" + escapeForSQL(url) + "'";
+            String query = "SELECT id, last_visit_time, visit_count, frecency_boost, is_javadoc, is_code_related FROM locations WHERE url = '" + escapeForSQL(url) + "'";
             ResultSet rs = stmt.executeQuery(query);
             if (rs.next()) {
                 id = rs.getLong(1);
@@ -172,10 +175,15 @@ public class LocationsDatabase {
                 frecencyBoost = frecencyBoost * (float)Math.exp(FRECENCY_DECAY * timeDelta);
                 
                 prevIsJavadoc = (rs.getInt(5) != 0);
+                prevIsCodeRelated = (rs.getInt(6) != 0);
             }
             
             if (isJavadoc == null) {
                 isJavadoc = prevIsJavadoc;
+            }
+            
+            if (isCodeRelated == null) {
+                isCodeRelated = prevIsCodeRelated;
             }
 
             visitCount += visitTimes.size();
@@ -183,7 +191,7 @@ public class LocationsDatabase {
                 frecencyBoost += (float)Math.exp(FRECENCY_DECAY * (lastVisitTime - visitTime));
             }
             
-            StringBuilder update = new StringBuilder("INSERT OR REPLACE INTO locations (id, url, last_visit_time, visit_count, frecency_boost, is_javadoc) VALUES " +
+            StringBuilder update = new StringBuilder("INSERT OR REPLACE INTO locations (id, url, last_visit_time, visit_count, frecency_boost, is_javadoc, is_code_related) VALUES " +
                     "(?, ?, ?, ?, ?, ?)");
             
             PreparedStatement prep = connection.prepareStatement(update.toString());
@@ -195,11 +203,12 @@ public class LocationsDatabase {
             prep.setInt(4, visitCount);
             prep.setFloat(5, frecencyBoost);
             prep.setInt(6, isJavadoc ? 1 : 0);
+            prep.setInt(7, isCodeRelated ? 1 : 0);
             
             prep.execute();
             
             if (id != -1) {
-                return new LocationInfo(id, url, lastVisitTime, visitCount, frecencyBoost, isJavadoc);
+                return new LocationInfo(id, url, lastVisitTime, visitCount, frecencyBoost, isJavadoc, isCodeRelated);
             } else {
                 return getLocationInfo(url);
             }
@@ -225,7 +234,7 @@ public class LocationsDatabase {
                     stmt = connection.createStatement();
                     
                     String update = "CREATE TABLE locations(id INTEGER PRIMARY KEY, url LONGVARCHAR NOT NULL, " +
-                            "last_visit_time INTEGER NOT NULL, visit_count INTEGER NOT NULL, frecency_boost FLOAT NOT NULL, is_javadoc INTEGER NOT NULL)";
+                            "last_visit_time INTEGER NOT NULL, visit_count INTEGER NOT NULL, frecency_boost FLOAT NOT NULL, is_javadoc INTEGER NOT NULL, is_code_related INTEGER NOT NULL)";
                     
                     stmt.executeUpdate(update);
                     
