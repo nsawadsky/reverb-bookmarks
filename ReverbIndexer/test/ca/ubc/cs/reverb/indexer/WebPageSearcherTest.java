@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Date;
 
 import org.apache.lucene.search.IndexSearcher;
 import org.codehaus.jackson.JsonFactory;
@@ -46,14 +47,15 @@ public class WebPageSearcherTest {
         WebPageSearcher searcher = new WebPageSearcher() {
             protected IndexSearcher getNewIndexSearcher() { return null; }
             
-            protected List<Hit> performSearch(IndexSearcher searcher, String queryString, int maxResults) throws IndexerException {
+            @Override
+            protected List<Hit> performSearch(IndexSearcher searcher, String queryString, int maxResults, Date now) throws IndexerException {
                 List<Hit> result = new ArrayList<Hit>();
                 if (queryString == "QueryA") {
-                    result.add(new Hit("UrlA_A", "UrlA_A", 2.0F));
-                    result.add(new Hit("UrlB_B", "UrlB_B", 1.0F));
+                    result.add(new Hit("UrlA_A", "UrlA_A", 2.0F, 1.0F));
+                    result.add(new Hit("UrlB_B", "UrlB_B", 1.0F, 1.0F));
                 } else if (queryString == "QueryB") {
-                    result.add(new Hit("UrlB_A", "UrlB_A", 1.0F));
-                    result.add(new Hit("UrlB_B", "UrlB_B", 2.0F));
+                    result.add(new Hit("UrlB_A", "UrlB_A", 1.0F, 1.0F));
+                    result.add(new Hit("UrlB_B", "UrlB_B", 2.0F, 1.0F));
                 } 
                 return result;
             }
@@ -74,15 +76,14 @@ public class WebPageSearcherTest {
         WebPageSearcher searcher = new WebPageSearcher() {
             protected IndexSearcher getNewIndexSearcher() { return null; }
             
-            protected List<Hit> performSearch(IndexSearcher searcher, String queryString, int maxResults) throws IndexerException {
+            @Override
+            protected List<Hit> performSearch(IndexSearcher searcher, String queryString, int maxResults, Date now) throws IndexerException {
                 List<Hit> result = new ArrayList<Hit>();
                 if (queryString == "QueryA") {
-                    Hit hit = new Hit("UrlA_A", "UrlA_A", 3.0F);
-                    hit.frecencyBoost = 1.0F;
+                    Hit hit = new Hit("UrlA_A", "UrlA_A", 3.0F, 1.0F);
                     result.add(hit);
                 } else if (queryString == "QueryB") {
-                    Hit hit = new Hit("UrlB_A", "UrlB_A", 2.0F);
-                    hit.frecencyBoost = 2.0F;
+                    Hit hit = new Hit("UrlB_A", "UrlB_A", 2.0F, 2.0F);
                     result.add(hit);
                 } 
                 return result;
@@ -105,18 +106,19 @@ public class WebPageSearcherTest {
         WebPageSearcher searcher = new WebPageSearcher() {
             protected IndexSearcher getNewIndexSearcher() { return null; }
             
-            protected List<Hit> performSearch(IndexSearcher searcher, String queryString, int maxResults) throws IndexerException {
+            @Override
+            protected List<Hit> performSearch(IndexSearcher searcher, String queryString, int maxResults, Date now) throws IndexerException {
                 List<Hit> result = new ArrayList<Hit>();
                 if (queryString == "QueryA") {
-                    result.add(new Hit("UrlA_A", "UrlA_A", 4.0F));
-                    result.add(new Hit("UrlB_A", "UrlB_A", 1.1F));
-                    result.add(new Hit("UrlB_B", "UrlB_B", 1.0F));
+                    result.add(new Hit("UrlA_A", "UrlA_A", 4.0F, 1.0F));
+                    result.add(new Hit("UrlB_A", "UrlB_A", 1.1F, 1.0F));
+                    result.add(new Hit("UrlB_B", "UrlB_B", 1.0F, 1.0F));
                 } else if (queryString == "QueryB") {
-                    result.add(new Hit("UrlB_A", "UrlB_A", 2.0F));
-                    result.add(new Hit("UrlB_B", "UrlB_B", 2.0F));
+                    result.add(new Hit("UrlB_A", "UrlB_A", 2.0F, 1.0F));
+                    result.add(new Hit("UrlB_B", "UrlB_B", 2.0F, 1.0F));
                 } else if (queryString == "QueryC") {
-                    result.add(new Hit("UrlC_A", "UrlC_A", 1.1F));
-                    result.add(new Hit("UrlC_B", "UrlC_B", 1.0F));
+                    result.add(new Hit("UrlC_A", "UrlC_A", 1.1F, 1.0F));
+                    result.add(new Hit("UrlC_B", "UrlC_B", 1.0F, 1.0F));
                 } 
                 return result;
             }
@@ -136,7 +138,8 @@ public class WebPageSearcherTest {
         WebPageSearcher searcher = new WebPageSearcher() {
             protected IndexSearcher getNewIndexSearcher() { return null; }
             
-            protected List<Hit> performSearch(IndexSearcher searcher, String queryString, int maxResults) throws IndexerException {
+            @Override
+            protected List<Hit> performSearch(IndexSearcher searcher, String queryString, int maxResults, Date now) throws IndexerException {
                 List<Hit> result = new ArrayList<Hit>();
                 if (queryString == "QueryA") {
                     result.add(new Hit("http://www.test.com/docs/1.2.3/TestFirstDifferent/1.2/rest", "TestFirstDifferent", 1.0F, 2.0F));

@@ -31,11 +31,14 @@ public class QueryPipeListener implements Runnable {
     private XpNamedPipe listeningPipe;
     private SharedIndexReader indexReader = null;
     private LocationsDatabase locationsDatabase;
+    private StudyDataCollector collector;
     
-    public QueryPipeListener(IndexerConfig config, WebPageIndexer indexer, LocationsDatabase locationsDatabase) {
+    public QueryPipeListener(IndexerConfig config, WebPageIndexer indexer, LocationsDatabase locationsDatabase,
+            StudyDataCollector collector) {
         this.config = config;
         this.indexer = indexer;
         this.locationsDatabase = locationsDatabase;
+        this.collector = collector;
     }
     
     public void start() throws IndexerException {
@@ -69,7 +72,7 @@ public class QueryPipeListener implements Runnable {
             try {
                 XpNamedPipe newPipe = listeningPipe.acceptConnection();
                 log.info("Accepted connection on query pipe");
-                new Thread(new QueryPipeConnection(config, newPipe, indexReader, locationsDatabase)).start();
+                new Thread(new QueryPipeConnection(config, newPipe, indexReader, locationsDatabase, collector)).start();
             } catch (IOException e) {
                 log.error("Error accepting connection on query pipe", e);
             }
@@ -81,10 +84,11 @@ public class QueryPipeListener implements Runnable {
         private WebPageSearcher searcher;
         private IndexerConfig config;
         
-        public QueryPipeConnection(IndexerConfig config, XpNamedPipe pipe, SharedIndexReader reader, LocationsDatabase locationsDatabase) {
+        public QueryPipeConnection(IndexerConfig config, XpNamedPipe pipe, SharedIndexReader reader, 
+                LocationsDatabase locationsDatabase, StudyDataCollector collector) {
             this.config = config;
             this.pipe = pipe;
-            searcher = new WebPageSearcher(config, reader, locationsDatabase);
+            searcher = new WebPageSearcher(config, reader, locationsDatabase, collector);
         }
         
         public void run() {

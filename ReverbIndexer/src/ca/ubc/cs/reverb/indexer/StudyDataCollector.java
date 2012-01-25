@@ -73,6 +73,10 @@ public class StudyDataCollector implements Runnable {
         }
         
     }
+    
+    public void start() {
+        new Thread(this).start();
+    }
 
     public void logEvent(StudyDataEvent event) {
         synchronized(events) {
@@ -81,66 +85,76 @@ public class StudyDataCollector implements Runnable {
     }
     
     public void pushDataToServer() throws IndexerException {
-        // Block updates to the file while we are trying to upload it.
-        synchronized(fileLock) {
-            File zipFile = null;
-            HttpClient httpClient = null;
-            try {
-                flushEventsToFile(true);
-                
-                File logFile = new File(config.getStudyDataLogFilePath());
-                byte[] data = new byte[(int)logFile.length()];
-                FileInputStream inputStream = new FileInputStream(logFile);
-                inputStream.read(data);
-                ZipOutputStream zipOutput = null;
-                
-                try {
-                    zipFile = File.createTempFile("reverb", ".zip");
-                    zipOutput = new ZipOutputStream(new FileOutputStream(zipFile));
-                    
-                    ZipEntry entry = new ZipEntry(config.getUserId() + ".txt");
-                    
-                    zipOutput.putNextEntry(entry);
-                    
-                    byte[] data = report.getBytes("UTF-8");
-                    
-                    zipOutput.write(data);
-                    
-                } finally {
-                    if (zipOutput != null) { zipOutput.close(); }
-                }
-                
-                httpClient = new DefaultHttpClient();
-                HttpPost httpPost = new HttpPost(UPLOAD_URL);
-                
-                MultipartEntity requestEntity = new MultipartEntity();
-    
-                StringBody participantId = new StringBody(historyMinerData.participantId.toString());
-                requestEntity.addPart("participant", participantId);
-                
-                FileBody fileInputPart = new FileBody(zipFile);
-                requestEntity.addPart(FILE_INPUT_NAME, fileInputPart);
-                
-                httpPost.setEntity(requestEntity);
-    
-                HttpResponse response = httpClient.execute(httpPost);
-                StatusLine line = response.getStatusLine();
-                if (line.getStatusCode() != HttpStatus.SC_OK) {
-                    if (line.getStatusCode() == HttpStatus.SC_BAD_REQUEST) {
-                        invalidParticipantId = true;
-                    } else if (line.getStatusCode() == HttpStatus.SC_CONFLICT) {
-                        maxUploadsReached = true;
-                    }
-                    throw new HistoryMinerException(Integer.toString(line.getStatusCode()) + " upload response: " + 
-                            line.getReasonPhrase());
-                }
+        try {
+            flushEventsToFile(true);
+            
+            List<LogFileInfo> logFiles = getLogFileInfos();
+            
+            if (logFiles.size() < 2) {
+                return;
             }
+            
+            // Do not send the current log file.
+            logFiles.remove(logFiles.size() - 1);
+            
+            HttpClient httpClient = new DefaultHttpClient();
+            
+            try {
+                for (LogFileInfo logFileInfo: logFiles) {
+                    File logFile = logFileInfo.logFile;
+                    byte[] data = new byte[(int)logFile.length()];
+                    FileInputStream inputStream = new FileInputStream(logFile);
+                    try {
+                        inputStream.read(data);
+                    } finally {
+                        inputStream.close();
+                    }
+                    
+                    File zipFile = File.createTempFile("reverb", ".zip");
+                    try {
+                        ZipOutputStream zipOutput = new ZipOutputStream(new FileOutputStream(zipFile));
+                        try {
+                            ZipEntry entry = new ZipEntry(logFile.getName());
+                            
+                            zipOutput.putNextEntry(entry);
+                            
+                            zipOutput.write(data);
+                        } finally {
+                            zipOutput.close();
+                        }
+                        
+                        HttpPost httpPost = new HttpPost(UPLOAD_URL);
+                        
+                        MultipartEntity requestEntity = new MultipartEntity();
+        
+                        StringBody participantId = new StringBody(config.getUserId());
+                        requestEntity.addPart("participant", participantId);
+                        
+                        FileBody fileInputPart = new FileBody(zipFile);
+                        requestEntity.addPart(FILE_INPUT_FIELD_NAME, fileInputPart);
+                        
+                        httpPost.setEntity(requestEntity);
+        
+                        HttpResponse response = httpClient.execute(httpPost);
+                        StatusLine line = response.getStatusLine();
+                        if (line.getStatusCode() == HttpStatus.SC_OK) {
+                            logFile.delete();
+                        } else {
+                            throw new IndexerException(Integer.toString(line.getStatusCode()) + " upload response: " + 
+                                    line.getReasonPhrase());
+                        }
+                    } finally {
+                        zipFile.delete();
+                    }
+                }
+            } finally {
+                httpClient.getConnectionManager().shutdown();
+            }
+        } catch (IndexerException e) {
+            throw e;
         } catch (Exception e) {
             throw new IndexerException("Error while trying to push data to server: " + e, e);
-        } finally {
-            if (zipFile != null) { zipFile.delete(); }
-            if (httpClient !=null) { httpClient.getConnectionManager().shutdown(); }
-        }
+        } 
     }
     
     private void flushEventsToFile(boolean forceCreateNewFile) throws IOException {
@@ -184,12 +198,10 @@ public class StudyDataCollector implements Runnable {
     }
     
     private void writeEvent(BufferedWriter writer, StudyDataEvent event) throws IOException {
-        String line = Long.toString(event.timestamp) + 
-                ", " + event.eventType.getShortName() + 
-                ", " + event.locationId + 
-                ", " + Integer.toString(event.isJavadoc ? 1 : 0);
-        writer.write(line);
-        writer.newLine();
+        synchronized (fileLock) {
+            writer.write(event.getLogLine());
+            writer.newLine();
+        }
     }
     
     private LogFileInfo getCurrentLogFileInfo() {

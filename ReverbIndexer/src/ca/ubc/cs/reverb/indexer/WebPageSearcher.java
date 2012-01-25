@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -38,6 +39,7 @@ public class WebPageSearcher {
     private SharedIndexReader reader;
     private QueryParser parser;
     private LocationsDatabase locationsDatabase;
+    private StudyDataCollector collector;
 
     private final static String VERSION_FIELD_SEP = "[\\_\\-\\.]";
     private final static String VERSION_NUMBER = "[0-9]+(?:" + VERSION_FIELD_SEP + "[0-9]+)*";
@@ -47,9 +49,11 @@ public class WebPageSearcher {
     // For testing
     WebPageSearcher() { }
     
-    public WebPageSearcher(IndexerConfig config, SharedIndexReader reader, LocationsDatabase locationsDatabase) {
+    public WebPageSearcher(IndexerConfig config, SharedIndexReader reader, 
+            LocationsDatabase locationsDatabase, StudyDataCollector collector) {
         this.config = config;
         this.locationsDatabase = locationsDatabase;
+        this.collector = collector;
         
         parser = new MultiFieldQueryParser(Version.LUCENE_33, 
                 new String[] {WebPageIndexer.TITLE_FIELD_NAME, WebPageIndexer.CONTENT_FIELD_NAME}, 
@@ -59,6 +63,8 @@ public class WebPageSearcher {
     }
     
     public BatchQueryReply performSearch(List<IndexerQuery> inputQueries) throws IndexerException {
+        Date now = new Date();
+        
         IndexSearcher indexSearcher = getNewIndexSearcher();
         
         // First, ensure query strings are unique.
@@ -74,7 +80,7 @@ public class WebPageSearcher {
         // Gather hits, store by URL.
         Map<String, HitInfo> infosByUrl = new HashMap<String, HitInfo>();
         for (IndexerQuery query: queries) {
-            List<Hit> hits = performSearch(indexSearcher, query.queryString, MAX_RESULTS_PER_QUERY);
+            List<Hit> hits = performSearch(indexSearcher, query.queryString, MAX_RESULTS_PER_QUERY, now);
             for (Hit hit: hits) {
                 HitInfo info = infosByUrl.get(hit.url);
                 if (info == null) {
@@ -147,6 +153,17 @@ public class WebPageSearcher {
             sortHitInfoList(mergedResult.hits);
         }
         
+        if (collector != null) {
+            // Log the recommendations about to be sent.
+            for (MergedQueryResult mergedResult: nextMergedResults) {
+                for (HitInfo info: mergedResult.hits) {
+                    collector.logEvent(new RecommendationEvent(
+                            now.getTime(), info.hit.locationInfo, info.frecencyBoost, info.combinedScore,
+                            info.getOverallScore()));
+                }
+            }
+        }
+        
         // Create the result structure to be sent to the client.
         BatchQueryReply result = new BatchQueryReply();
         for (MergedQueryResult mergedResult: nextMergedResults) {
@@ -197,7 +214,7 @@ public class WebPageSearcher {
         }
     }
     
-    protected List<Hit> performSearch(IndexSearcher searcher, String queryString, int maxResults) throws IndexerException {
+    protected List<Hit> performSearch(IndexSearcher searcher, String queryString, int maxResults, Date now) throws IndexerException {
         try {
             Query query = parser.parse(queryString);
             
@@ -214,13 +231,17 @@ public class WebPageSearcher {
                     urls.add(url);
                 }
                 Map<String, LocationInfo> locationInfos = locationsDatabase.getLocationInfos(urls);
-                for (Hit location: resultList) {
-                    LocationInfo locationInfo = locationInfos.get(location.url);
-                    if (locationInfo != null) {
-                        location.frecencyBoost = locationInfo.frecencyBoost;
-                        location.isJavadoc = locationInfo.isJavadoc;
+                List<Hit> hitsToRemove = new ArrayList<Hit>();
+                for (Hit hit: resultList) {
+                    LocationInfo locationInfo = locationInfos.get(hit.url);
+                    if (locationInfo == null) {
+                        hitsToRemove.add(hit); 
+                    } else {
+                        hit.locationInfo = locationInfo;
+                        hit.frecencyBoost = locationInfo.getFrecencyBoost(now.getTime());
                     }
                 }
+                resultList.removeAll(hitsToRemove);
                 return resultList;
             } finally {
                 searcher.close();
@@ -295,12 +316,13 @@ public class WebPageSearcher {
             this.luceneScore = luceneScore;
             this.frecencyBoost = frecencyBoost;
         }
-
+        
         public String url;
         public String title;
         public float luceneScore;
-        public float frecencyBoost = 1.0F;
-        public boolean isJavadoc = false;
+        public float frecencyBoost;
+        
+        public LocationInfo locationInfo;
     }
         
     protected class HitInfo {
@@ -317,7 +339,7 @@ public class WebPageSearcher {
         public List<IndexerQuery> queries = new ArrayList<IndexerQuery>();
         public float bestIndividualScore;
         public IndexerQuery bestQuery;
-        public float frecencyBoost = 1.0F;
+        public float frecencyBoost;
         public float combinedScore;
         
         public float getOverallScore() {
@@ -353,7 +375,7 @@ public class WebPageSearcher {
                     if (misses == 0) {
                         // URL's are identical -- should never happen.
                         hitInfo.frecencyBoost = Math.min(
-                                hitInfo.frecencyBoost + testInfo.frecencyBoost, LocationsDatabase.MAX_FRECENCY_BOOST);
+                                hitInfo.frecencyBoost + testInfo.frecencyBoost, LocationInfo.MAX_FRECENCY_BOOST);
                         return true;
                     }
                     if (misses == 1) {
@@ -363,12 +385,12 @@ public class WebPageSearcher {
                             try {
                                 if (compareVersionNumbers(splitUrl[missIndex], testSplitUrl[missIndex]) < 0) {
                                     testInfo.frecencyBoost = Math.min(
-                                            hitInfo.frecencyBoost + testInfo.frecencyBoost, LocationsDatabase.MAX_FRECENCY_BOOST);
+                                            hitInfo.frecencyBoost + testInfo.frecencyBoost, LocationInfo.MAX_FRECENCY_BOOST);
                                     hitInfo = testInfo;
                                     splitUrl = testSplitUrl;
                                 } else {
                                     hitInfo.frecencyBoost = Math.min(
-                                            hitInfo.frecencyBoost + testInfo.frecencyBoost, LocationsDatabase.MAX_FRECENCY_BOOST);
+                                            hitInfo.frecencyBoost + testInfo.frecencyBoost, LocationInfo.MAX_FRECENCY_BOOST);
                                 }
                                 return true;
                             } catch (NumberFormatException e) {
