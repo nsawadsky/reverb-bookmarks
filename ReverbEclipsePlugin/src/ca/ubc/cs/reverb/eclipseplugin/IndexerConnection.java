@@ -17,6 +17,8 @@ import ca.ubc.cs.reverb.indexer.messages.DeleteLocationRequest;
 import ca.ubc.cs.reverb.indexer.messages.IndexerMessage;
 import ca.ubc.cs.reverb.indexer.messages.IndexerMessageEnvelope;
 import ca.ubc.cs.reverb.indexer.messages.IndexerReply;
+import ca.ubc.cs.reverb.indexer.messages.UploadLogsReply;
+import ca.ubc.cs.reverb.indexer.messages.UploadLogsRequest;
 
 import xpnp.XpNamedPipe;
 
@@ -43,6 +45,14 @@ public class IndexerConnection implements Runnable {
     
     public void stop() throws IOException {
         pipe.stop();
+    }
+    
+    public UploadLogsReply sendUploadLogsRequest(UploadLogsRequest request, int timeoutMsecs) throws IOException, InterruptedException {
+        IndexerReply reply = sendRequest(request, timeoutMsecs);
+        if (! (reply instanceof UploadLogsReply)) {
+            throw new IOException("Unexpected reply message type: " + reply.getClass());
+        }
+        return (UploadLogsReply)reply;
     }
     
     public CodeQueryReply sendCodeQueryRequest(CodeQueryRequest request, int timeoutMsecs) throws IOException, InterruptedException {

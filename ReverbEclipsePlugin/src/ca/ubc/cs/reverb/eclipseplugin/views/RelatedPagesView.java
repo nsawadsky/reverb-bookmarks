@@ -6,6 +6,10 @@ import java.net.URI;
 
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.part.*;
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jface.viewers.*;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.jface.action.*;
@@ -23,6 +27,8 @@ import ca.ubc.cs.reverb.indexer.messages.CodeQueryResult;
 import ca.ubc.cs.reverb.indexer.messages.DeleteLocationRequest;
 import ca.ubc.cs.reverb.indexer.messages.IndexerMessage;
 import ca.ubc.cs.reverb.indexer.messages.Location;
+import ca.ubc.cs.reverb.indexer.messages.UploadLogsReply;
+import ca.ubc.cs.reverb.indexer.messages.UploadLogsRequest;
 
 public class RelatedPagesView extends ViewPart implements EditorMonitorListener {
 
@@ -156,6 +162,7 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
         final Action openBrowserAction = createOpenBrowserAction();
         final Action deleteLocationAction = createDeleteLocationAction();
         final Action updateViewAction = createUpdateViewAction();
+        final Action uploadLogsAction = createUploadLogsAction();
         
         viewer.addSelectionChangedListener(new ISelectionChangedListener() {
 
@@ -192,8 +199,7 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
                 manager.add(updateViewAction);
                 manager.add(deleteLocationAction);
                 manager.add(new Separator());
-                // Other plug-ins can contribute there actions here
-                manager.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
+                manager.add(uploadLogsAction);
             }
             
         });
@@ -234,6 +240,39 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
         viewer.expandAll();
     }
 
+    private Action createUploadLogsAction() {
+        Action uploadLogsAction = new Action() {
+            public void run() {
+                Job job = new Job("Uploading logs") {
+                    @Override
+                    protected IStatus run(IProgressMonitor arg0) {
+                        try {
+                            UploadLogsReply reply = EditorMonitor.getDefault().getIndexerConnection().sendUploadLogsRequest(
+                                    new UploadLogsRequest(), 60000);
+                            if (reply.errorOccurred) {
+                                IStatus status = getLogger().createStatus(IStatus.ERROR, "Error uploading logs: " + reply.errorMessage, null);
+                                getLogger().log(status);
+                                return status;
+                            }
+                            return Status.OK_STATUS;
+                        } catch (Exception e) {
+                            IStatus status = getLogger().createStatus(IStatus.ERROR, "Error sending upload logs request", e);
+                            getLogger().log(status);
+                            return status;
+                        }
+                    }
+                };
+                job.schedule();
+            }
+        };
+                
+        uploadLogsAction.setText("Upload Logs");
+        uploadLogsAction.setToolTipText("Upload Logs");
+        uploadLogsAction.setEnabled(true);
+        
+        return uploadLogsAction;
+    }
+    
     private Action createUpdateViewAction() {
         Action updateViewAction = new Action() {
             public void run() {

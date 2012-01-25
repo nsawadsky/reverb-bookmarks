@@ -31,6 +31,14 @@ public class PluginLogger {
     }
     
     public void log(int severity, String msg, Throwable t) {
+        log(createStatus(severity, msg, t));
+    }
+    
+    public void log(IStatus status) {
+        eclipseLog.log(status);
+    }
+    
+    public IStatus createStatus(int severity, String msg, Throwable t) {
         StringBuilder logMsg = new StringBuilder(msg);
         if (t != null) {
             logMsg.append(": ");
@@ -39,6 +47,6 @@ public class PluginLogger {
             t.printStackTrace(pw);
             logMsg.append(sw.toString());
         }
-        eclipseLog.log(new Status(severity, PluginActivator.PLUGIN_ID, logMsg.toString(), t));
+        return new Status(severity, PluginActivator.PLUGIN_ID, logMsg.toString(), t);
     }
 }
