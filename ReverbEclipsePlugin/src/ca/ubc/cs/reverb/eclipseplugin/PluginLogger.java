@@ -42,10 +42,7 @@ public class PluginLogger {
         StringBuilder logMsg = new StringBuilder(msg);
         if (t != null) {
             logMsg.append(": ");
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            t.printStackTrace(pw);
-            logMsg.append(sw.toString());
+            logMsg.append(t.toString());
         }
         return new Status(severity, PluginActivator.PLUGIN_ID, logMsg.toString(), t);
     }
