@@ -122,35 +122,6 @@ public class WebPageIndexer {
             
             String normalizedUrl = normalizeUrl(info.url);
 
-            // If page was already indexed today, do not index again.
-            boolean alreadyIndexedToday = (info.html == null || info.html.isEmpty());
-            
-            if (!alreadyIndexedToday) {
-                LocationInfo currLocationInfo = locationsDatabase.getLocationInfo(normalizedUrl);
-                if (currLocationInfo != null) {
-                    Calendar lastVisitCal = GregorianCalendar.getInstance();
-                    lastVisitCal.setTimeInMillis(currLocationInfo.lastVisitTime);
-                    Calendar currTimeCal = GregorianCalendar.getInstance();
-
-                    if (lastVisitCal.get(Calendar.YEAR) == currTimeCal.get(Calendar.YEAR) && 
-                            lastVisitCal.get(Calendar.MONTH) == currTimeCal.get(Calendar.MONTH) &&
-                            lastVisitCal.get(Calendar.DATE) == currTimeCal.get(Calendar.DATE)) {
-                        alreadyIndexedToday = true;
-                    }
-                }
-            }
-            
-            if (alreadyIndexedToday) {
-                // Still need to record the additional visit(s).
-                LocationInfo updated = locationsDatabase.updateLocationInfo(normalizedUrl, info.visitTimes, null, null, now);
-                // Only record non-batch updates in the study data log
-                if (info.visitTimes == null || info.visitTimes.isEmpty()) {
-                    collector.logEvent(new StudyDataEvent(now, StudyEventType.BROWSER_VISIT, updated, 
-                            updated.getFrecencyBoost(now)));
-                }
-                return false;
-            }
-            
             // make a new, empty document
             Document doc = new Document();
     
