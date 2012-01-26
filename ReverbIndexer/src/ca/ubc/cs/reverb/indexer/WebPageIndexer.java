@@ -180,8 +180,6 @@ public class WebPageIndexer {
             // URL, if present:
             indexWriter.updateDocument(new Term(URL_FIELD_NAME, normalizedUrl), doc);
             
-            // Ensure that the locations database is only updated if the page was indexed successfully 
-            // (since a row in the locations database can prevent indexing for up to a day).
             // Rare interleavings of commitChanges, deleteLocation, and indexPage
             // could still result in a page being absent from the index, but not indexable for up to a day.
             // We accept this risk to avoid the performance hit of synchronizing these three
