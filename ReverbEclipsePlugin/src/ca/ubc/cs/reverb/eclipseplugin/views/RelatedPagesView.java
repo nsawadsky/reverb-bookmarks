@@ -243,7 +243,7 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
     private Action createUploadLogsAction() {
         Action uploadLogsAction = new Action() {
             public void run() {
-                Job job = new Job("Uploading logs") {
+                Job job = new Job("Uploading Reverb logs") {
                     @Override
                     protected IStatus run(IProgressMonitor arg0) {
                         try {
