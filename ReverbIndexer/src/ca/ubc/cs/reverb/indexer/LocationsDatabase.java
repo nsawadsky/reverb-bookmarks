@@ -19,9 +19,6 @@ import java.util.Map;
  * public accessors of this class (and by the fact that there should only ever be one instance of the indexer process).
  */
 public class LocationsDatabase {
-    private static final long VISIT_HALF_LIFE_MSECS = 6 * 30 * 24 * 60 * 60 * 1000L;
-    public static final float FRECENCY_DECAY = (float)Math.log(0.5) / VISIT_HALF_LIFE_MSECS;
-
     private static final String JDBC_SQLITE = "jdbc:sqlite:";
     
     private IndexerConfig config;
@@ -118,15 +115,15 @@ public class LocationsDatabase {
         }
     }
     
-    public synchronized Date getLastVisitDate(String url) throws IndexerException {
+    public synchronized Long getLastVisitTime(String url) throws IndexerException {
         try {
             Statement stmt = connection.createStatement();
     
             String query = "SELECT last_visit_time FROM locations WHERE url = '" + escapeForSQL(url) + "'";
             ResultSet rs = stmt.executeQuery(query);
             if (rs.next()) {
-                long lastVisitTime = rs.getLong(1);
-                return new Date(lastVisitTime);
+                Long lastVisitTime = rs.getLong(1);
+                return lastVisitTime;
             }
             return null;
         } catch (SQLException e) {
@@ -171,8 +168,7 @@ public class LocationsDatabase {
                 visitCount = rs.getInt(3);
                 frecencyBoost = rs.getFloat(4);
                 
-                long timeDelta = lastVisitTime - oldLastVisitTime;
-                frecencyBoost = frecencyBoost * (float)Math.exp(FRECENCY_DECAY * timeDelta);
+                frecencyBoost = LocationInfo.adjustFrecencyBoost(frecencyBoost, oldLastVisitTime, lastVisitTime);
                 
                 prevIsJavadoc = (rs.getInt(5) != 0);
                 prevIsCodeRelated = (rs.getInt(6) != 0);
@@ -188,7 +184,7 @@ public class LocationsDatabase {
 
             visitCount += visitTimes.size();
             for (Long visitTime: visitTimes) {
-                frecencyBoost += (float)Math.exp(FRECENCY_DECAY * (lastVisitTime - visitTime));
+                frecencyBoost += LocationInfo.adjustFrecencyBoost(1.0F, visitTime, lastVisitTime);
             }
             
             StringBuilder update = new StringBuilder("INSERT OR REPLACE INTO locations (id, url, last_visit_time, visit_count, frecency_boost, is_javadoc, is_code_related) VALUES " +

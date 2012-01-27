@@ -118,8 +118,6 @@ public class WebPageIndexer {
      */
     public boolean indexPage(UpdatePageInfoRequest info) throws IndexerException {
         try {
-            long now = new Date().getTime();
-            
             String normalizedUrl = normalizeUrl(info.url);
 
             // make a new, empty document
@@ -179,6 +177,8 @@ public class WebPageIndexer {
             // we use updateDocument instead to replace the old one matching the exact 
             // URL, if present:
             indexWriter.updateDocument(new Term(URL_FIELD_NAME, normalizedUrl), doc);
+            
+            long now = new Date().getTime();
             
             // Rare interleavings of commitChanges, deleteLocation, and indexPage
             // could still result in a page being absent from the index, but not indexable for up to a day.
