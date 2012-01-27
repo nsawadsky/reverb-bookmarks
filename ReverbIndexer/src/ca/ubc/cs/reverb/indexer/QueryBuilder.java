@@ -126,10 +126,11 @@ public class QueryBuilder {
                     } else {
                         throw new IndexerException("Code element member name not selective enough to be used on its own");
                     }
+                } else {
+                    QueryElement queryElement = getTypeQueryElement(codeElement);
+                    queryElement.addOptionalQuery(codeElement.memberName, codeElement.memberName);
+                    addToQueryElements(queryElement);
                 }
-                QueryElement queryElement = getTypeQueryElement(codeElement);
-                queryElement.addOptionalQuery(codeElement.memberName, codeElement.memberName);
-                addToQueryElements(queryElement);
                 break;
             }
             case STATIC_FIELD_REF:

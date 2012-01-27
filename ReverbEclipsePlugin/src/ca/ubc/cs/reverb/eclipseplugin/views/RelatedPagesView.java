@@ -298,17 +298,17 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
                 if (structured.getFirstElement() instanceof Location) {
                     Location location = (Location)structured.getFirstElement();
                     try {
-                        long resultGenTimestamp = 0;
-                        if (contentProvider.getQueryReply() != null) {
-                            resultGenTimestamp = contentProvider.getQueryReply().timestamp;
-                        }
-                        EditorMonitor.getDefault().getIndexerConnection().sendRequestAsync(
-                                new LogClickRequest(location, resultGenTimestamp), null, null);
                         Desktop.getDesktop().browse(new URI(location.url));
                     } catch (Exception e) {
                         getLogger().logError(
                                 "Exception opening browser on '" + location.url + "'", e);
                     }
+                    long resultGenTimestamp = 0;
+                    if (contentProvider.getQueryReply() != null) {
+                        resultGenTimestamp = contentProvider.getQueryReply().timestamp;
+                    }
+                    EditorMonitor.getDefault().getIndexerConnection().sendRequestAsync(
+                            new LogClickRequest(location, resultGenTimestamp), null, null);
                 }
             }
         };
