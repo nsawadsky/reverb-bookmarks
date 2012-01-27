@@ -1,10 +1,12 @@
-package ca.ubc.cs.reverb.indexer;
+package ca.ubc.cs.reverb.indexer.study;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class StudyDataEvent {
-    private final static SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
+import ca.ubc.cs.reverb.indexer.LocationInfo;
+
+public abstract class StudyDataEvent {
+    private final static String DATE_FORMAT_STRING = "yyyy-MM-dd'T'HH:mm:ss.SSS";
     
     public StudyDataEvent(long timestamp, StudyEventType eventType, LocationInfo info, float frecencyBoost) {
         this.timestamp = timestamp;
@@ -28,13 +30,18 @@ public class StudyDataEvent {
     public boolean isJavadoc;
     public boolean isCodeRelated;
     
+    public static SimpleDateFormat getDateFormat() {
+        return new SimpleDateFormat(DATE_FORMAT_STRING);
+    }
+    
     public String getLogLine() {
-        return DATE_FORMAT.format(new Date(timestamp)) + 
+        SimpleDateFormat dateFormat = getDateFormat();
+        return dateFormat.format(new Date(timestamp)) + 
                 ", " + eventType.getShortName() + 
                 ", " + locationId + 
                 ", " + (isJavadoc ? 1 : 0) +
                 ", " + (isCodeRelated ? 1 : 0) +
-                ", " + DATE_FORMAT.format(new Date(lastVisitTime)) +
+                ", " + dateFormat.format(new Date(lastVisitTime)) +
                 ", " + visitCount + 
                 ", " + String.format("%.3f", storedFrecencyBoost) + 
                 ", " + String.format("%.3f", frecencyBoost);

@@ -172,7 +172,9 @@ public class IndexerConnection implements Runnable {
     
     public void sendRequestAsync(IndexerMessage msg, IndexerConnectionCallback callback, Object clientInfo) {
         Long requestId = getNextRequestId();
-        putCallbackInfo(requestId, new CallbackInfo(callback, clientInfo));
+        if (callback != null) {
+            putCallbackInfo(requestId, new CallbackInfo(callback, clientInfo));
+        }
         
         try {
             IndexerMessageEnvelope envelope = new IndexerMessageEnvelope(requestId.toString(), msg);

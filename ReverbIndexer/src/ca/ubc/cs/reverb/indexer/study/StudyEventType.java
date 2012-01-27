@@ -1,4 +1,4 @@
-package ca.ubc.cs.reverb.indexer;
+package ca.ubc.cs.reverb.indexer.study;
 
 public enum StudyEventType {
     /**

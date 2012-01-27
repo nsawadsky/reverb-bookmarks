@@ -31,6 +31,8 @@ import org.jsoup.select.Elements;
 
 import ca.ubc.cs.reverb.indexer.messages.DeleteLocationRequest;
 import ca.ubc.cs.reverb.indexer.messages.UpdatePageInfoRequest;
+import ca.ubc.cs.reverb.indexer.study.BrowserVisitEvent;
+import ca.ubc.cs.reverb.indexer.study.StudyDataCollector;
 
 /**
  * This class is thread-safe, because of the thread-safety of IndexerConfig, LocationsDatabase 
@@ -187,7 +189,7 @@ public class WebPageIndexer {
             LocationInfo updated = locationsDatabase.updateLocationInfo(normalizedUrl, info.visitTimes, isJavadoc, isCodeRelated, now);
             // Only record non-batch updates in the study data log
             if (info.visitTimes == null || info.visitTimes.isEmpty()) {
-                collector.logEvent(new StudyDataEvent(now, StudyEventType.BROWSER_VISIT, updated,
+                collector.logEvent(new BrowserVisitEvent(now, updated,
                         updated.getFrecencyBoost(now)));
             }
 
