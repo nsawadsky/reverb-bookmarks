@@ -111,6 +111,15 @@ public class WebPageSearcher {
             hitInfos = hitInfos.subList(0, MAX_RESULTS);
         }
 
+        if (collector != null) {
+            // Log the recommendations about to be sent.
+            for (HitInfo info: hitInfos) {
+                collector.logEvent(new RecommendationEvent(
+                        now, info.hit.locationInfo, info.frecencyBoost, info.combinedScore,
+                        info.getOverallScore()));
+            }
+        }
+        
         // Group results with the query that gave them the highest score.  Ensure that the resulting
         // list of MergedQueryResults is sorted according to the highest-scoring contained result.
         List<MergedQueryResult> mergedResults = new ArrayList<MergedQueryResult>();
@@ -151,17 +160,6 @@ public class WebPageSearcher {
         // Sort hit info lists for merged results.
         for (MergedQueryResult mergedResult: nextMergedResults) {
             sortHitInfoList(mergedResult.hits);
-        }
-        
-        if (collector != null) {
-            // Log the recommendations about to be sent.
-            for (MergedQueryResult mergedResult: nextMergedResults) {
-                for (HitInfo info: mergedResult.hits) {
-                    collector.logEvent(new RecommendationEvent(
-                            now, info.hit.locationInfo, info.frecencyBoost, info.combinedScore,
-                            info.getOverallScore()));
-                }
-            }
         }
         
         // Create the result structure to be sent to the client.

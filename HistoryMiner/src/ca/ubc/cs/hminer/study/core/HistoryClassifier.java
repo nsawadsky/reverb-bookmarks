@@ -316,18 +316,16 @@ public class HistoryClassifier {
             long startTimeMsecs = System.currentTimeMillis();
             
             InputStream inputStream = null;
-            HttpGet httpGet = null;
             ByteArrayOutputStream page = null;
-            HttpEntity responseEntity = null;
             try {
                 if (location.url.startsWith("file:")) {
                     inputStream = new FileInputStream(new File(new URI(location.url)));
                 } else {
-                    httpGet = new HttpGet(location.url);
+                    HttpGet httpGet = new HttpGet(location.url);
                     httpGet.setHeader("User-Agent", FIREFOX_USER_AGENT);
                     
                     HttpResponse response = httpClient.execute(httpGet);
-                    responseEntity = response.getEntity();
+                    HttpEntity responseEntity = response.getEntity();
                     inputStream = responseEntity.getContent();
                     Header contentType = responseEntity.getContentType();
                     if (contentType == null || contentType.getValue() == null) {
@@ -358,22 +356,11 @@ public class HistoryClassifier {
                     }
                 }
                 
-                if (responseEntity != null) {
-                    // Ensures input stream is closed and connection is released.
-                    EntityUtils.consume(responseEntity);
-                }
-            } catch (Exception e) {
-                if (httpGet != null) {
-                    // Recommended cleanup for HTTP request in case of exception.
-                    httpGet.abort();
-                }
-                throw e;
             } finally {
-                // Need this for the case where input stream is associated with a file.
                 if (inputStream != null) {
-                    try {
+                    try { 
                         inputStream.close();
-                    } catch (Exception e) { }
+                    } catch (IOException e) { }
                 }
             }
             

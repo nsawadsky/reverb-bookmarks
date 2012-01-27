@@ -25,6 +25,7 @@ import org.apache.http.entity.mime.MultipartEntity;
 import org.apache.http.entity.mime.content.FileBody;
 import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.util.EntityUtils;
 import org.apache.log4j.Logger;
 
 public class StudyDataCollector implements Runnable {
@@ -137,6 +138,7 @@ public class StudyDataCollector implements Runnable {
         
                         HttpResponse response = httpClient.execute(httpPost);
                         StatusLine line = response.getStatusLine();
+                        EntityUtils.consume(response.getEntity());
                         if (line.getStatusCode() == HttpStatus.SC_OK) {
                             logFile.delete();
                         } else {
