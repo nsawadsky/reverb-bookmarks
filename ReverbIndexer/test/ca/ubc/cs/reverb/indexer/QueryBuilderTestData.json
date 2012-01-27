@@ -12,6 +12,16 @@
       "queryString" : "(+MyclassdeclnopackageNores)",
       "queryClientInfo" : "MyclassdeclnopackageNores"
     } ],
+    
+    "testTypeDeclRefErrorElements": [ {
+	  "codeElement" : {
+	    "elementType" : "TYPE_DECL",
+	    "packageName" : null,
+	    "className" : "Myclassdeclnopackage",
+	    "memberName" : null
+	  },
+	  "errorMessage" : "ca.ubc.cs.reverb.indexer.IndexerException: Code element class name not selective enough to be used without package name"
+	} ],
   
     "testMethodDeclCall": [ {
       "queryString" : "(+(mypackage.Myclass OR (mypackage AND Myclass)) Myclass mymethoddecl mymethodcall)",
@@ -23,7 +33,17 @@
       "queryString" : "(+mymethodcallNores)",
       "queryClientInfo" : "mymethodcallNores"
     } ],
-  
+    
+    "testMethodDeclCallErrorElements": [ {
+	  "codeElement" : {
+	    "elementType" : "METHOD_CALL",
+	    "packageName" : null,
+	    "className" : null,
+	    "memberName" : "mymethodcall"
+	  },
+	  "errorMessage" : "ca.ubc.cs.reverb.indexer.IndexerException: Code element member name not selective enough to be used on its own"
+	} ],
+    
     "testStaticFieldRef": [ {
       "queryString" : "(+(mypackage.Myclass OR (mypackage AND Myclass)) Myclass mymethodcall MY_FIELD_REF) OR (+Myclass.mymethodcall) OR (+Myclass.MY_FIELD_REF)",
       "queryClientInfo" : "Myclass mymethodcall"

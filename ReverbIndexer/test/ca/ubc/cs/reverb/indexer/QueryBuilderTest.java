@@ -50,6 +50,10 @@ public class QueryBuilderTest {
         List<IndexerQuery> result = builder.getQueries();
         JsonNode expected = getExpectedResult("testTypeDeclRef");
         assertEquals("formatted actual: " + getJsonString(result), expected, getJsonNode(result));
+
+        List<CodeElementError> errorElements = builder.getErrorElements();
+        JsonNode expectedErrorElements = getExpectedResult("testTypeDeclRefErrorElements");
+        assertEquals("formatted actual: " + getJsonString(errorElements), expectedErrorElements, getJsonNode(errorElements));
     }
 
     @Test
@@ -65,6 +69,10 @@ public class QueryBuilderTest {
         List<IndexerQuery> result = builder.getQueries();
         JsonNode expected = getExpectedResult("testMethodDeclCall");
         assertEquals("formatted actual: " + getJsonString(result), expected, getJsonNode(result));
+        
+        List<CodeElementError> errorElements = builder.getErrorElements();
+        JsonNode expectedErrorElements = getExpectedResult("testMethodDeclCallErrorElements");
+        assertEquals("formatted actual: " + getJsonString(errorElements), expectedErrorElements, getJsonNode(errorElements));
     }
 
     @Test
@@ -78,6 +86,7 @@ public class QueryBuilderTest {
         List<IndexerQuery> result = builder.getQueries();
         JsonNode expected = getExpectedResult("testStaticFieldRef");
         assertEquals("formatted actual: " + getJsonString(result), expected, getJsonNode(result));
+        assertTrue(builder.getErrorElements().isEmpty());
     }
 
     @Test
