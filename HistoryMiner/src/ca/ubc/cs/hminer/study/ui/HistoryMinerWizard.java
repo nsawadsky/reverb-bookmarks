@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.StatusLine;
@@ -18,6 +19,7 @@ import org.apache.http.entity.mime.MultipartEntity;
 import org.apache.http.entity.mime.content.FileBody;
 import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.util.EntityUtils;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.util.DefaultPrettyPrinter;
@@ -158,6 +160,7 @@ public class HistoryMinerWizard extends Wizard implements IPageChangingListener,
 
                     HttpResponse response = httpClient.execute(httpPost);
                     StatusLine line = response.getStatusLine();
+                    EntityUtils.consume(response.getEntity());
                     if (line.getStatusCode() != HttpStatus.SC_OK) {
                         if (line.getStatusCode() == HttpStatus.SC_BAD_REQUEST) {
                             invalidParticipantId = true;
