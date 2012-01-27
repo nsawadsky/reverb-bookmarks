@@ -1,4 +1,4 @@
-package ca.ubc.cs.reverb.indexer;
+package ca.ubc.cs.reverb.indexer.study;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -27,6 +27,9 @@ import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.apache.log4j.Logger;
+
+import ca.ubc.cs.reverb.indexer.IndexerConfig;
+import ca.ubc.cs.reverb.indexer.IndexerException;
 
 public class StudyDataCollector implements Runnable {
     private static Logger log = Logger.getLogger(StudyDataCollector.class);

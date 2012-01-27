@@ -27,6 +27,7 @@ import ca.ubc.cs.reverb.indexer.messages.CodeQueryResult;
 import ca.ubc.cs.reverb.indexer.messages.DeleteLocationRequest;
 import ca.ubc.cs.reverb.indexer.messages.IndexerMessage;
 import ca.ubc.cs.reverb.indexer.messages.Location;
+import ca.ubc.cs.reverb.indexer.messages.LogClickRequest;
 import ca.ubc.cs.reverb.indexer.messages.UploadLogsReply;
 import ca.ubc.cs.reverb.indexer.messages.UploadLogsRequest;
 
@@ -47,6 +48,10 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
         
         public void setQueryReply(CodeQueryReply reply) {
             this.codeQueryReply = reply;
+        }
+        
+        public CodeQueryReply getQueryReply() {
+            return this.codeQueryReply;
         }
         
         public void removeLocation(Location location) {
@@ -293,6 +298,12 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
                 if (structured.getFirstElement() instanceof Location) {
                     Location location = (Location)structured.getFirstElement();
                     try {
+                        long resultGenTimestamp = 0;
+                        if (contentProvider.getQueryReply() != null) {
+                            resultGenTimestamp = contentProvider.getQueryReply().timestamp;
+                        }
+                        EditorMonitor.getDefault().getIndexerConnection().sendRequestAsync(
+                                new LogClickRequest(location, resultGenTimestamp), null, null);
                         Desktop.getDesktop().browse(new URI(location.url));
                     } catch (Exception e) {
                         getLogger().logError(

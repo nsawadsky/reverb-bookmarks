@@ -26,6 +26,8 @@ import ca.ubc.cs.reverb.indexer.messages.BatchQueryReply;
 import ca.ubc.cs.reverb.indexer.messages.IndexerQuery;
 import ca.ubc.cs.reverb.indexer.messages.Location;
 import ca.ubc.cs.reverb.indexer.messages.QueryResult;
+import ca.ubc.cs.reverb.indexer.study.RecommendationEvent;
+import ca.ubc.cs.reverb.indexer.study.StudyDataCollector;
 
 /**
  * WebPageSearcher instances are not shared across threads, since my understanding from the docs is that
@@ -163,7 +165,9 @@ public class WebPageSearcher {
         }
         
         // Create the result structure to be sent to the client.
-        BatchQueryReply result = new BatchQueryReply();
+        // It is important for data analysis purposes that the 'now' value used here be 
+        // the same as the 'now' value used above when logging the recommendations.
+        BatchQueryReply result = new BatchQueryReply(now);
         for (MergedQueryResult mergedResult: nextMergedResults) {
             result.queryResults.add(new QueryResult(
                     mergedResult.queries, getLocationList(mergedResult.hits)));

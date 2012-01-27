@@ -2,6 +2,7 @@ package ca.ubc.cs.reverb.indexer;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import org.codehaus.jackson.map.ObjectMapper;
@@ -20,9 +21,13 @@ import ca.ubc.cs.reverb.indexer.messages.DeleteLocationReply;
 import ca.ubc.cs.reverb.indexer.messages.IndexerMessageEnvelope;
 import ca.ubc.cs.reverb.indexer.messages.IndexerQuery;
 import ca.ubc.cs.reverb.indexer.messages.IndexerReply;
+import ca.ubc.cs.reverb.indexer.messages.LogClickReply;
+import ca.ubc.cs.reverb.indexer.messages.LogClickRequest;
 import ca.ubc.cs.reverb.indexer.messages.QueryResult;
 import ca.ubc.cs.reverb.indexer.messages.UploadLogsReply;
 import ca.ubc.cs.reverb.indexer.messages.UploadLogsRequest;
+import ca.ubc.cs.reverb.indexer.study.RecommendationClickEvent;
+import ca.ubc.cs.reverb.indexer.study.StudyDataCollector;
 
 
 public class QueryPipeListener implements Runnable {
@@ -113,6 +118,8 @@ public class QueryPipeListener implements Runnable {
                             handleCodeQueryRequest(envelope.clientRequestId, (CodeQueryRequest)envelope.message);
                         } else if (envelope.message instanceof UploadLogsRequest) {
                             handleUploadLogsRequest(envelope.clientRequestId, (UploadLogsRequest)envelope.message);
+                        } else if (envelope.message instanceof LogClickRequest) {
+                            handleLogClickRequest(envelope.clientRequestId, (LogClickRequest)envelope.message);
                         } else {
                             throw new IndexerException("Unexpected message content: " + envelope.message.getClass());
                         }
@@ -126,6 +133,17 @@ public class QueryPipeListener implements Runnable {
             } finally {
                 pipe.close();
             }
+        }
+        
+        private void handleLogClickRequest(String clientRequestId, LogClickRequest request) throws IndexerException {
+            LocationInfo info = locationsDatabase.getLocationInfo(request.location.url);
+            if (info != null) {
+                RecommendationClickEvent event = new RecommendationClickEvent(new Date().getTime(), 
+                        info, request.location.frecencyBoost, request.location.luceneScore, 
+                        request.location.overallScore, request.resultGenTimestamp);
+                collector.logEvent(event);
+            }
+            sendReply(clientRequestId, new LogClickReply());
         }
         
         private void handleUploadLogsRequest(String clientRequestId, UploadLogsRequest request) throws IndexerException {
@@ -157,7 +175,7 @@ public class QueryPipeListener implements Runnable {
                 builder.buildQueries();
                 BatchQueryReply batchQueryReply = searcher.performSearch(
                         builder.getQueries());
-                codeQueryReply = new CodeQueryReply();
+                codeQueryReply = new CodeQueryReply(batchQueryReply.timestamp);
                 codeQueryReply.errorElements = builder.getErrorElements();
                 for (QueryResult result: batchQueryReply.queryResults) {
                     List<String> allKeywords = new ArrayList<String>();

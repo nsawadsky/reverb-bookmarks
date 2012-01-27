@@ -1,4 +1,6 @@
-package ca.ubc.cs.reverb.indexer;
+package ca.ubc.cs.reverb.indexer.study;
+
+import ca.ubc.cs.reverb.indexer.LocationInfo;
 
 public class RecommendationEvent extends StudyDataEvent {
 

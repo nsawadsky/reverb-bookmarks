@@ -18,6 +18,7 @@ import ca.ubc.cs.reverb.indexer.messages.BatchQueryReply;
 import ca.ubc.cs.reverb.indexer.messages.IndexerQuery;
 import ca.ubc.cs.reverb.indexer.messages.Location;
 import ca.ubc.cs.reverb.indexer.messages.QueryResult;
+import ca.ubc.cs.reverb.indexer.study.StudyDataCollector;
 
 public class IndexerService {
     private static Logger log = Logger.getLogger(IndexerService.class);
