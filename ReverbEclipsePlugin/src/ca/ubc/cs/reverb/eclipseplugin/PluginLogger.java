@@ -1,8 +1,5 @@
 package ca.ubc.cs.reverb.eclipseplugin;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-
 import org.eclipse.core.runtime.ILog;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;

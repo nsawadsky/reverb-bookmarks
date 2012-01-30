@@ -19,6 +19,7 @@ import org.eclipse.swt.SWT;
 
 import ca.ubc.cs.reverb.eclipseplugin.EditorMonitor;
 import ca.ubc.cs.reverb.eclipseplugin.EditorMonitorListener;
+import ca.ubc.cs.reverb.eclipseplugin.IndexerConnection;
 import ca.ubc.cs.reverb.eclipseplugin.IndexerConnectionCallback;
 import ca.ubc.cs.reverb.eclipseplugin.PluginActivator;
 import ca.ubc.cs.reverb.eclipseplugin.PluginLogger;
@@ -40,6 +41,9 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
     
     private TreeViewer viewer;
     private ViewContentProvider contentProvider;
+    private PluginLogger logger;
+    private EditorMonitor editorMonitor;
+    private IndexerConnection indexerConnection;
 
     class ViewContentProvider implements IStructuredContentProvider, 
             ITreeContentProvider {
@@ -157,6 +161,10 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
      * to create the viewer and initialize it.
      */
     public void createPartControl(Composite parent){
+        this.logger = PluginActivator.getDefault().getLogger();
+        this.editorMonitor = PluginActivator.getDefault().getEditorMonitor();
+        this.indexerConnection = PluginActivator.getDefault().getIndexerConnection();
+        
         contentProvider = new ViewContentProvider();
         viewer = new TreeViewer(parent, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL);
         viewer.setContentProvider(contentProvider);
@@ -216,13 +224,13 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
         IToolBarManager toolbarManager = bars.getToolBarManager();
         toolbarManager.add(updateViewAction);
 
-        EditorMonitor.getDefault().start(getSite().getPage());
-        EditorMonitor.getDefault().addListener(this);
-        EditorMonitor.getDefault().requestRefresh(false);
+        editorMonitor.start(getSite().getPage());
+        editorMonitor.addListener(this);
+        editorMonitor.requestRefresh(false);
    }
 
     public void updateView() {
-        EditorMonitor.getDefault().requestRefresh(true);
+        editorMonitor.requestRefresh(true);
     }
     
     /**
@@ -234,8 +242,8 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
     
     @Override
     public void dispose() {
+        editorMonitor.removeListener(this);
         super.dispose();
-        EditorMonitor.getDefault().removeListener(this);
     }
     
     @Override 
@@ -245,6 +253,10 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
         viewer.expandAll();
     }
 
+    @Override
+    public void onInteractionEvent() {
+    }
+
     private Action createUploadLogsAction() {
         Action uploadLogsAction = new Action() {
             public void run() {
@@ -252,17 +264,17 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
                     @Override
                     protected IStatus run(IProgressMonitor arg0) {
                         try {
-                            UploadLogsReply reply = EditorMonitor.getDefault().getIndexerConnection().sendUploadLogsRequest(
+                            UploadLogsReply reply = indexerConnection.sendUploadLogsRequest(
                                     new UploadLogsRequest(), 60000);
                             if (reply.errorOccurred) {
-                                IStatus status = getLogger().createStatus(IStatus.ERROR, "Error uploading logs: " + reply.errorMessage, null);
-                                getLogger().log(status);
+                                IStatus status = logger.createStatus(IStatus.ERROR, "Error uploading logs: " + reply.errorMessage, null);
+                                logger.log(status);
                                 return status;
                             }
                             return Status.OK_STATUS;
                         } catch (Exception e) {
-                            IStatus status = getLogger().createStatus(IStatus.ERROR, "Error sending upload logs request", e);
-                            getLogger().log(status);
+                            IStatus status = logger.createStatus(IStatus.ERROR, "Error sending upload logs request", e);
+                            logger.log(status);
                             return status;
                         }
                     }
@@ -281,7 +293,7 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
     private Action createUpdateViewAction() {
         Action updateViewAction = new Action() {
             public void run() {
-                EditorMonitor.getDefault().requestRefresh(true);
+                editorMonitor.requestRefresh(true);
             }
         };
         updateViewAction.setText("Update Links");
@@ -300,15 +312,15 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
                     try {
                         Desktop.getDesktop().browse(new URI(location.url));
                     } catch (Exception e) {
-                        getLogger().logError(
+                        logger.logError(
                                 "Exception opening browser on '" + location.url + "'", e);
                     }
                     long resultGenTimestamp = 0;
                     if (contentProvider.getQueryReply() != null) {
                         resultGenTimestamp = contentProvider.getQueryReply().timestamp;
                     }
-                    EditorMonitor.getDefault().getIndexerConnection().sendRequestAsync(
-                            new LogClickRequest(location, resultGenTimestamp), null, null);
+                    indexerConnection.sendRequestAsync(
+                            new LogClickRequest(location), null, null);
                 }
             }
         };
@@ -327,7 +339,7 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
                 IStructuredSelection structured = (IStructuredSelection)viewer.getSelection();
                 if (structured.getFirstElement() instanceof Location) {
                     final Location location = (Location)structured.getFirstElement();
-                    EditorMonitor.getDefault().getIndexerConnection().sendRequestAsync(
+                    indexerConnection.sendRequestAsync(
                             new DeleteLocationRequest(location.url), new IndexerConnectionCallback() {
 
                                 @Override
@@ -370,10 +382,6 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
                 viewer.getControl().getShell(),
                 "Reverb",
                 message);
-    }
-
-    private PluginLogger getLogger() {
-        return PluginActivator.getDefault().getLogger();
     }
 
 }
