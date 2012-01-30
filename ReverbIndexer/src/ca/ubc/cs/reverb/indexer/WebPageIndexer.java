@@ -32,6 +32,7 @@ import org.jsoup.select.Elements;
 import ca.ubc.cs.reverb.indexer.messages.DeleteLocationRequest;
 import ca.ubc.cs.reverb.indexer.messages.UpdatePageInfoRequest;
 import ca.ubc.cs.reverb.indexer.study.BrowserVisitEvent;
+import ca.ubc.cs.reverb.indexer.study.DeleteLocationEvent;
 import ca.ubc.cs.reverb.indexer.study.StudyDataCollector;
 
 /**
@@ -101,10 +102,13 @@ public class WebPageIndexer {
             // could still result in a page being absent from the index, but not indexable for up to a day.
             // We accept this risk to avoid the performance hit of synchronizing these three
             // methods (especially commitChanges).
-            locationsDatabase.deleteLocationInfo(request.url);
+            LocationInfo deletedInfo = locationsDatabase.deleteLocationInfo(request.url);
             
             indexWriter.deleteDocuments(new Term(URL_FIELD_NAME, request.url));
             indexWriter.commit();
+            
+            long now = new Date().getTime();
+            collector.logEvent(new DeleteLocationEvent(now, deletedInfo, deletedInfo.getFrecencyBoost(now)));
         } catch (Exception e) {
             throw new IndexerException("Exception deleting document: " + e, e);
         }

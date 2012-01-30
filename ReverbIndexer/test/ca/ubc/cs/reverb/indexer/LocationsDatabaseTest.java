@@ -80,8 +80,10 @@ public class LocationsDatabaseTest {
         assertEquals(dbInfo2, results.get(testUrl2));
         assertEquals(2, results.size());
         
-        db.deleteLocationInfo(testUrl);
+        LocationInfo deletedInfo = db.deleteLocationInfo(testUrl);
+        assertEquals(dbInfo, deletedInfo);
         assertNull(db.getLocationInfo(testUrl));
+        assertNull(db.deleteLocationInfo(testUrl));
     }
 
 }
