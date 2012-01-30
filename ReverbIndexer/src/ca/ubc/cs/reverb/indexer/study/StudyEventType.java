@@ -14,7 +14,12 @@ public enum StudyEventType {
     /**
      * Click on recommendation in IDE plugin.
      */
-    RECOMMENDATION_CLICK("REC_CLICK");
+    RECOMMENDATION_CLICK("REC_CLICK"),
+    
+    /**
+     * Delete of a location.
+     */
+    DELETE_LOCATION("DELETE");
     
     private String shortName;
     

@@ -81,6 +81,11 @@ public class LocationsDatabase {
         return results;
     }
     
+    /**
+     * Get location info for the specified URL.
+
+     * @return The location info, or null if location not found. 
+     */
     public synchronized LocationInfo getLocationInfo(String url)  throws IndexerException {
         Map<String, LocationInfo> resultMap = getLocationInfos(Arrays.asList(url));
         return resultMap.get(url);
@@ -88,14 +93,21 @@ public class LocationsDatabase {
     
     /**
      * The delete is committed immediately (along with any pending updates).
+     * 
+     * @return The info for the location deleted, or null if location was not found.
      */
-    public synchronized void deleteLocationInfo(String url) throws IndexerException { 
+    public synchronized LocationInfo deleteLocationInfo(String url) throws IndexerException { 
         try {
+            LocationInfo info = getLocationInfo(url);
+            if (info == null) {
+                return null;
+            }
             Statement stmt = connection.createStatement();
             String update = "DELETE FROM locations WHERE (url = '" + escapeForSQL(url) + "')";
             stmt.executeUpdate(update);
             
             connection.commit();
+            return info;
         } catch (SQLException e1) {
             try { 
                 connection.rollback(); 
