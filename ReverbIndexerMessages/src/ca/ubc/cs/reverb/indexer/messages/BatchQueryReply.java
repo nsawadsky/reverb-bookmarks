@@ -8,10 +8,6 @@ public class BatchQueryReply extends IndexerReply {
     public BatchQueryReply() {
     }
     
-    public BatchQueryReply(long timestamp) {
-        this.timestamp = timestamp;
-    }
-    
     public BatchQueryReply(boolean errorOccurred, String errorMessage) {
         super(errorOccurred, errorMessage);
         timestamp = new Date().getTime();
