@@ -140,7 +140,7 @@ public class QueryPipeListener implements Runnable {
             if (info != null) {
                 RecommendationClickEvent event = new RecommendationClickEvent(new Date().getTime(), 
                         info, request.location.frecencyBoost, request.location.luceneScore, 
-                        request.location.overallScore, request.resultGenTimestamp);
+                        request.location.overallScore, request.location.resultGenTimestamp);
                 collector.logEvent(event);
             }
             sendReply(clientRequestId, new LogClickReply());
