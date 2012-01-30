@@ -1,7 +1,13 @@
 package ca.ubc.cs.reverb.eclipseplugin;
 
+import java.io.IOException;
+
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.ui.IWorkbench;
+import org.eclipse.ui.IWorkbenchPage;
+import org.eclipse.ui.IWorkbenchWindow;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.BundleContext;
 
@@ -18,6 +24,12 @@ public class PluginActivator extends AbstractUIPlugin {
 	
 	private PluginLogger logger;
 	
+	private PluginConfig config;
+	
+	private EditorMonitor editorMonitor;
+	
+	private IndexerConnection indexerConnection;
+	
 	private Image searchImage;
 	
 	/**
@@ -32,16 +44,47 @@ public class PluginActivator extends AbstractUIPlugin {
 	 */
 	public void start(BundleContext context) throws Exception {
 		super.start(context);
-		plugin = this;
+
+        config = new PluginConfig();
 		logger = new PluginLogger(getLog());
+		
+        indexerConnection = new IndexerConnection(logger);
+        indexerConnection.start();
+
+		editorMonitor = new EditorMonitor(logger, indexerConnection);
+		
+		final IWorkbench workbench = PlatformUI.getWorkbench();
+		if (workbench == null) {
+		    throw new PluginException("Failed to get workbench during startup");
+		}
+		workbench.getDisplay().asyncExec(new Runnable() {
+            public void run() {
+                IWorkbenchWindow window = workbench.getActiveWorkbenchWindow();
+                if (window == null) {
+                    logger.logError("Failed to get workbench window during startup");
+                    return;
+                }
+                IWorkbenchPage activePage = window.getActivePage();
+                if (activePage == null) {
+                    logger.logError("Failed to get active workbench page during startup");
+                    return;
+                }
+                editorMonitor.start(window.getActivePage());
+            }
+        });
+        
+        plugin = this;
 	}
 
-	/*
+    /*
 	 * (non-Javadoc)
 	 * @see org.eclipse.ui.plugin.AbstractUIPlugin#stop(org.osgi.framework.BundleContext)
 	 */
 	public void stop(BundleContext context) throws Exception {
-		plugin = null;
+        plugin = null;
+	    try {
+	        indexerConnection.stop();
+	    } catch (IOException e) { }
 		super.stop(context);
 	}
 
@@ -69,6 +112,18 @@ public class PluginActivator extends AbstractUIPlugin {
 	    return this.logger;
 	}
 	
+	public PluginConfig getConfig() {
+	    return this.config;
+	}
+	
+	public EditorMonitor getEditorMonitor() {
+	    return this.editorMonitor;
+	}
+	
+	public IndexerConnection getIndexerConnection() {
+	    return this.indexerConnection;
+	}
+	
     public Image getSearchImage() {
         if (searchImage == null) {
             ImageDescriptor descriptor = getImageDescriptor("icons/search.gif");
@@ -78,4 +133,5 @@ public class PluginActivator extends AbstractUIPlugin {
         }
         return searchImage;
     }
+
 }

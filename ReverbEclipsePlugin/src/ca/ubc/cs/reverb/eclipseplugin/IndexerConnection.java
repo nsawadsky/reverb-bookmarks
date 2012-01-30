@@ -35,7 +35,10 @@ public class IndexerConnection implements Runnable {
      */
     private Map<Long, CallbackInfo> callbacks = new HashMap<Long, CallbackInfo>();
     
-    public IndexerConnection() throws IOException {
+    private PluginLogger logger;
+    
+    public IndexerConnection(PluginLogger logger) throws IOException {
+        this.logger = logger;
         pipe = XpNamedPipe.openNamedPipe("reverb-query", true);
     }
     
@@ -92,29 +95,29 @@ public class IndexerConnection implements Runnable {
                     envelope = mapper.readValue(responseData, IndexerMessageEnvelope.class);
                     requestId = Long.parseLong(envelope.clientRequestId);
                 } catch (Exception e) {
-                    getLogger().logError("Error deserializing message from JSON", e);
+                    logger.logError("Error deserializing message from JSON", e);
                 }
                 if (envelope != null) {
                     CallbackInfo callbackInfo = removeCallbackInfo(requestId);
                     if (callbackInfo == null) {
-                        getLogger().logInfo("Callback not found for request ID " + requestId);
+                        logger.logInfo("Callback not found for request ID " + requestId);
                     } else {
                         try {
                             callbackInfo.callback.onIndexerMessage(envelope.message, callbackInfo.clientInfo);
                         } catch (Throwable t) {
-                            getLogger().logError("Callback threw exception", t);
+                            logger.logError("Callback threw exception", t);
                         }
                     }
                 }
             }
         } catch (IOException e) {
             // TODO: Close and reopen pipe?  
-            getLogger().logError("Error reading from pipe", e);
+            logger.logError("Error reading from pipe", e);
             for (CallbackInfo info: removeAllCallbacks()) {
                 try {
                     info.callback.onIndexerError("Error reading from pipe: " + e, e);
                 } catch (Throwable t) {
-                    getLogger().logError("Callback threw exception", t);
+                    logger.logError("Callback threw exception", t);
                 }
             }
         }
@@ -221,10 +224,6 @@ public class IndexerConnection implements Runnable {
         return nextRequestId++;
     }
     
-    private PluginLogger getLogger() {
-        return PluginActivator.getDefault().getLogger();
-    }
-
     private class CallbackInfo {
         IndexerConnectionCallback callback;
         Object clientInfo;

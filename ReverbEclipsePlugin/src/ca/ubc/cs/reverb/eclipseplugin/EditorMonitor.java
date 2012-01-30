@@ -15,6 +15,7 @@ import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.ITextOperationTarget;
 import org.eclipse.jface.text.ITextViewer;
+import org.eclipse.jface.text.IViewportListener;
 import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.KeyListener;
 import org.eclipse.swt.events.MouseEvent;
@@ -31,14 +32,14 @@ import ca.ubc.cs.reverb.indexer.messages.CodeQueryReply;
 import ca.ubc.cs.reverb.indexer.messages.CodeQueryRequest;
 import ca.ubc.cs.reverb.indexer.messages.IndexerQuery;
 
-public class EditorMonitor implements IPartListener, MouseListener, KeyListener {
+public class EditorMonitor implements IPartListener, MouseListener, KeyListener, IViewportListener {
     private final static int REFRESH_DELAY_MSECS = 1000;
     private final static long INVALID_TIME = -1;
     
-    private static EditorMonitor instance = new EditorMonitor();
     private boolean isStarted = false;
     private long lastRequestRefreshTime = INVALID_TIME;
     private IndexerConnection indexerConnection;
+    private PluginLogger logger;
     private IWorkbenchPage workbenchPage;
     
     private ITextViewer lastTextViewer = null;
@@ -55,23 +56,15 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener 
      */
     private Set<IEditorPart> listenedParts = new HashSet<IEditorPart>();
     
-    private EditorMonitor() {
-       
+    public EditorMonitor(PluginLogger logger, IndexerConnection indexerConnection) {
+       this.logger = logger;
+       this.indexerConnection = indexerConnection;
     }
 
-    public static EditorMonitor getDefault() {
-        return instance;
-    }
-    
-    public void start(IWorkbenchPage page) throws PluginException {
+    // TODO: Add a stop() method?
+    public void start(IWorkbenchPage page) {
         if (!isStarted) {
             workbenchPage = page;
-            try {
-                indexerConnection = new IndexerConnection();
-                indexerConnection.start();
-            } catch (IOException e) {
-                throw new PluginException("Failed to create indexer connection: " + e, e);
-            }
     
             workbenchPage.addPartListener(this);
             IWorkbenchPart part = workbenchPage.getActivePart();
@@ -82,10 +75,6 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener 
             }
             isStarted = true;
         }
-    }
-    
-    public IndexerConnection getIndexerConnection() {
-        return indexerConnection;
     }
     
     public void addListener(EditorMonitorListener listener) {
@@ -152,6 +141,10 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener 
         handleNavigationEvent();
     }
 
+    @Override
+    public void viewportChanged(int arg0) {
+    }
+
     public void requestRefresh(boolean immediate) {
         // Ensure that an update will be sent.
         lastTextViewer = null;
@@ -193,7 +186,7 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener 
                             try {
                                 buildAndExecuteQuery(compileUnit, topPosition, bottomPosition);
                             } catch (Exception e) {
-                                getLogger().logError("Error creating/executing query", e);
+                                logger.logError("Error creating/executing query", e);
                             }
                         }
                         
@@ -204,7 +197,7 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener 
                 }
             }
         } catch (Exception e) {
-            getLogger().logError("Error refreshing result list", e);
+            logger.logError("Error refreshing result list", e);
         }
     }
     
@@ -275,6 +268,8 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener 
             return true;
         }
         if (getTextViewer(editorPart) != null && getCompilationUnit(editorPart) != null) {
+            getTextViewer(editorPart).addViewportListener(this);
+
             Control control = (Control)editorPart.getAdapter(Control.class);
             control.addKeyListener(this);
             control.addMouseListener(this);
@@ -286,6 +281,8 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener 
     
     private void stopListening(IEditorPart editorPart) {
         if (isListenedPart(editorPart)) {
+            getTextViewer(editorPart).removeViewportListener(this);
+            
             Control control = (Control)editorPart.getAdapter(Control.class);
             control.removeKeyListener(this);
             control.removeMouseListener(this);
@@ -323,7 +320,7 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener 
             try {
                 listener.onCodeQueryReply(reply);
             } catch (Throwable t) {
-                getLogger().logError("Listener threw exception", t);
+                logger.logError("Listener threw exception", t);
             }
         }
     }
@@ -347,14 +344,9 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener 
     }
     
     private void logQueries(List<IndexerQuery> queries) {
-        PluginLogger log = getLogger();
         for (IndexerQuery query: queries) {
-            log.logInfo("Query display = " + query.queryClientInfo + ", query detail = " + query.queryString);
+            logger.logInfo("Query display = " + query.queryClientInfo + ", query detail = " + query.queryString);
         }
     }
     
-    private PluginLogger getLogger() {
-        return PluginActivator.getDefault().getLogger();
-    }
-
 }
