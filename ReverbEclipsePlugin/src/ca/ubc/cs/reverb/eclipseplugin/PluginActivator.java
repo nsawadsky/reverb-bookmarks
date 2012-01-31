@@ -32,6 +32,8 @@ public class PluginActivator extends AbstractUIPlugin {
 	
 	private Image searchImage;
 	
+	private boolean initComplete = false;
+	
 	/**
 	 * The constructor
 	 */
@@ -48,34 +50,58 @@ public class PluginActivator extends AbstractUIPlugin {
         config = new PluginConfig();
 		logger = new PluginLogger(getLog());
 		
-        indexerConnection = new IndexerConnection(logger);
-        indexerConnection.start();
-
-		editorMonitor = new EditorMonitor(logger, indexerConnection);
-		
-		final IWorkbench workbench = PlatformUI.getWorkbench();
+		IWorkbench workbench = PlatformUI.getWorkbench();
 		if (workbench == null) {
 		    throw new PluginException("Failed to get workbench during startup");
 		}
 		workbench.getDisplay().asyncExec(new Runnable() {
             public void run() {
-                IWorkbenchWindow window = workbench.getActiveWorkbenchWindow();
-                if (window == null) {
-                    logger.logError("Failed to get workbench window during startup");
-                    return;
-                }
-                IWorkbenchPage activePage = window.getActivePage();
-                if (activePage == null) {
-                    logger.logError("Failed to get active workbench page during startup");
-                    return;
-                }
-                editorMonitor.start(window.getActivePage());
+                try {
+                    finishInit();
+                } catch (PluginException e) { }
             }
         });
         
         plugin = this;
 	}
 
+	/** 
+	 * We defer creation of indexerConnection, because it references Jackson JSON 
+	 * classes, whose use of class loading conflicts with OSGi class loading during
+	 * Eclipse startup, resulting in timeout errors in the Eclipse log (most 
+	 * likely caused by classloader deadlocks).
+	 */
+	public void finishInit() throws PluginException {
+	    if (!initComplete) {
+	        try {
+    	        indexerConnection = new IndexerConnection(logger);
+    
+    	        indexerConnection.start();
+
+    	        editorMonitor = new EditorMonitor(logger, indexerConnection);
+                
+                IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
+                if (window == null) {
+                    throw new PluginException("Failed to get workbench window during startup");
+                }
+                IWorkbenchPage activePage = window.getActivePage();
+                if (activePage == null) {
+                    throw new PluginException("Failed to get active workbench page during startup");
+                }
+                editorMonitor.start(window.getActivePage());
+	        } catch (Exception e) { 
+	            String errorMsg = "Error completing plugin initialization"; 
+	            logger.logError(errorMsg, e);
+	            if (e instanceof PluginException) {
+	                throw (PluginException)e;
+	            }
+	            throw new PluginException(errorMsg + ": " + e, e);
+	        } 
+	        
+	        initComplete = true;
+	    }
+	}
+	
     /*
 	 * (non-Javadoc)
 	 * @see org.eclipse.ui.plugin.AbstractUIPlugin#stop(org.osgi.framework.BundleContext)

@@ -37,12 +37,12 @@ public class IndexerConnection implements Runnable {
     
     private PluginLogger logger;
     
-    public IndexerConnection(PluginLogger logger) throws IOException {
+    public IndexerConnection(PluginLogger logger) {
         this.logger = logger;
-        pipe = XpNamedPipe.openNamedPipe("reverb-query", true);
     }
     
-    public void start() {
+    public void start() throws IOException {
+        pipe = XpNamedPipe.openNamedPipe("reverb-query", true);
         new Thread(this).start();
     }
     

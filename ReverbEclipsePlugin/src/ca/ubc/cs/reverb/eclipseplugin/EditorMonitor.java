@@ -36,7 +36,6 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener,
     private final static int REFRESH_DELAY_MSECS = 1000;
     private final static long INVALID_TIME = -1;
     
-    private boolean isStarted = false;
     private long lastRequestRefreshTime = INVALID_TIME;
     private IndexerConnection indexerConnection;
     private PluginLogger logger;
@@ -63,17 +62,14 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener,
 
     // TODO: Add a stop() method?
     public void start(IWorkbenchPage page) {
-        if (!isStarted) {
-            workbenchPage = page;
-    
-            workbenchPage.addPartListener(this);
-            IWorkbenchPart part = workbenchPage.getActivePart();
-            if (part instanceof IEditorPart) {
-                if (listen((IEditorPart)part)) {
-                    handleNavigationEvent();
-                }
+        workbenchPage = page;
+
+        workbenchPage.addPartListener(this);
+        IWorkbenchPart part = workbenchPage.getActivePart();
+        if (part instanceof IEditorPart) {
+            if (listen((IEditorPart)part)) {
+                handleNavigationEvent();
             }
-            isStarted = true;
         }
     }
     

@@ -22,6 +22,7 @@ import ca.ubc.cs.reverb.eclipseplugin.EditorMonitorListener;
 import ca.ubc.cs.reverb.eclipseplugin.IndexerConnection;
 import ca.ubc.cs.reverb.eclipseplugin.IndexerConnectionCallback;
 import ca.ubc.cs.reverb.eclipseplugin.PluginActivator;
+import ca.ubc.cs.reverb.eclipseplugin.PluginException;
 import ca.ubc.cs.reverb.eclipseplugin.PluginLogger;
 import ca.ubc.cs.reverb.indexer.messages.CodeQueryReply;
 import ca.ubc.cs.reverb.indexer.messages.CodeQueryResult;
@@ -152,6 +153,9 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
     }
 
     @Override
+    /**
+     * Note that the active workbench page is not necessarily available when this is called.
+     */
     public void init(IViewSite site) throws PartInitException {
         super.init(site);
     }
@@ -161,6 +165,8 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
      * to create the viewer and initialize it.
      */
     public void createPartControl(Composite parent){
+        PluginActivator.getDefault().finishInit();
+
         this.logger = PluginActivator.getDefault().getLogger();
         this.editorMonitor = PluginActivator.getDefault().getEditorMonitor();
         this.indexerConnection = PluginActivator.getDefault().getIndexerConnection();
@@ -224,7 +230,6 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
         IToolBarManager toolbarManager = bars.getToolBarManager();
         toolbarManager.add(updateViewAction);
 
-        editorMonitor.start(getSite().getPage());
         editorMonitor.addListener(this);
         editorMonitor.requestRefresh(false);
    }

@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: ReverbPlugin
+Bundle-Name: Reverb
 Bundle-SymbolicName: ca.ubc.cs.reverb.eclipseplugin;singleton:=true
 Bundle-Version: 1.0.0.qualifier
 Bundle-Activator: ca.ubc.cs.reverb.eclipseplugin.PluginActivator
