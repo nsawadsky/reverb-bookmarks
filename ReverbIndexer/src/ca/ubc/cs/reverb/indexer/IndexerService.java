@@ -57,7 +57,7 @@ public class IndexerService {
                 queryPipeListener.start();
                 
                 Runtime runtime = Runtime.getRuntime();
-                log.info("Indexer service started, user ID = " + config.getUserId() + ", max memory = " + runtime.maxMemory()/(1024*1024) + " MB");
+                log.info("Indexer service started, user ID = " + config.getUserId() + ", key = " + config.getUserIdKey() + ", max memory = " + runtime.maxMemory()/(1024*1024) + " MB");
             }
         } catch (IndexerException e) {
             log.error("Exception starting service", e);
