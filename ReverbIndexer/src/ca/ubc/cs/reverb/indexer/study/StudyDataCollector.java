@@ -134,6 +134,9 @@ public class StudyDataCollector implements Runnable {
                         StringBody participantId = new StringBody(config.getUserId());
                         requestEntity.addPart("participant", participantId);
                         
+                        StringBody key = new StringBody(config.getUserIdKey());
+                        requestEntity.addPart("key", key);
+
                         FileBody fileInputPart = new FileBody(zipFile);
                         requestEntity.addPart(FILE_INPUT_FIELD_NAME, fileInputPart);
                         

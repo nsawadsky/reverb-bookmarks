@@ -4,8 +4,16 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.UUID;
+
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+
+import org.apache.commons.codec.binary.Base64;
 
 /**
  * Class must be thread-safe.
@@ -22,6 +30,8 @@ public class IndexerConfig {
     private String studyDataLogFolderPath;
     
     private String userId;
+    
+    private String userIdKey;
     
     public IndexerConfig() throws IndexerException {
         String localAppDataPath = System.getenv(LOCAL_APPDATA_ENV_VAR);
@@ -78,7 +88,11 @@ public class IndexerConfig {
         return userId;
     }
     
-    private void initializeUserId() throws IOException, IllegalArgumentException, IndexerException {
+    public String getUserIdKey() {
+        return userIdKey;
+    }
+    
+    private void initializeUserId() throws IOException, IllegalArgumentException, IndexerException, InvalidKeyException, NoSuchAlgorithmException {
         String userIdPath = getUserIdPath();
         File userIdFile = new File(userIdPath);
         if (!userIdFile.exists()) {
@@ -112,6 +126,25 @@ public class IndexerConfig {
             UUID uuid = UUID.fromString(new String(Arrays.copyOfRange(buffer, 0, charsRead)));
             userId = uuid.toString();
         }
+        userIdKey = initializeUserIdKey(userId);
+    }
+    
+    private String initializeUserIdKey(String inputUserId) throws UnsupportedEncodingException, NoSuchAlgorithmException, InvalidKeyException {
+        String className = IndexerConfig.class.getName();
+        String shortName = className.substring(className.lastIndexOf('.')+1);
+        SecretKeySpec keySpec = new SecretKeySpec(
+                shortName.getBytes("UTF-8"), "HmacSHA256");
+
+        Mac mac = Mac.getInstance("HmacSHA256");
+        mac.init(keySpec);
+        byte[] bytes = mac.doFinal(inputUserId.getBytes("UTF-8"));
+
+        String base64 = Base64.encodeBase64String(bytes);
+        if (base64.indexOf('\r') != -1) {
+            // Strip the carriage-return and line-feed characters.
+            base64 = base64.substring(0, base64.indexOf('\r'));
+        }
+        return base64;
     }
     
     private String getUserIdPath() {
