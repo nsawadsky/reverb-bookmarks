@@ -13,7 +13,7 @@ import ca.ubc.cs.reverb.indexer.messages.Location;
 
 /**
  * Currently, this class is only invoked from the UI thread.  This may change in future,
- * however, so its methods are synchronized.
+ * however, so its public methods are synchronized.
  */
 public class StudyActivityMonitor implements EditorMonitorListener {
     private StudyState studyState;
@@ -55,7 +55,7 @@ public class StudyActivityMonitor implements EditorMonitorListener {
         }
     }
 
-    private synchronized void loadStudyState() throws PluginException {
+    private void loadStudyState() throws PluginException {
         try {
             File pluginStateFile = new File(config.getStudyStatePath());
             if (!pluginStateFile.exists()) {
@@ -72,7 +72,7 @@ public class StudyActivityMonitor implements EditorMonitorListener {
         }
     }
     
-    private synchronized void saveStudyState() throws PluginException {
+    private void saveStudyState() throws PluginException {
         JsonGenerator jsonGenerator = null;
         try {
             ObjectMapper mapper = new ObjectMapper();
