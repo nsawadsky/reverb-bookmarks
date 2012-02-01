@@ -12,7 +12,8 @@ import ca.ubc.cs.reverb.indexer.messages.CodeQueryReply;
 import ca.ubc.cs.reverb.indexer.messages.Location;
 
 /**
- * Threading: We assume this is only ever called from the UI thread.
+ * Currently, this class is only invoked from the UI thread.  This may change in future,
+ * however, so its methods are synchronized.
  */
 public class StudyActivityMonitor implements EditorMonitorListener {
     private StudyState studyState;
@@ -31,7 +32,7 @@ public class StudyActivityMonitor implements EditorMonitorListener {
     }
 
     @Override
-    public void onInteractionEvent(long timeMsecs) {
+    public synchronized void onInteractionEvent(long timeMsecs) {
         long currentInterval = timeMsecs / StudyState.ACTIVITY_INTERVAL_MSECS;
         if (currentInterval != studyState.lastActiveInterval) {
             studyState.lastActiveInterval = currentInterval;
@@ -45,7 +46,7 @@ public class StudyActivityMonitor implements EditorMonitorListener {
         
     }
     
-    public void addRecommendationClicked(Location clicked) {
+    public synchronized void addRecommendationClicked(Location clicked) {
         studyState.recommendationsClicked.add(clicked);
         try {
             saveStudyState();
@@ -54,7 +55,7 @@ public class StudyActivityMonitor implements EditorMonitorListener {
         }
     }
 
-    private void loadStudyState() throws PluginException {
+    private synchronized void loadStudyState() throws PluginException {
         try {
             File pluginStateFile = new File(config.getStudyStatePath());
             if (!pluginStateFile.exists()) {
@@ -71,7 +72,7 @@ public class StudyActivityMonitor implements EditorMonitorListener {
         }
     }
     
-    private void saveStudyState() throws PluginException {
+    private synchronized void saveStudyState() throws PluginException {
         JsonGenerator jsonGenerator = null;
         try {
             ObjectMapper mapper = new ObjectMapper();
