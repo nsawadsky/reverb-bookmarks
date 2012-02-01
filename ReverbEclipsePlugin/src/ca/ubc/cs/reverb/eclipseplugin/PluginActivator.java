@@ -28,7 +28,7 @@ public class PluginActivator extends AbstractUIPlugin {
 	
 	private EditorMonitor editorMonitor;
 	
-	private StudyUserInterface studyUserInterface;
+	private StudyActivityMonitor studyActivityMonitor;
 	
 	private IndexerConnection indexerConnection;
 	
@@ -68,7 +68,7 @@ public class PluginActivator extends AbstractUIPlugin {
 	}
 
 	/** 
-	 * We defer creation of indexerConnection and studyUserInterface, because they reference Jackson JSON 
+	 * We defer creation of indexerConnection and studyActivityMonitor, because they reference Jackson JSON 
 	 * classes, whose use of class loading conflicts with OSGi class loading during
 	 * Eclipse startup, resulting in timeout errors in the Eclipse log (most 
 	 * likely caused by classloader deadlocks).
@@ -82,9 +82,9 @@ public class PluginActivator extends AbstractUIPlugin {
 
     	        editorMonitor = new EditorMonitor(logger, indexerConnection);
                 
-    	        studyUserInterface = new StudyUserInterface(config, logger);
+    	        studyActivityMonitor = new StudyActivityMonitor(config, logger);
     	        
-    	        editorMonitor.addListener(studyUserInterface);
+    	        editorMonitor.addListener(studyActivityMonitor);
     	        
                 IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
                 if (window == null) {
@@ -154,6 +154,10 @@ public class PluginActivator extends AbstractUIPlugin {
 	
 	public IndexerConnection getIndexerConnection() {
 	    return this.indexerConnection;
+	}
+	
+	public StudyActivityMonitor getStudyActivityMonitor() {
+	    return this.studyActivityMonitor;
 	}
 	
     public Image getSearchImage() {
