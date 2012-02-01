@@ -24,6 +24,7 @@ import ca.ubc.cs.reverb.eclipseplugin.IndexerConnectionCallback;
 import ca.ubc.cs.reverb.eclipseplugin.PluginActivator;
 import ca.ubc.cs.reverb.eclipseplugin.PluginException;
 import ca.ubc.cs.reverb.eclipseplugin.PluginLogger;
+import ca.ubc.cs.reverb.eclipseplugin.StudyActivityMonitor;
 import ca.ubc.cs.reverb.indexer.messages.CodeQueryReply;
 import ca.ubc.cs.reverb.indexer.messages.CodeQueryResult;
 import ca.ubc.cs.reverb.indexer.messages.DeleteLocationRequest;
@@ -45,6 +46,7 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
     private PluginLogger logger;
     private EditorMonitor editorMonitor;
     private IndexerConnection indexerConnection;
+    private StudyActivityMonitor studyActivityMonitor;
 
     class ViewContentProvider implements IStructuredContentProvider, 
             ITreeContentProvider {
@@ -175,6 +177,7 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
         this.logger = PluginActivator.getDefault().getLogger();
         this.editorMonitor = PluginActivator.getDefault().getEditorMonitor();
         this.indexerConnection = PluginActivator.getDefault().getIndexerConnection();
+        this.studyActivityMonitor = PluginActivator.getDefault().getStudyActivityMonitor();
         
         contentProvider = new ViewContentProvider();
         viewer = new TreeViewer(parent, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL);
@@ -331,6 +334,7 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
                     }
                     indexerConnection.sendRequestAsync(
                             new LogClickRequest(location), null, null);
+                    studyActivityMonitor.addRecommendationClicked(location);
                 }
             }
         };

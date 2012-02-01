@@ -15,6 +15,8 @@ public class PluginConfig {
     
     private String settingsPath;
     
+    private String pluginStatePath;
+    
     private String userId;
     
     public PluginConfig() throws PluginException {
@@ -29,6 +31,13 @@ public class PluginConfig {
         } catch (Exception e) {
             throw new PluginException("Error getting/creating user ID: " + e, e);
         }
+        pluginStatePath = basePath + File.separator + "plugin";
+        File pluginStateDir = new File(pluginStatePath);
+        if (!pluginStateDir.exists()) {
+            if (!pluginStateDir.mkdirs()) {
+                throw new PluginException("Could not create directory '" + pluginStatePath + "'");
+            }
+        }
     }
     
     public String getUserId() {
@@ -36,7 +45,7 @@ public class PluginConfig {
     }
     
     public String getStudyStatePath() {
-        return settingsPath + File.separator + "studystate.txt";
+        return pluginStatePath + File.separator + "studystate.txt";
     }
 
     private void initializeUserId() throws IOException, IllegalArgumentException, PluginException {

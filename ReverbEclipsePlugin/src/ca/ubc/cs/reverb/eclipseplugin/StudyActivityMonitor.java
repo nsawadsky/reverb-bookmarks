@@ -2,7 +2,6 @@ package ca.ubc.cs.reverb.eclipseplugin;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 
 import org.codehaus.jackson.JsonEncoding;
 import org.codehaus.jackson.JsonGenerator;
@@ -10,13 +9,17 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.util.DefaultPrettyPrinter;
 
 import ca.ubc.cs.reverb.indexer.messages.CodeQueryReply;
+import ca.ubc.cs.reverb.indexer.messages.Location;
 
-public class StudyUserInterface implements EditorMonitorListener {
+/**
+ * Threading: We assume this is only ever called from the UI thread.
+ */
+public class StudyActivityMonitor implements EditorMonitorListener {
     private StudyState studyState;
     private PluginConfig config;
     private PluginLogger logger;
     
-    public StudyUserInterface(PluginConfig config, PluginLogger logger) throws PluginException {
+    public StudyActivityMonitor(PluginConfig config, PluginLogger logger) throws PluginException {
         this.config = config;
         this.logger = logger;
         loadStudyState();
@@ -41,6 +44,15 @@ public class StudyUserInterface implements EditorMonitorListener {
         }
         
     }
+    
+    public void addRecommendationClicked(Location clicked) {
+        studyState.recommendationsClicked.add(clicked);
+        try {
+            saveStudyState();
+        } catch (PluginException e) {
+            logger.logError("Error saving study state", e);
+        }
+    }
 
     private void loadStudyState() throws PluginException {
         try {
@@ -60,10 +72,10 @@ public class StudyUserInterface implements EditorMonitorListener {
     }
     
     private void saveStudyState() throws PluginException {
-        OutputStreamWriter writer = null;
+        JsonGenerator jsonGenerator = null;
         try {
             ObjectMapper mapper = new ObjectMapper();
-            JsonGenerator jsonGenerator = mapper.getJsonFactory().createJsonGenerator(new File(config.getStudyStatePath()), 
+            jsonGenerator = mapper.getJsonFactory().createJsonGenerator(new File(config.getStudyStatePath()), 
                     JsonEncoding.UTF8);
             jsonGenerator.setPrettyPrinter(new DefaultPrettyPrinter());
 
@@ -71,9 +83,9 @@ public class StudyUserInterface implements EditorMonitorListener {
         } catch (Exception e) {
             throw new PluginException("Error saving plugin state: " + e, e);
         } finally {
-            if (writer != null) {
+            if (jsonGenerator != null) {
                 try { 
-                    writer.close();
+                    jsonGenerator.close();
                 } catch (IOException e) { } 
             }
         }
