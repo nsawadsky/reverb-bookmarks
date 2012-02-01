@@ -47,7 +47,9 @@ public class IndexerConnection implements Runnable {
     }
     
     public void stop() throws IOException {
-        pipe.stop();
+        if (pipe != null) {
+            pipe.stop();
+        }
     }
     
     public UploadLogsReply sendUploadLogsRequest(UploadLogsRequest request, int timeoutMsecs) throws IOException, InterruptedException {
