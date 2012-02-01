@@ -138,7 +138,7 @@ public class QueryPipeListener implements Runnable {
         private void handleLogClickRequest(String clientRequestId, LogClickRequest request) throws IndexerException {
             LocationInfo info = locationsDatabase.getLocationInfo(request.location.url);
             if (info != null) {
-                RecommendationClickEvent event = new RecommendationClickEvent(new Date().getTime(), 
+                RecommendationClickEvent event = new RecommendationClickEvent(System.currentTimeMillis(), 
                         info, request.location.frecencyBoost, request.location.luceneScore, 
                         request.location.overallScore, request.location.resultGenTimestamp);
                 collector.logEvent(event);

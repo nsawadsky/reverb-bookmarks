@@ -57,11 +57,7 @@ public class IndexerConfig {
                 throw new IndexerException("Could not create directory '" + studyDataLogFolderPath + "'");
             }
         }
-        try {
-            initializeUserId();
-        } catch (Exception e) {
-            throw new IndexerException("Error getting/creating user ID: " + e, e);
-        }
+        initializeUserId();
     }
     
     public String getIndexerPipeName() {
@@ -92,59 +88,69 @@ public class IndexerConfig {
         return userIdKey;
     }
     
-    private void initializeUserId() throws IOException, IllegalArgumentException, IndexerException, InvalidKeyException, NoSuchAlgorithmException {
-        String userIdPath = getUserIdPath();
-        File userIdFile = new File(userIdPath);
-        if (!userIdFile.exists()) {
-            File settingsDir = new File(settingsPath);
-            if (!settingsDir.exists()) {
-                if (!settingsDir.mkdirs()) {
-                    throw new IndexerException("Could not create directory '" + settingsPath + "'");
+    private void initializeUserId() throws IndexerException {
+        try {
+            String userIdPath = getUserIdPath();
+            File userIdFile = new File(userIdPath);
+            if (!userIdFile.exists()) {
+                File settingsDir = new File(settingsPath);
+                if (!settingsDir.exists()) {
+                    if (!settingsDir.mkdirs()) {
+                        throw new IndexerException("Could not create directory '" + settingsPath + "'");
+                    }
                 }
+                UUID uuid = UUID.randomUUID();
+                FileWriter writer = new FileWriter(userIdFile);
+                try { 
+                    writer.write(uuid.toString());
+                } finally { 
+                    writer.close();
+                }
+                userId = uuid.toString();
+            } else {
+                FileReader reader = new FileReader(userIdFile);
+                final int BUF_SIZE = 1024;
+                char[] buffer = new char[BUF_SIZE];
+                int charsRead = 0;
+                try {
+                    charsRead = reader.read(buffer);
+                } finally {
+                    reader.close();
+                }
+                if (charsRead <= 0) {
+                    throw new IndexerException("Empty uid.txt file");
+                }
+                UUID uuid = UUID.fromString(new String(Arrays.copyOfRange(buffer, 0, charsRead)));
+                userId = uuid.toString();
             }
-            UUID uuid = UUID.randomUUID();
-            FileWriter writer = new FileWriter(userIdFile);
-            try { 
-                writer.write(uuid.toString());
-            } finally { 
-                writer.close();
-            }
-            userId = uuid.toString();
-        } else {
-            FileReader reader = new FileReader(userIdFile);
-            final int BUF_SIZE = 1024;
-            char[] buffer = new char[BUF_SIZE];
-            int charsRead = 0;
-            try {
-                charsRead = reader.read(buffer);
-            } finally {
-                reader.close();
-            }
-            if (charsRead <= 0) {
-                throw new IndexerException("Empty uid.txt file");
-            }
-            UUID uuid = UUID.fromString(new String(Arrays.copyOfRange(buffer, 0, charsRead)));
-            userId = uuid.toString();
+            userIdKey = initializeUserIdKey(userId);
+        } catch (IndexerException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IndexerException("Error getting/creating user ID: " + e, e);
         }
-        userIdKey = initializeUserIdKey(userId);
     }
     
-    private String initializeUserIdKey(String inputUserId) throws UnsupportedEncodingException, NoSuchAlgorithmException, InvalidKeyException {
-        String className = IndexerConfig.class.getName();
-        String shortName = className.substring(className.lastIndexOf('.')+1);
-        SecretKeySpec keySpec = new SecretKeySpec(
-                shortName.getBytes("UTF-8"), "HmacSHA256");
-
-        Mac mac = Mac.getInstance("HmacSHA256");
-        mac.init(keySpec);
-        byte[] bytes = mac.doFinal(inputUserId.getBytes("UTF-8"));
-
-        String base64 = Base64.encodeBase64String(bytes);
-        if (base64.indexOf('\r') != -1) {
-            // Strip the carriage-return and line-feed characters.
-            base64 = base64.substring(0, base64.indexOf('\r'));
+    private String initializeUserIdKey(String inputUserId) throws IndexerException {
+        try {
+            String className = IndexerConfig.class.getName();
+            String shortName = className.substring(className.lastIndexOf('.')+1);
+            SecretKeySpec keySpec = new SecretKeySpec(
+                    shortName.getBytes("UTF-8"), "HmacSHA256");
+    
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(keySpec);
+            byte[] bytes = mac.doFinal(inputUserId.getBytes("UTF-8"));
+    
+            String base64 = Base64.encodeBase64String(bytes);
+            if (base64.indexOf('\r') != -1) {
+                // Strip the carriage-return and line-feed characters.
+                base64 = base64.substring(0, base64.indexOf('\r'));
+            }
+            return base64;
+        } catch (Exception e) {
+            throw new IndexerException("Error creating user ID key: " + e, e);
         }
-        return base64;
     }
     
     private String getUserIdPath() {

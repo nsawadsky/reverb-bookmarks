@@ -14,7 +14,7 @@ public class CodeQueryReply extends IndexerReply {
     
     public CodeQueryReply(boolean errorOccurred, String errorMessage) {
         super(errorOccurred, errorMessage);
-        timestamp = new Date().getTime();
+        timestamp = System.currentTimeMillis();
     }
 
     public List<CodeQueryResult> queryResults = new ArrayList<CodeQueryResult>();

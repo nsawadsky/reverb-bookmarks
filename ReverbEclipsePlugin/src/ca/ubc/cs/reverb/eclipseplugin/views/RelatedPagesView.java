@@ -164,8 +164,13 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
      * This is a callback that will allow us
      * to create the viewer and initialize it.
      */
-    public void createPartControl(Composite parent){
-        PluginActivator.getDefault().finishInit();
+    @Override
+    public void createPartControl(Composite parent) {
+        try {
+            PluginActivator.getDefault().finishInit();
+        } catch (PluginException e) {
+            throw new RuntimeException("Error completing activator initialization: " + e, e);
+        }
 
         this.logger = PluginActivator.getDefault().getLogger();
         this.editorMonitor = PluginActivator.getDefault().getEditorMonitor();
@@ -259,7 +264,7 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
     }
 
     @Override
-    public void onInteractionEvent() {
+    public void onInteractionEvent(long timeMsecs) {
     }
 
     private Action createUploadLogsAction() {

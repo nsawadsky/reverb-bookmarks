@@ -35,6 +35,10 @@ public class PluginConfig {
         return userId;
     }
     
+    public String getStudyStatePath() {
+        return settingsPath + File.separator + "studystate.txt";
+    }
+
     private void initializeUserId() throws IOException, IllegalArgumentException, PluginException {
         String userIdPath = getUserIdPath();
         File userIdFile = new File(userIdPath);
@@ -74,4 +78,5 @@ public class PluginConfig {
     private String getUserIdPath() {
         return settingsPath + File.separator + "uid.txt";
     }
+    
 }

@@ -8,5 +8,5 @@ public interface EditorMonitorListener {
     /**
      * An interaction event occurred (key pressed, mouse button pressed, viewport changed) in a Java code editor.
      */
-    void onInteractionEvent();
+    void onInteractionEvent(long timeMsecs);
 }

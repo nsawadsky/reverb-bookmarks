@@ -10,7 +10,7 @@ public class BatchQueryReply extends IndexerReply {
     
     public BatchQueryReply(boolean errorOccurred, String errorMessage) {
         super(errorOccurred, errorMessage);
-        timestamp = new Date().getTime();
+        timestamp = System.currentTimeMillis();
     }
 
     public List<QueryResult> queryResults = new ArrayList<QueryResult>();

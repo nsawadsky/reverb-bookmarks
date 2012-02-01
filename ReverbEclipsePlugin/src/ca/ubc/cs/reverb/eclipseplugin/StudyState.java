@@ -8,7 +8,7 @@ import ca.ubc.cs.reverb.indexer.messages.Location;
 /**
  * This class is serialized/deserialized to/from JSON using the Jackson library.
  */
-public class PluginState {
+public class StudyState {
     /**
      * Activity is measured in 15 minute intervals.
      */
@@ -23,4 +23,9 @@ public class PluginState {
      * Intervals counted in which the user has actively viewed or edited Java code.
      */
     public int activeIntervals = 0;
+    
+    /**
+     * Last interval in which activity occurred.
+     */
+    public long lastActiveInterval = 0;
 }

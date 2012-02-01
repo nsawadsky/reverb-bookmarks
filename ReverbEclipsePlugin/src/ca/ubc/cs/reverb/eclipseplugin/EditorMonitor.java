@@ -68,7 +68,7 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener,
         IWorkbenchPart part = workbenchPage.getActivePart();
         if (part instanceof IEditorPart) {
             if (listen((IEditorPart)part)) {
-                handleNavigationEvent();
+                handleNavigationEvent(System.currentTimeMillis());
             }
         }
     }
@@ -90,7 +90,7 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener,
         if (part instanceof IEditorPart) {
             IEditorPart editorPart = (IEditorPart)part;
             if (listen(editorPart)) {
-                handleNavigationEvent();
+                handleNavigationEvent(System.currentTimeMillis());
             }
         }
     }
@@ -120,12 +120,16 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener,
 
     @Override
     public void keyReleased(KeyEvent e) {
-        handleNavigationEvent();
+        long now = System.currentTimeMillis();
+        handleNavigationEvent(now);
+        notifyListenersInteractionEvent(now);
     }
 
     @Override
     public void mouseDoubleClick(MouseEvent e) {
-        handleNavigationEvent();
+        long now = System.currentTimeMillis();
+        handleNavigationEvent(now);
+        notifyListenersInteractionEvent(now);
     }
 
     @Override
@@ -134,11 +138,15 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener,
 
     @Override
     public void mouseUp(MouseEvent e) {
-        handleNavigationEvent();
+        long now = System.currentTimeMillis();
+        handleNavigationEvent(now);
+        notifyListenersInteractionEvent(now);
     }
 
     @Override
     public void viewportChanged(int arg0) {
+        long now = System.currentTimeMillis();
+        notifyListenersInteractionEvent(now);
     }
 
     public void requestRefresh(boolean immediate) {
@@ -147,7 +155,7 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener,
         if (immediate) {
             doRefresh();
         } else {
-            startRefreshTimer();
+            startRefreshTimer(System.currentTimeMillis());
         }
     }
     
@@ -218,7 +226,7 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener,
         });
     }
     
-    private void startRefreshTimer() {
+    private void startRefreshTimer(long now) {
         class TimerCallback implements Runnable {
             long startTime = INVALID_TIME;
             
@@ -245,18 +253,17 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener,
             }
         }
         
-        long currentTime = System.currentTimeMillis();
-        if (lastRequestRefreshTime == INVALID_TIME || ((currentTime - lastRequestRefreshTime) > (5 * REFRESH_DELAY_MSECS))) {
-            lastRequestRefreshTime = System.currentTimeMillis();
+        if (lastRequestRefreshTime == INVALID_TIME || ((now - lastRequestRefreshTime) > (5 * REFRESH_DELAY_MSECS))) {
+            lastRequestRefreshTime = now;
             TimerCallback callback = new TimerCallback(lastRequestRefreshTime);
             PlatformUI.getWorkbench().getDisplay().timerExec(REFRESH_DELAY_MSECS, callback);
         } else {
-            lastRequestRefreshTime = System.currentTimeMillis();
+            lastRequestRefreshTime = now;
         }
     }
 
-    private void handleNavigationEvent() {
-        startRefreshTimer();
+    private void handleNavigationEvent(long now) {
+        startRefreshTimer(now);
     }
     
     private boolean listen(IEditorPart editorPart) {
@@ -315,6 +322,20 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener,
         for (EditorMonitorListener listener: listenersCopy) {
             try {
                 listener.onCodeQueryReply(reply);
+            } catch (Throwable t) {
+                logger.logError("Listener threw exception", t);
+            }
+        }
+    }
+    
+    private void notifyListenersInteractionEvent(long timeMsecs) {
+        List<EditorMonitorListener> listenersCopy = null;
+        synchronized (listeners) {
+            listenersCopy = new ArrayList<EditorMonitorListener>(listeners);
+        }
+        for (EditorMonitorListener listener: listenersCopy) {
+            try {
+                listener.onInteractionEvent(timeMsecs);
             } catch (Throwable t) {
                 logger.logError("Listener threw exception", t);
             }
