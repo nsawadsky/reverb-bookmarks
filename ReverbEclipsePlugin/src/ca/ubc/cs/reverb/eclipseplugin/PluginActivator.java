@@ -42,12 +42,14 @@ public class PluginActivator extends AbstractUIPlugin {
 	public PluginActivator() {
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.eclipse.ui.plugin.AbstractUIPlugin#start(org.osgi.framework.BundleContext)
+	/**
+     * Early startup is enabled for the plugin.  It's important to note that, with early startup, start() 
+     * may be invoked in a separate thread from the UI thread.
 	 */
 	public void start(BundleContext context) throws Exception {
 		super.start(context);
+
+        plugin = this;
 
         config = new PluginConfig();
 		logger = new PluginLogger(getLog());
@@ -63,8 +65,6 @@ public class PluginActivator extends AbstractUIPlugin {
                 } catch (PluginException e) { }
             }
         });
-        
-        plugin = this;
 	}
 
 	/** 
@@ -75,6 +75,9 @@ public class PluginActivator extends AbstractUIPlugin {
 	 * 
 	 * In addition, the workbench window and active page may not yet be available when the start() method is
 	 * called.
+	 * 
+	 * The above issues may be partly due to enabling early startup for the plugin.  With early startup, start() 
+	 * may be invoked in a separate thread from the UI thread.
 	 * 
 	 * @param activePage The active workbench page.  If null, then this method attempts to retrieve
 	 *                   the active page from the workbench.
@@ -124,7 +127,9 @@ public class PluginActivator extends AbstractUIPlugin {
 	public void stop(BundleContext context) throws Exception {
         plugin = null;
 	    try {
-	        indexerConnection.stop();
+	        if (indexerConnection != null) {
+	            indexerConnection.stop();
+	        }
 	    } catch (IOException e) { }
 		super.stop(context);
 	}
