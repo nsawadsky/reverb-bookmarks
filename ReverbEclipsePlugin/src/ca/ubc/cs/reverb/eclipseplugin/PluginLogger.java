@@ -19,6 +19,14 @@ public class PluginLogger {
         log(IStatus.ERROR, msg, t);
     }
     
+    public void logWarn(String msg) {
+        logWarn(msg, null);
+    }
+    
+    public void logWarn(String msg, Throwable t) {
+        log(IStatus.WARNING, msg, t);
+    }
+
     public void logInfo(String msg) {
         logInfo(msg, null);
     }

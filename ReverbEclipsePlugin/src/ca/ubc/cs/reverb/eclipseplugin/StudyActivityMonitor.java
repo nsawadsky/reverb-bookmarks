@@ -18,8 +18,10 @@ public class StudyActivityMonitor implements EditorMonitorListener {
     private StudyState studyState;
     private PluginConfig config;
     private PluginLogger logger;
+    private long createdThreadId;
     
     public StudyActivityMonitor(PluginConfig config, PluginLogger logger) throws PluginException {
+        this.createdThreadId = Thread.currentThread().getId();
         this.config = config;
         this.logger = logger;
         loadStudyState();
@@ -46,6 +48,9 @@ public class StudyActivityMonitor implements EditorMonitorListener {
     }
     
     public void addRecommendationClicked(Location clicked) {
+        if (Thread.currentThread().getId() != createdThreadId) {
+            logger.logWarn("StudyActivityMonitor.addRecommendationClicked invoked from different thread than was used to create it");
+        }
         studyState.recommendationsClicked.add(clicked);
         try {
             saveStudyState();
