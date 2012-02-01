@@ -59,7 +59,7 @@ public class PluginActivator extends AbstractUIPlugin {
 		workbench.getDisplay().asyncExec(new Runnable() {
             public void run() {
                 try {
-                    finishInit();
+                    finishInit(null);
                 } catch (PluginException e) { }
             }
         });
@@ -72,8 +72,14 @@ public class PluginActivator extends AbstractUIPlugin {
 	 * classes, whose use of class loading conflicts with OSGi class loading during
 	 * Eclipse startup, resulting in timeout errors in the Eclipse log (most 
 	 * likely caused by classloader deadlocks).
+	 * 
+	 * In addition, the workbench window and active page may not yet be available when the start() method is
+	 * called.
+	 * 
+	 * @param activePage The active workbench page.  If null, then this method attempts to retrieve
+	 *                   the active page from the workbench.
 	 */
-	public void finishInit() throws PluginException {
+	public void finishInit(IWorkbenchPage activePage) throws PluginException {
 	    if (!initComplete) {
 	        try {
     	        indexerConnection = new IndexerConnection(logger);
@@ -86,15 +92,17 @@ public class PluginActivator extends AbstractUIPlugin {
     	        
     	        editorMonitor.addListener(studyActivityMonitor);
     	        
-                IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
-                if (window == null) {
-                    throw new PluginException("Failed to get workbench window during startup");
-                }
-                IWorkbenchPage activePage = window.getActivePage();
-                if (activePage == null) {
-                    throw new PluginException("Failed to get active workbench page during startup");
-                }
-                editorMonitor.start(window.getActivePage());
+    	        if (activePage == null) {
+                    IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
+                    if (window == null) {
+                        throw new PluginException("Failed to get workbench window during startup");
+                    }
+                    activePage = window.getActivePage();
+                    if (activePage == null) {
+                        throw new PluginException("Failed to get active workbench page during startup");
+                    }
+    	        }
+                editorMonitor.start(activePage);
 	        } catch (Exception e) { 
 	            String errorMsg = "Error completing plugin initialization"; 
 	            logger.logError(errorMsg, e);

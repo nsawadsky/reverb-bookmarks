@@ -169,7 +169,9 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
     @Override
     public void createPartControl(Composite parent) {
         try {
-            PluginActivator.getDefault().finishInit();
+            // Pass the page in as a parameter, since it may not yet be available through
+            // PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().
+            PluginActivator.getDefault().finishInit(getSite().getPage());
         } catch (PluginException e) {
             throw new RuntimeException("Error completing activator initialization: " + e, e);
         }
@@ -255,7 +257,9 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
     
     @Override
     public void dispose() {
-        editorMonitor.removeListener(this);
+        if (editorMonitor != null) {
+            editorMonitor.removeListener(this);
+        }
         super.dispose();
     }
     
