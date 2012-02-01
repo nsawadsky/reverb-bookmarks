@@ -65,7 +65,7 @@ public class WebPageSearcher {
     }
     
     public BatchQueryReply performSearch(List<IndexerQuery> inputQueries) throws IndexerException {
-        long now = new Date().getTime();
+        long now = System.currentTimeMillis();
         
         IndexSearcher indexSearcher = getNewIndexSearcher();
         

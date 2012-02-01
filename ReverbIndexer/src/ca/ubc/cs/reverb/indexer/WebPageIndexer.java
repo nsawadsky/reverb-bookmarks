@@ -107,7 +107,7 @@ public class WebPageIndexer {
             indexWriter.deleteDocuments(new Term(URL_FIELD_NAME, request.url));
             indexWriter.commit();
             
-            long now = new Date().getTime();
+            long now = System.currentTimeMillis();
             collector.logEvent(new DeleteLocationEvent(now, deletedInfo, deletedInfo.getFrecencyBoost(now)));
         } catch (Exception e) {
             throw new IndexerException("Exception deleting document: " + e, e);
@@ -184,7 +184,7 @@ public class WebPageIndexer {
             // URL, if present:
             indexWriter.updateDocument(new Term(URL_FIELD_NAME, normalizedUrl), doc);
             
-            long now = new Date().getTime();
+            long now = System.currentTimeMillis();
             
             // Rare interleavings of commitChanges, deleteLocation, and indexPage
             // could still result in a page being absent from the index, but not indexable for up to a day.
