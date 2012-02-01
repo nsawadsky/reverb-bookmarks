@@ -30,11 +30,16 @@ public class QueryBuilderTest {
     @Before
     public void setup() throws JsonParseException, IOException {
         InputStream testDataStream = QueryBuilderTest.class.getResourceAsStream("QueryBuilderTestData.json");
-
-        JsonFactory factory = new JsonFactory();
-        JsonParser parser = factory.createJsonParser(testDataStream);
-        parser.setCodec(new ObjectMapper());
-        testData = parser.readValueAsTree();
+        try {
+            JsonFactory factory = new JsonFactory();
+            JsonParser parser = factory.createJsonParser(testDataStream);
+            parser.setCodec(new ObjectMapper());
+            testData = parser.readValueAsTree();
+        } finally {
+            if (testDataStream != null) {
+                testDataStream.close();
+            }
+        }
     }
     
     @Test
