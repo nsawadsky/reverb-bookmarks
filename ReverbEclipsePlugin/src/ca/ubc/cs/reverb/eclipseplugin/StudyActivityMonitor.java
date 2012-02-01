@@ -50,7 +50,7 @@ public class StudyActivityMonitor implements EditorMonitorListener {
     public void addRecommendationClicked(Location clicked) {
         // Log a warning if multiple threads are using a single instance of this class.
         if (Thread.currentThread().getId() != createdThreadId) {
-            logger.logWarn("StudyActivityMonitor.addRecommendationClicked invoked from different thread than was used to create it");
+            logger.logWarn("StudyActivityMonitor.addRecommendationClicked invoked from different thread than called constructor");
         }
         studyState.recommendationsClicked.add(clicked);
         try {
