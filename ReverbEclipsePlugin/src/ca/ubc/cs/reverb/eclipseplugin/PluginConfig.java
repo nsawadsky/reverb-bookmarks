@@ -17,6 +17,8 @@ public class PluginConfig {
     
     private String pluginStatePath;
     
+    private String studyDataLogFolderPath;
+    
     private String userId;
     
     public PluginConfig() throws PluginException {
@@ -38,6 +40,14 @@ public class PluginConfig {
                 throw new PluginException("Could not create directory '" + pluginStatePath + "'");
             }
         }
+
+        studyDataLogFolderPath = basePath + File.separator + "logs";
+        File logFolder = new File(studyDataLogFolderPath);
+        if (!logFolder.exists()) {
+            if (!logFolder.mkdirs()) {
+                throw new PluginException("Could not create directory '" + studyDataLogFolderPath + "'");
+            }
+        }
     }
     
     public String getUserId() {
@@ -48,6 +58,10 @@ public class PluginConfig {
         return pluginStatePath + File.separator + "studystate.txt";
     }
 
+    public String getStudyDataLogFolderPath() {
+        return studyDataLogFolderPath;
+    }
+    
     private void initializeUserId() throws IOException, IllegalArgumentException, PluginException {
         String userIdPath = getUserIdPath();
         File userIdFile = new File(userIdPath);
