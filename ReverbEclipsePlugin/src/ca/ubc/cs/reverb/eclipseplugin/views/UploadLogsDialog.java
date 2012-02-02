@@ -23,12 +23,12 @@ import org.eclipse.swt.widgets.DirectoryDialog;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Text;
-import org.eclipse.wb.swt.SWTResourceManager;
-import org.eclipse.wb.swt.ResourceManager;
 import org.eclipse.swt.widgets.Link;
 
 import ca.ubc.cs.reverb.eclipseplugin.PluginConfig;
 import ca.ubc.cs.reverb.eclipseplugin.PluginLogger;
+import org.eclipse.wb.swt.SWTResourceManager;
+import org.eclipse.wb.swt.ResourceManager;
 
 public class UploadLogsDialog extends TitleAreaDialog implements SelectionListener {
     private final static String LOG_FILE_EXTENSION = ".txt";
