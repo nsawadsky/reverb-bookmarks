@@ -85,11 +85,11 @@ public class PluginActivator extends AbstractUIPlugin {
 	public void finishInit(IWorkbenchPage activePage) throws PluginException {
 	    if (!initComplete) {
 	        try {
+                IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
+                if (window == null) {
+                    throw new PluginException("Failed to get workbench window during startup");
+                }
                 if (activePage == null) {
-                    IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
-                    if (window == null) {
-                        throw new PluginException("Failed to get workbench window during startup");
-                    }
                     activePage = window.getActivePage();
                     if (activePage == null) {
                         throw new PluginException("Failed to get active workbench page during startup");
@@ -102,7 +102,8 @@ public class PluginActivator extends AbstractUIPlugin {
 
     	        editorMonitor = new EditorMonitor(logger, indexerConnection);
                 
-    	        studyActivityMonitor = new StudyActivityMonitor(config, logger);
+    	        studyActivityMonitor = new StudyActivityMonitor(window.getShell(), config, logger,
+    	                indexerConnection);
     	        
     	        editorMonitor.addListener(studyActivityMonitor);
     	        

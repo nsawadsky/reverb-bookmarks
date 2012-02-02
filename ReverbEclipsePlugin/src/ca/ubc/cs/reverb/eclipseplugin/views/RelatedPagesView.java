@@ -5,6 +5,7 @@ import java.awt.Desktop;
 import java.net.URI;
 
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.part.*;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
@@ -13,6 +14,7 @@ import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jface.viewers.*;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.jface.action.*;
+import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.ui.*;
 import org.eclipse.swt.SWT;
@@ -22,6 +24,7 @@ import ca.ubc.cs.reverb.eclipseplugin.EditorMonitorListener;
 import ca.ubc.cs.reverb.eclipseplugin.IndexerConnection;
 import ca.ubc.cs.reverb.eclipseplugin.IndexerConnectionCallback;
 import ca.ubc.cs.reverb.eclipseplugin.PluginActivator;
+import ca.ubc.cs.reverb.eclipseplugin.PluginConfig;
 import ca.ubc.cs.reverb.eclipseplugin.PluginException;
 import ca.ubc.cs.reverb.eclipseplugin.PluginLogger;
 import ca.ubc.cs.reverb.eclipseplugin.StudyActivityMonitor;
@@ -43,6 +46,7 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
     
     private TreeViewer viewer;
     private ViewContentProvider contentProvider;
+    private PluginConfig config;
     private PluginLogger logger;
     private EditorMonitor editorMonitor;
     private IndexerConnection indexerConnection;
@@ -176,6 +180,7 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
             throw new RuntimeException("Error completing activator initialization: " + e, e);
         }
 
+        this.config = PluginActivator.getDefault().getConfig();
         this.logger = PluginActivator.getDefault().getLogger();
         this.editorMonitor = PluginActivator.getDefault().getEditorMonitor();
         this.indexerConnection = PluginActivator.getDefault().getIndexerConnection();
@@ -277,26 +282,29 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
     private Action createUploadLogsAction() {
         Action uploadLogsAction = new Action() {
             public void run() {
-                Job job = new Job("Uploading Reverb logs") {
-                    @Override
-                    protected IStatus run(IProgressMonitor arg0) {
-                        try {
-                            UploadLogsReply reply = indexerConnection.sendUploadLogsRequest(
-                                    new UploadLogsRequest(), 60000);
-                            if (reply.errorOccurred) {
-                                IStatus status = logger.createStatus(IStatus.ERROR, "Error uploading logs: " + reply.errorMessage, null);
+                UploadLogsDialog uploadDialog = new UploadLogsDialog(getShell(), config, logger);
+                if (uploadDialog.open() == Dialog.OK) {
+                    Job job = new Job("Uploading Reverb logs") {
+                        @Override
+                        protected IStatus run(IProgressMonitor arg0) {
+                            try {
+                                UploadLogsReply reply = indexerConnection.sendUploadLogsRequest(
+                                        new UploadLogsRequest(), 60000);
+                                if (reply.errorOccurred) {
+                                    IStatus status = logger.createStatus(IStatus.ERROR, "Error uploading logs: " + reply.errorMessage, null);
+                                    logger.log(status);
+                                    return status;
+                                }
+                                return Status.OK_STATUS;
+                            } catch (Exception e) {
+                                IStatus status = logger.createStatus(IStatus.ERROR, "Error sending upload logs request", e);
                                 logger.log(status);
                                 return status;
                             }
-                            return Status.OK_STATUS;
-                        } catch (Exception e) {
-                            IStatus status = logger.createStatus(IStatus.ERROR, "Error sending upload logs request", e);
-                            logger.log(status);
-                            return status;
                         }
-                    }
-                };
-                job.schedule();
+                    };
+                    job.schedule();
+                }
             }
         };
                 
@@ -307,6 +315,11 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
         return uploadLogsAction;
     }
     
+    protected Shell getShell() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
     private Action createUpdateViewAction() {
         Action updateViewAction = new Action() {
             public void run() {
