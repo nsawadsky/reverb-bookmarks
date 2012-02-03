@@ -12,14 +12,14 @@ public class StudyState {
     /**
      * Activity is measured in 15 minute intervals.
      */
-    //public final static int ACTIVITY_INTERVAL_MSECS = 15 * 60 * 1000;
-    public final static int ACTIVITY_INTERVAL_MSECS = 15 * 1000;
+    public final static int ACTIVITY_INTERVAL_MSECS = 15 * 60 * 1000;
+    //public final static int ACTIVITY_INTERVAL_MSECS = 15 * 1000;
     
     /**
      * At 3 and 6 hours, we prompt to upload logs.
      */
-    //public final static int LOG_UPLOAD_INTERVALS = 12; 
-    public final static int LOG_UPLOAD_INTERVALS = 2; 
+    public final static int LOG_UPLOAD_INTERVALS = 12; 
+    //public final static int LOG_UPLOAD_INTERVALS = 2; 
 
     /**
      * Number of successful log uploads to complete study.

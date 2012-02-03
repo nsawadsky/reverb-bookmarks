@@ -2,13 +2,17 @@ package ca.ubc.cs.reverb.eclipseplugin.views;
 
 import java.awt.Desktop;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.TitleAreaDialog;
+import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.CellEditor;
-import org.eclipse.jface.viewers.CellLabelProvider;
+import org.eclipse.jface.viewers.ColumnLabelProvider;
 import org.eclipse.jface.viewers.ColumnViewerToolTipSupport;
 import org.eclipse.jface.viewers.ComboBoxCellEditor;
+import org.eclipse.jface.viewers.EditingSupport;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.jface.viewers.TextCellEditor;
@@ -26,22 +30,31 @@ import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 
+import ca.ubc.cs.reverb.eclipseplugin.LocationAndRating;
 import ca.ubc.cs.reverb.eclipseplugin.PluginLogger;
+import ca.ubc.cs.reverb.indexer.messages.Location;
+
 import org.eclipse.wb.swt.ResourceManager;
 
 public class RateRecommendationsDialog extends TitleAreaDialog {
 
     private Table table;
     private PluginLogger logger;
+    private List<LocationAndRating> ratedLocations;
     
     /**
      * Create the dialog.
      * @param parentShell
      */
-    public RateRecommendationsDialog(Shell parentShell, PluginLogger logger) {
+    public RateRecommendationsDialog(Shell parentShell, PluginLogger logger, List<Location> locations) {
         super(parentShell);
         setHelpAvailable(false);
         this.logger = logger;
+        
+        ratedLocations = new ArrayList<LocationAndRating>();
+        for (Location location: locations) {
+            ratedLocations.add(new LocationAndRating(location));
+        }
     }
 
     /**
@@ -88,49 +101,53 @@ public class RateRecommendationsDialog extends TitleAreaDialog {
         });
                 
         TableViewer viewer = new TableViewer(table);
+        viewer.setContentProvider(ArrayContentProvider.getInstance());
+
         ColumnViewerToolTipSupport.enableFor(viewer);
         
-        CellLabelProvider labelProvider = new CellLabelProvider() {
-
-            public void update(ViewerCell cell) {
-            }
-        };
-
         TableViewerColumn titleViewerColumn = new TableViewerColumn(viewer, SWT.NONE);
-        titleViewerColumn.setLabelProvider(labelProvider);
+        titleViewerColumn.setLabelProvider(new ColumnLabelProvider() {
+            public String getText(Object item) {
+                return ((LocationAndRating)item).location.title;
+            }
+        });
         
         TableColumn titleColumn = titleViewerColumn.getColumn();
         titleColumn.setResizable(true);
         titleColumn.setText("Page Title");
         titleColumn.setWidth(259);
         
-        TableViewerColumn commentsViewerColumn = new TableViewerColumn(viewer, SWT.NONE);
-        commentsViewerColumn.setLabelProvider(labelProvider);
-
-        TableColumn commentsColumn = commentsViewerColumn.getColumn();
-        commentsColumn.setResizable(true);
-        commentsColumn.setText("Comments");
-        commentsColumn.setWidth(291);
-        
-        CellEditor[] editors = new CellEditor[3];
-        
-        TextCellEditor textEditor = new TextCellEditor(table);
-        editors[1] = textEditor;
-        
         TableViewerColumn ratingViewerColumn = new TableViewerColumn(viewer, SWT.NONE);
-        ratingViewerColumn.setLabelProvider(labelProvider);
+        ratingViewerColumn.setLabelProvider(new ColumnLabelProvider() {
+            public String getText(Object item) {
+                int rating = ((LocationAndRating)item).rating; 
+                if (rating == 0) {
+                    return "";
+                }
+                return Integer.toString(rating);
+            }
+        });
+        ratingViewerColumn.setEditingSupport(new RatingEditingSupport(viewer));
 
         TableColumn ratingColumn = ratingViewerColumn.getColumn();
         ratingColumn.setResizable(true);
         ratingColumn.setText("Rating");
-        ratingColumn.setWidth(47);
+        ratingColumn.setWidth(70);
 
-        ComboBoxCellEditor comboBoxEditor = new ComboBoxCellEditor(table,
-                new String[]{"1", "2", "3", "4", "5"}, SWT.READ_ONLY);
-        editors[2] = comboBoxEditor;
+        TableViewerColumn commentViewerColumn = new TableViewerColumn(viewer, SWT.NONE);
+        commentViewerColumn.setLabelProvider(new ColumnLabelProvider() {
+            public String getText(Object item) {
+                return ((LocationAndRating)item).comment;
+            }
+        });
+        commentViewerColumn.setEditingSupport(new CommentEditingSupport(viewer));
         
-        viewer.setCellEditors(editors);
+        TableColumn commentColumn = commentViewerColumn.getColumn();
+        commentColumn.setResizable(true);
+        commentColumn.setText("Comment");
+        commentColumn.setWidth(268);
         
+        viewer.setInput(this.ratedLocations);
         return area;
     }
 
@@ -152,5 +169,70 @@ public class RateRecommendationsDialog extends TitleAreaDialog {
     @Override
     protected Point getInitialSize() {
         return new Point(630, 524);
+    }
+    
+    private class CommentEditingSupport extends EditingSupport {
+        private TableViewer viewer;
+        
+        public CommentEditingSupport(TableViewer viewer) {
+            super(viewer);
+            this.viewer = viewer;
+        }
+        
+        @Override
+        protected CellEditor getCellEditor(Object element) {
+            return new TextCellEditor(viewer.getTable());
+        }
+
+        @Override
+        protected boolean canEdit(Object element) {
+            return true;
+        }
+
+        @Override
+        protected Object getValue(Object element) {
+            return ((LocationAndRating)element).comment;
+        }
+
+        @Override
+        protected void setValue(Object element, Object value) {
+            ((LocationAndRating)element).comment = (value == null ? null : value.toString());
+            viewer.refresh();
+        }
+        
+    }
+
+    private class RatingEditingSupport extends EditingSupport {
+        private TableViewer viewer;
+        
+        public RatingEditingSupport(TableViewer viewer) {
+            super(viewer);
+            this.viewer = viewer;
+        }
+        
+        @Override
+        protected CellEditor getCellEditor(Object element) {
+            ComboBoxCellEditor result = new ComboBoxCellEditor(viewer.getTable(), 
+                    new String[] {"5", "4", "3", "2", "1"}, SWT.READ_ONLY);
+            result.setActivationStyle(ComboBoxCellEditor.DROP_DOWN_ON_MOUSE_ACTIVATION);
+            return result;
+        }
+
+        @Override
+        protected boolean canEdit(Object element) {
+            return true;
+        }
+
+        @Override
+        protected Object getValue(Object element) {
+            return ((LocationAndRating)element).rating - 1; 
+        }
+
+        @Override
+        protected void setValue(Object element, Object value) {
+            ((LocationAndRating)element).rating = ((Integer)value)+1;
+            viewer.refresh();
+        }
+        
     }
 }

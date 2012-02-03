@@ -197,6 +197,7 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
         final Action deleteLocationAction = createDeleteLocationAction();
         final Action updateViewAction = createUpdateViewAction();
         final Action uploadLogsAction = createUploadLogsAction();
+        final Action rateRecommendationsAction = createRateRecommendationsAction();
         
         viewer.addSelectionChangedListener(new ISelectionChangedListener() {
 
@@ -234,6 +235,7 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
                 manager.add(deleteLocationAction);
                 manager.add(new Separator());
                 manager.add(uploadLogsAction);
+                manager.add(rateRecommendationsAction);
             }
             
         });
@@ -313,6 +315,21 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
         uploadLogsAction.setEnabled(true);
         
         return uploadLogsAction;
+    }
+    
+    private Action createRateRecommendationsAction() {
+        Action rateRecommendationsAction = new Action() {
+            public void run() {
+                RateRecommendationsDialog ratingDialog = new RateRecommendationsDialog(
+                        getShell(), logger, studyActivityMonitor.getRecommendationsClicked());
+                ratingDialog.open();
+            }
+        };
+        rateRecommendationsAction.setText("Rate Recommendations");
+        rateRecommendationsAction.setToolTipText("Rate Recommendations");
+        rateRecommendationsAction.setEnabled(true);
+
+        return rateRecommendationsAction;
     }
     
     protected Shell getShell() {
