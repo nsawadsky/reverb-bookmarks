@@ -2,6 +2,8 @@ package ca.ubc.cs.reverb.eclipseplugin;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.codehaus.jackson.JsonEncoding;
 import org.codehaus.jackson.JsonGenerator;
@@ -26,11 +28,11 @@ import ca.ubc.cs.reverb.indexer.messages.UploadLogsRequest;
  */
 public class StudyActivityMonitor implements EditorMonitorListener {
     // 30 seconds
-    //private final static int UPLOAD_PROMPT_DELAY_MSECS = 30000;
-    private final static int UPLOAD_PROMPT_DELAY_MSECS = 10000;
+    private final static int UPLOAD_PROMPT_DELAY_MSECS = 30000;
+    //private final static int UPLOAD_PROMPT_DELAY_MSECS = 10000;
     // 15 minutes
-    //private final static int UPLOAD_RETRY_DELAY_MSECS = 15 * 60 * 1000;
-    private final static int UPLOAD_RETRY_DELAY_MSECS = 15 * 1000;
+    private final static int UPLOAD_RETRY_DELAY_MSECS = 15 * 60 * 1000;
+    //private final static int UPLOAD_RETRY_DELAY_MSECS = 15 * 1000;
     
     private IndexerConnection indexerConnection;
     private StudyState studyState;
@@ -73,6 +75,10 @@ public class StudyActivityMonitor implements EditorMonitorListener {
             }
         }
         
+    }
+    
+    public List<Location> getRecommendationsClicked() {
+        return new ArrayList<Location>(studyState.recommendationsClicked);
     }
     
     public void addRecommendationClicked(Location clicked) {
