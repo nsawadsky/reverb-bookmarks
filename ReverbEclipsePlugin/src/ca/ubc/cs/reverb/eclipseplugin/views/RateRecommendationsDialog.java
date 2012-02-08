@@ -3,6 +3,7 @@ package ca.ubc.cs.reverb.eclipseplugin.views;
 import java.awt.Desktop;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.eclipse.jface.dialogs.IDialogConstants;
@@ -16,7 +17,6 @@ import org.eclipse.jface.viewers.EditingSupport;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.jface.viewers.TextCellEditor;
-import org.eclipse.jface.viewers.ViewerCell;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
@@ -88,12 +88,12 @@ public class RateRecommendationsDialog extends TitleAreaDialog {
             @Override
             public void widgetDefaultSelected(SelectionEvent event) {
                 TableItem item = (TableItem)event.item;
-                String url = item.getText(0);
-                if (url != null) {
+                LocationAndRating locationAndRating = (LocationAndRating)item.getData();
+                if (locationAndRating != null) {
                     try {
-                        Desktop.getDesktop().browse(new URI(url));
+                        Desktop.getDesktop().browse(new URI(locationAndRating.location.url));
                     } catch (Exception e) {
-                        logger.logError("Exception opening browser on URL " + url, e);
+                        logger.logError("Exception opening browser on URL " + locationAndRating.location.url, e);
                     }
                 }
             }
@@ -109,6 +109,10 @@ public class RateRecommendationsDialog extends TitleAreaDialog {
         titleViewerColumn.setLabelProvider(new ColumnLabelProvider() {
             public String getText(Object item) {
                 return ((LocationAndRating)item).location.title;
+            }
+            
+            public String getToolTipText(Object item) {
+                return ((LocationAndRating)item).location.url;
             }
         });
         
@@ -191,7 +195,8 @@ public class RateRecommendationsDialog extends TitleAreaDialog {
 
         @Override
         protected Object getValue(Object element) {
-            return ((LocationAndRating)element).comment;
+            String comment = ((LocationAndRating)element).comment; 
+            return (comment == null ? "" : comment);
         }
 
         @Override
@@ -204,6 +209,7 @@ public class RateRecommendationsDialog extends TitleAreaDialog {
 
     private class RatingEditingSupport extends EditingSupport {
         private TableViewer viewer;
+        private final List<String> labels = Arrays.asList("", "5", "4", "3", "2", "1");
         
         public RatingEditingSupport(TableViewer viewer) {
             super(viewer);
@@ -212,8 +218,7 @@ public class RateRecommendationsDialog extends TitleAreaDialog {
         
         @Override
         protected CellEditor getCellEditor(Object element) {
-            ComboBoxCellEditor result = new ComboBoxCellEditor(viewer.getTable(), 
-                    new String[] {"5", "4", "3", "2", "1"}, SWT.READ_ONLY);
+            ComboBoxCellEditor result = new ComboBoxCellEditor(viewer.getTable(), labels.toArray(new String[] {}), SWT.READ_ONLY);
             result.setActivationStyle(ComboBoxCellEditor.DROP_DOWN_ON_MOUSE_ACTIVATION);
             return result;
         }
@@ -225,12 +230,22 @@ public class RateRecommendationsDialog extends TitleAreaDialog {
 
         @Override
         protected Object getValue(Object element) {
-            return ((LocationAndRating)element).rating - 1; 
+            int rating = ((LocationAndRating)element).rating;
+            if (rating == 0) {
+                return 0;
+            }
+            return labels.indexOf(Integer.toString(rating));
         }
 
         @Override
         protected void setValue(Object element, Object value) {
-            ((LocationAndRating)element).rating = ((Integer)value)+1;
+            LocationAndRating locationAndRating = (LocationAndRating)element;
+            int intValue = (Integer)value;
+            if (intValue == 0) {
+                locationAndRating.rating = 0;
+            } else {
+                locationAndRating.rating = Integer.parseInt(labels.get(intValue));
+            }
             viewer.refresh();
         }
         
