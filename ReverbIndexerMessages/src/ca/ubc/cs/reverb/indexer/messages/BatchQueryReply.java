@@ -1,7 +1,6 @@
 package ca.ubc.cs.reverb.indexer.messages;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 public class BatchQueryReply extends IndexerReply {
@@ -10,13 +9,7 @@ public class BatchQueryReply extends IndexerReply {
     
     public BatchQueryReply(boolean errorOccurred, String errorMessage) {
         super(errorOccurred, errorMessage);
-        timestamp = System.currentTimeMillis();
     }
 
     public List<QueryResult> queryResults = new ArrayList<QueryResult>();
-
-    /**
-     * Timestamp when the results were generated.
-     */
-    public long timestamp;
 }
