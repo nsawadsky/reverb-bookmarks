@@ -12,6 +12,7 @@ import java.nio.channels.FileChannel;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.dialogs.TitleAreaDialog;
+import org.eclipse.jface.dialogs.TrayDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
@@ -29,8 +30,10 @@ import ca.ubc.cs.reverb.eclipseplugin.PluginConfig;
 import ca.ubc.cs.reverb.eclipseplugin.PluginLogger;
 import org.eclipse.wb.swt.SWTResourceManager;
 import org.eclipse.wb.swt.ResourceManager;
+import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.layout.GridLayout;
 
-public class UploadLogsDialog extends TitleAreaDialog implements SelectionListener {
+public class UploadLogsDialog extends TrayDialog implements SelectionListener {
     private final static String LOG_FILE_EXTENSION = ".txt";
     private final static String MORE_INFORMATION_URL = "http://code.google.com/p/reverb-plugin/";
     
@@ -53,23 +56,32 @@ public class UploadLogsDialog extends TitleAreaDialog implements SelectionListen
     }
 
     /**
+     * Set dialog title.
+     */
+    @Override
+    protected void configureShell(Shell shell) {
+        super.configureShell(shell);
+        shell.setText("Upload Reverb Usage Logs");
+    }
+    
+    /**
      * Create contents of the dialog.
      * @param parent
      */
     @Override
     protected Control createDialogArea(Composite parent) {
-        setTitleImage(ResourceManager.getPluginImage("ca.ubc.cs.reverb.eclipseplugin", "icons/reverb-48.png"));
-        setTitle("Upload Reverb Usage Logs");
-        Composite area = (Composite) super.createDialogArea(parent);
-        Composite container = new Composite(area, SWT.NONE);
-        container.setLayoutData(new GridData(GridData.FILL_BOTH));
+        Composite container = (Composite) super.createDialogArea(parent);
+        GridLayout gridLayout = (GridLayout) container.getLayout();
+        gridLayout.numColumns = 2;
         
         txtReverbIsReady = new Text(container, SWT.WRAP);
         txtReverbIsReady.setBackground(SWTResourceManager.getColor(SWT.COLOR_WIDGET_BACKGROUND));
         txtReverbIsReady.setText("Reverb is ready to upload scrubbed usage logs.  Recommendations and browser page visits are identified in the logs by numbers only.  No code or web page details are included.  ");
         txtReverbIsReady.setBounds(10, 10, 424, 48);
+        txtReverbIsReady.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
         
         btnViewLogs = new Button(container, SWT.NONE);
+        btnViewLogs.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false, false, 1, 1));
         btnViewLogs.setBounds(10, 87, 75, 25);
         btnViewLogs.setText("View logs");
         btnViewLogs.addSelectionListener(this);
@@ -77,9 +89,10 @@ public class UploadLogsDialog extends TitleAreaDialog implements SelectionListen
         lnkMoreInformation = new Link(container, SWT.NONE);
         lnkMoreInformation.setBounds(10, 64, 252, 15);
         lnkMoreInformation.setText("<a>More Information</a>");
+        new Label(container, SWT.NONE);
         lnkMoreInformation.addSelectionListener(this);
 
-        return area;
+        return container;
     }
 
     /**
