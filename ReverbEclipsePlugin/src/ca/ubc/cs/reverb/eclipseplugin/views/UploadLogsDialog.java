@@ -177,8 +177,6 @@ public class UploadLogsDialog extends TrayDialog implements SelectionListener {
 
     @Override
     public void widgetDefaultSelected(SelectionEvent e) {
-        // TODO Auto-generated method stub
-        
     }
 
     private static void copyFile(File sourceFile, File destFile) throws IOException {

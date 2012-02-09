@@ -5,7 +5,6 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.TrayDialog;
 import org.eclipse.jface.viewers.ArrayContentProvider;
@@ -30,35 +29,52 @@ import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 
 import ca.ubc.cs.reverb.eclipseplugin.LocationAndRating;
+import ca.ubc.cs.reverb.eclipseplugin.PluginConfig;
 import ca.ubc.cs.reverb.eclipseplugin.PluginLogger;
 import ca.ubc.cs.reverb.indexer.messages.Location;
 
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.wb.swt.SWTResourceManager;
+import org.eclipse.swt.widgets.Button;
 
 public class RateRecommendationsDialog extends TrayDialog {
-
     private Table table;
     private PluginLogger logger;
-    private List<LocationAndRating> ratedLocations;
+    private PluginConfig config;
+    private List<LocationAndRating> locationRatings;
     private Text txtDidYouFind;
     
     /**
      * Create the dialog.
      * @param parentShell
      */
-    public RateRecommendationsDialog(Shell parentShell, PluginLogger logger, List<Location> locations) {
+    public RateRecommendationsDialog(Shell parentShell, PluginConfig config, PluginLogger logger, List<Location> locations) {
         super(parentShell);
         setShellStyle(this.getShellStyle() | SWT.RESIZE);
         setHelpAvailable(false);
+        this.config = config;
         this.logger = logger;
         
-        ratedLocations = new ArrayList<LocationAndRating>();
+        locationRatings = new ArrayList<LocationAndRating>();
+        
         for (Location location: locations) {
-            ratedLocations.add(new LocationAndRating(location));
+            // Skip duplicates.
+            boolean found = false;
+            for (LocationAndRating locationRating: locationRatings) {
+                if (locationRating.location.url.equals(location.url)) {
+                    found = true;
+                }
+            }
+            if (!found) {
+                locationRatings.add(new LocationAndRating(location));
+            }
         }
     }
 
+    public List<LocationAndRating> getLocationRatings() {
+        return locationRatings;
+    }
+    
     /**
      * Set dialog title.
      */
@@ -78,7 +94,9 @@ public class RateRecommendationsDialog extends TrayDialog {
         
         txtDidYouFind = new Text(container, SWT.WRAP);
         txtDidYouFind.setBackground(SWTResourceManager.getColor(SWT.COLOR_WIDGET_BACKGROUND));
-        txtDidYouFind.setText("You clicked on the following links.  Did you find them useful?  Please rate each one (5 most useful, 1 least useful), and let us know any comments you have.  You can double-click on a row to open the page in your browser.");
+        txtDidYouFind.setText("You clicked on the links below.  Did you find them useful?  Please rate " +
+                "each one (5 most useful, 1 least useful), and let us know any comments you have.  You can " +
+                "double-click on a row to open the page in your browser.");
         txtDidYouFind.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
         
         table = new Table(container, SWT.BORDER | SWT.FULL_SELECTION);
@@ -157,7 +175,7 @@ public class RateRecommendationsDialog extends TrayDialog {
         commentColumn.setText("Comment");
         commentColumn.setWidth(288);
         
-        viewer.setInput(this.ratedLocations);
+        viewer.setInput(this.locationRatings);
         return container;
     }
 
@@ -167,8 +185,9 @@ public class RateRecommendationsDialog extends TrayDialog {
      */
     @Override
     protected void createButtonsForButtonBar(Composite parent) {
-        createButton(parent, IDialogConstants.OK_ID, IDialogConstants.OK_LABEL,
+        Button button = createButton(parent, IDialogConstants.OK_ID, IDialogConstants.OK_LABEL,
                 true);
+        button.setText("Submit");
         createButton(parent, IDialogConstants.CANCEL_ID,
                 IDialogConstants.CANCEL_LABEL, false);
     }

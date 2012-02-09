@@ -3,6 +3,8 @@ package ca.ubc.cs.reverb.eclipseplugin;
 import ca.ubc.cs.reverb.indexer.messages.Location;
 
 public class LocationAndRating {
+    public LocationAndRating() { }
+
     public LocationAndRating(Location location) {
         this.location = location;
     }
