@@ -175,7 +175,7 @@ public class QueryPipeListener implements Runnable {
                 builder.buildQueries();
                 BatchQueryReply batchQueryReply = searcher.performSearch(
                         builder.getQueries());
-                codeQueryReply = new CodeQueryReply(batchQueryReply.timestamp);
+                codeQueryReply = new CodeQueryReply();
                 codeQueryReply.errorElements = builder.getErrorElements();
                 for (QueryResult result: batchQueryReply.queryResults) {
                     List<String> allKeywords = new ArrayList<String>();

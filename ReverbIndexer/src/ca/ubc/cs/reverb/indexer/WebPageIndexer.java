@@ -1,17 +1,7 @@
 package ca.ubc.cs.reverb.indexer;
 
 import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.io.StringReader;
-import java.io.Writer;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 import org.apache.lucene.document.Document;
@@ -24,9 +14,7 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Version;
 import org.jsoup.Jsoup;
-import org.jsoup.nodes.Comment;
 import org.jsoup.nodes.Element;
-import org.jsoup.nodes.Node;
 import org.jsoup.select.Elements;
 
 import ca.ubc.cs.reverb.indexer.messages.DeleteLocationRequest;
