@@ -7,7 +7,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.eclipse.jface.dialogs.IDialogConstants;
-import org.eclipse.jface.dialogs.TitleAreaDialog;
+import org.eclipse.jface.dialogs.TrayDialog;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.CellEditor;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
@@ -22,7 +22,6 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Shell;
@@ -34,13 +33,15 @@ import ca.ubc.cs.reverb.eclipseplugin.LocationAndRating;
 import ca.ubc.cs.reverb.eclipseplugin.PluginLogger;
 import ca.ubc.cs.reverb.indexer.messages.Location;
 
-import org.eclipse.wb.swt.ResourceManager;
+import org.eclipse.swt.widgets.Text;
+import org.eclipse.wb.swt.SWTResourceManager;
 
-public class RateRecommendationsDialog extends TitleAreaDialog {
+public class RateRecommendationsDialog extends TrayDialog {
 
     private Table table;
     private PluginLogger logger;
     private List<LocationAndRating> ratedLocations;
+    private Text txtDidYouFind;
     
     /**
      * Create the dialog.
@@ -48,6 +49,7 @@ public class RateRecommendationsDialog extends TitleAreaDialog {
      */
     public RateRecommendationsDialog(Shell parentShell, PluginLogger logger, List<Location> locations) {
         super(parentShell);
+        setShellStyle(this.getShellStyle() | SWT.RESIZE);
         setHelpAvailable(false);
         this.logger = logger;
         
@@ -58,25 +60,29 @@ public class RateRecommendationsDialog extends TitleAreaDialog {
     }
 
     /**
+     * Set dialog title.
+     */
+    @Override
+    protected void configureShell(Shell shell) {
+        super.configureShell(shell);
+        shell.setText("Rate Recommendations");
+    }
+    
+    /**
      * Create contents of the dialog.
      * @param parent
      */
     @Override
     protected Control createDialogArea(Composite parent) {
-        setMessage("Did you find the following Reverb links useful?  Please rate each one, and let us know any comments you have.  (You can double-click on a row to open the page in your browser.)");
-        setTitleImage(ResourceManager.getPluginImage("ca.ubc.cs.reverb.eclipseplugin", "icons/reverb-48.png"));
-        setTitle("Rate Recommendations");
+        Composite container = (Composite) super.createDialogArea(parent);
         
-        Composite area = (Composite) super.createDialogArea(parent);
-        Composite container = new Composite(area, SWT.NULL);
-
-        container.setLayout(new GridLayout(1, false));
+        txtDidYouFind = new Text(container, SWT.WRAP);
+        txtDidYouFind.setBackground(SWTResourceManager.getColor(SWT.COLOR_WIDGET_BACKGROUND));
+        txtDidYouFind.setText("You clicked on the following links.  Did you find them useful?  Please rate each one (5 most useful, 1 least useful), and let us know any comments you have.  You can double-click on a row to open the page in your browser.");
+        txtDidYouFind.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
         
         table = new Table(container, SWT.BORDER | SWT.FULL_SELECTION);
-        GridData gd_table = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);
-        gd_table.widthHint = 591;
-        gd_table.heightHint = 293;
-        table.setLayoutData(gd_table);
+        table.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
         table.setHeaderVisible(true);
         table.setLinesVisible(true);
         table.addSelectionListener(new SelectionListener() {
@@ -119,7 +125,7 @@ public class RateRecommendationsDialog extends TitleAreaDialog {
         TableColumn titleColumn = titleViewerColumn.getColumn();
         titleColumn.setResizable(true);
         titleColumn.setText("Page Title");
-        titleColumn.setWidth(259);
+        titleColumn.setWidth(230);
         
         TableViewerColumn ratingViewerColumn = new TableViewerColumn(viewer, SWT.NONE);
         ratingViewerColumn.setLabelProvider(new ColumnLabelProvider() {
@@ -149,10 +155,10 @@ public class RateRecommendationsDialog extends TitleAreaDialog {
         TableColumn commentColumn = commentViewerColumn.getColumn();
         commentColumn.setResizable(true);
         commentColumn.setText("Comment");
-        commentColumn.setWidth(268);
+        commentColumn.setWidth(288);
         
         viewer.setInput(this.ratedLocations);
-        return area;
+        return container;
     }
 
     /**
