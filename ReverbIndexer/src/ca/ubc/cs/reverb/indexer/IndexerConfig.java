@@ -3,10 +3,6 @@ package ca.ubc.cs.reverb.indexer;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.UUID;
 
@@ -133,8 +129,7 @@ public class IndexerConfig {
     
     private String initializeUserIdKey(String inputUserId) throws IndexerException {
         try {
-            String className = IndexerConfig.class.getName();
-            String shortName = className.substring(className.lastIndexOf('.')+1);
+            String shortName = "IndexerConfig";
             SecretKeySpec keySpec = new SecretKeySpec(
                     shortName.getBytes("UTF-8"), "HmacSHA256");
     

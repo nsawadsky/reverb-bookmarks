@@ -2,9 +2,19 @@ package ca.ubc.cs.reverb.eclipseplugin;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.StatusLine;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.mime.MultipartEntity;
+import org.apache.http.entity.mime.content.StringBody;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.util.EntityUtils;
 import org.codehaus.jackson.JsonEncoding;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -14,9 +24,11 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jface.dialogs.Dialog;
+import org.eclipse.jface.window.Window;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.PlatformUI;
 
+import ca.ubc.cs.reverb.eclipseplugin.views.RateRecommendationsDialog;
 import ca.ubc.cs.reverb.eclipseplugin.views.UploadLogsDialog;
 import ca.ubc.cs.reverb.indexer.messages.CodeQueryReply;
 import ca.ubc.cs.reverb.indexer.messages.Location;
@@ -27,6 +39,8 @@ import ca.ubc.cs.reverb.indexer.messages.UploadLogsRequest;
  * Threading: We assume this class is only ever invoked from the UI thread.
  */
 public class StudyActivityMonitor implements EditorMonitorListener {
+    private final static String UPLOAD_URL = "https://www.cs.ubc.ca/~nicks/reverb/rec-ratings-uploader.php";
+
     // 30 seconds
     private final static int UPLOAD_PROMPT_DELAY_MSECS = 30000;
     //private final static int UPLOAD_PROMPT_DELAY_MSECS = 10000;
@@ -93,7 +107,73 @@ public class StudyActivityMonitor implements EditorMonitorListener {
             logger.logError("Error saving study state", e);
         }
     }
+    
+    public void promptForRatings() {
+        final RateRecommendationsDialog dialog = new RateRecommendationsDialog(shell, config, logger, studyState.recommendationsClicked);
+        
+        if (dialog.open() == Window.OK) {
+            Job uploadJob = new Job(null) {
 
+                @Override
+                protected IStatus run(IProgressMonitor monitor) {
+                    try {
+                        uploadRatings(dialog.getLocationRatings());
+                    } catch (Exception e) {
+                        return logger.createStatus(IStatus.ERROR, "Error uploading ratings", e);
+                    }
+                    return Status.OK_STATUS;
+                }
+                
+            };
+            uploadJob.schedule();
+        }
+        
+    }
+    
+    private void uploadRatings(List<LocationAndRating> ratings) throws IOException, PluginException {
+        HttpClient httpClient = null;
+        try {
+            String report = generateReport(ratings);
+            
+            httpClient = new DefaultHttpClient();
+            HttpPost httpPost = new HttpPost(UPLOAD_URL);
+            
+            MultipartEntity requestEntity = new MultipartEntity();
+
+            StringBody participantId = new StringBody(config.getUserId());
+            requestEntity.addPart("participant", participantId);
+            
+            StringBody key = new StringBody(config.getUserIdKey());
+            requestEntity.addPart("key", key);
+
+            StringBody reportBody = new StringBody(report);
+            requestEntity.addPart("ratingsReport", reportBody);
+            
+            httpPost.setEntity(requestEntity);
+
+            HttpResponse response = httpClient.execute(httpPost);
+            StatusLine line = response.getStatusLine();
+            EntityUtils.consume(response.getEntity());
+            if (line.getStatusCode() != HttpStatus.SC_OK) {
+                throw new PluginException(Integer.toString(line.getStatusCode()) + " upload response: " + 
+                        line.getReasonPhrase());
+            }
+        } finally {
+            if (httpClient != null) { httpClient.getConnectionManager().shutdown(); }
+        }
+    }
+    
+    private String generateReport(List<LocationAndRating> locationRatings) throws IOException {
+        StringWriter writer = new StringWriter();
+        ObjectMapper mapper = new ObjectMapper();
+        JsonGenerator jsonGenerator = mapper.getJsonFactory().createJsonGenerator(writer);
+        jsonGenerator.setPrettyPrinter(new DefaultPrettyPrinter());
+
+        mapper.writeValue(jsonGenerator, new RatingsReport(locationRatings));
+        
+        return writer.toString();
+    }
+    
     private void schedulePromptForUpload(int delayMsecs) {
         shell.getDisplay().timerExec(delayMsecs, new Runnable() {
 

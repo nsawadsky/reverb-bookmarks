@@ -284,7 +284,7 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
     private Action createUploadLogsAction() {
         Action uploadLogsAction = new Action() {
             public void run() {
-                UploadLogsDialog uploadDialog = new UploadLogsDialog(getShell(), config, logger);
+                UploadLogsDialog uploadDialog = new UploadLogsDialog(getSite().getShell(), config, logger);
                 if (uploadDialog.open() == Dialog.OK) {
                     Job job = new Job("Uploading Reverb logs") {
                         @Override
@@ -294,13 +294,11 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
                                         new UploadLogsRequest(), 60000);
                                 if (reply.errorOccurred) {
                                     IStatus status = logger.createStatus(IStatus.ERROR, "Error uploading logs: " + reply.errorMessage, null);
-                                    logger.log(status);
                                     return status;
                                 }
                                 return Status.OK_STATUS;
                             } catch (Exception e) {
                                 IStatus status = logger.createStatus(IStatus.ERROR, "Error sending upload logs request", e);
-                                logger.log(status);
                                 return status;
                             }
                         }
@@ -320,9 +318,7 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
     private Action createRateRecommendationsAction() {
         Action rateRecommendationsAction = new Action() {
             public void run() {
-                RateRecommendationsDialog ratingDialog = new RateRecommendationsDialog(
-                        getShell(), logger, studyActivityMonitor.getRecommendationsClicked());
-                ratingDialog.open();
+                studyActivityMonitor.promptForRatings();
             }
         };
         rateRecommendationsAction.setText("Rate Recommendations");
@@ -332,11 +328,6 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
         return rateRecommendationsAction;
     }
     
-    protected Shell getShell() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
     private Action createUpdateViewAction() {
         Action updateViewAction = new Action() {
             public void run() {
@@ -361,10 +352,6 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
                     } catch (Exception e) {
                         logger.logError(
                                 "Exception opening browser on '" + location.url + "'", e);
-                    }
-                    long resultGenTimestamp = 0;
-                    if (contentProvider.getQueryReply() != null) {
-                        resultGenTimestamp = contentProvider.getQueryReply().timestamp;
                     }
                     indexerConnection.sendRequestAsync(
                             new LogClickRequest(location), null, null);
@@ -425,11 +412,4 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
         return deleteLocationAction;
     }
     
-    private void showMessage(String message) {
-        MessageDialog.openInformation(
-                viewer.getControl().getShell(),
-                "Reverb",
-                message);
-    }
-
 }
