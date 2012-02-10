@@ -318,7 +318,7 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
     private Action createRateRecommendationsAction() {
         Action rateRecommendationsAction = new Action() {
             public void run() {
-                studyActivityMonitor.promptForRatings();
+                studyActivityMonitor.displayRateRecommendationsDialog();
             }
         };
         rateRecommendationsAction.setText("Rate Recommendations");

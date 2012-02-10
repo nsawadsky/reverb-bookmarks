@@ -80,7 +80,7 @@ public class RateRecommendationsDialog extends TrayDialog {
     @Override
     protected void configureShell(Shell shell) {
         super.configureShell(shell);
-        shell.setText("Rate Recommendations");
+        shell.setText("Rate Reverb Recommendations");
     }
     
     /**

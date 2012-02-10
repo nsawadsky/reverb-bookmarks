@@ -50,6 +50,8 @@ public class StudyActivityMonitor implements EditorMonitorListener {
     private final static int UPLOAD_RETRY_DELAY_MSECS = 15 * 60 * 1000;
     //private final static int UPLOAD_RETRY_DELAY_MSECS = 15 * 1000;
     
+    private final static int UPLOADS_TO_COMPLETE_STUDY = 2;
+    
     private IndexerConnection indexerConnection;
     private StudyState studyState;
     private PluginConfig config;
@@ -65,7 +67,7 @@ public class StudyActivityMonitor implements EditorMonitorListener {
         this.indexerConnection = indexerConnection;
         loadStudyState();
         if (studyState.uploadPending) {
-            schedulePromptForUpload(UPLOAD_PROMPT_DELAY_MSECS);
+            schedulePromptForUploadLogs(UPLOAD_PROMPT_DELAY_MSECS);
         }
     }
     
@@ -82,7 +84,7 @@ public class StudyActivityMonitor implements EditorMonitorListener {
             studyState.activeIntervals++;
             if (!studyState.uploadPending && studyState.activeIntervals % StudyState.LOG_UPLOAD_INTERVALS == 0) {
                 studyState.uploadPending = true;
-                schedulePromptForUpload(UPLOAD_PROMPT_DELAY_MSECS);
+                schedulePromptForUploadLogs(UPLOAD_PROMPT_DELAY_MSECS);
             }
             try {
                 saveStudyState();
@@ -110,7 +112,7 @@ public class StudyActivityMonitor implements EditorMonitorListener {
         }
     }
     
-    public void promptForRatings() {
+    public void displayRateRecommendationsDialog() {
         final RateRecommendationsDialog dialog = new RateRecommendationsDialog(shell, config, logger, studyState.recommendationsClicked);
         
         if (dialog.open() == Window.OK) {
@@ -120,9 +122,13 @@ public class StudyActivityMonitor implements EditorMonitorListener {
                 protected IStatus run(IProgressMonitor monitor) {
                     try {
                         uploadRatings(dialog.getLocationRatings());
+                        PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
+                            public void run() { handleSuccessfulRateRecommendations(); }
+                        });
                     } catch (Exception e) {
-                        return logger.createStatus(IStatus.ERROR, "Error uploading ratings", e);
+                        logger.logError("Error uploading ratings", e);
                     }
+                    // We always report success, since we do not want an error popup.
                     return Status.OK_STATUS;
                 }
                 
@@ -132,10 +138,14 @@ public class StudyActivityMonitor implements EditorMonitorListener {
         
     }
     
+    public void displayStudyCompleteDialog() {
+        
+    }
+    
     private void uploadRatings(List<LocationRating> ratings) throws IOException, PluginException {
         HttpClient httpClient = null;
         try {
-            String report = generateReport(ratings);
+            String report = generateRatingsReport(ratings);
             
             httpClient = new DefaultHttpClient();
             HttpPost httpPost = new HttpPost(UPLOAD_URL);
@@ -165,7 +175,7 @@ public class StudyActivityMonitor implements EditorMonitorListener {
         }
     }
     
-    private String generateReport(List<LocationRating> locationRatings) throws IOException {
+    private String generateRatingsReport(List<LocationRating> locationRatings) throws IOException {
         StringWriter writer = new StringWriter();
         ObjectMapper mapper = new ObjectMapper();
         JsonGenerator jsonGenerator = mapper.getJsonFactory().createJsonGenerator(writer);
@@ -176,20 +186,19 @@ public class StudyActivityMonitor implements EditorMonitorListener {
         return writer.toString();
     }
     
-    private void schedulePromptForUpload(int delayMsecs) {
+    private void schedulePromptForUploadLogs(int delayMsecs) {
         shell.getDisplay().timerExec(delayMsecs, new Runnable() {
 
             @Override
             public void run() {
-                promptForUpload();
+                promptForUploadLogs();
             }
             
         });
     }
     
-    private void handleSuccessfulUpload() {
-        studyState.uploadPending = false;
-        studyState.successfulLogUploads++;
+    private void handleSuccessfulRateRecommendations() {
+        studyState.recommendationsClicked.clear();
         try {
             saveStudyState();
         } catch (PluginException e) {
@@ -197,10 +206,26 @@ public class StudyActivityMonitor implements EditorMonitorListener {
         }
     }
     
-    private void promptForUpload() {
+    private void handleSuccessfulUploadLogs() {
+        studyState.uploadPending = false;
+        studyState.successfulLogUploads++;
+        try {
+            saveStudyState();
+        } catch (PluginException e) {
+            logger.logError("Error saving study state", e);
+        }
+        if (! studyState.recommendationsClicked.isEmpty()) {
+            displayRateRecommendationsDialog();
+        }
+        if (studyState.successfulLogUploads == UPLOADS_TO_COMPLETE_STUDY) {
+            displayStudyCompleteDialog();
+        }
+    }
+    
+    private void promptForUploadLogs() {
         UploadLogsDialog uploadDialog = new UploadLogsDialog(shell, config, logger);
         if (uploadDialog.open() != Dialog.OK) {
-            schedulePromptForUpload(UPLOAD_RETRY_DELAY_MSECS);
+            schedulePromptForUploadLogs(UPLOAD_RETRY_DELAY_MSECS);
         } else {
             Job job = new Job("Uploading Reverb logs") {
                 @Override
@@ -217,11 +242,11 @@ public class StudyActivityMonitor implements EditorMonitorListener {
                     }
                     if (result.isOK()) {
                         PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
-                            public void run() { handleSuccessfulUpload(); }
+                            public void run() { handleSuccessfulUploadLogs(); }
                         });
                     } else {
                         PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
-                            public void run() { schedulePromptForUpload(UPLOAD_RETRY_DELAY_MSECS); }
+                            public void run() { schedulePromptForUploadLogs(UPLOAD_RETRY_DELAY_MSECS); }
                         });
                     }
                     return result;
