@@ -236,6 +236,7 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
                 manager.add(new Separator());
                 manager.add(uploadLogsAction);
                 manager.add(rateRecommendationsAction);
+                manager.add(new Separator());
             }
             
         });

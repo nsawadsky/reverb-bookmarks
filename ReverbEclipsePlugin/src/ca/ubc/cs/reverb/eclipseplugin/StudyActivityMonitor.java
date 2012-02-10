@@ -28,6 +28,8 @@ import org.eclipse.jface.window.Window;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.PlatformUI;
 
+import ca.ubc.cs.reverb.eclipseplugin.reports.LocationRating;
+import ca.ubc.cs.reverb.eclipseplugin.reports.RatingsReport;
 import ca.ubc.cs.reverb.eclipseplugin.views.RateRecommendationsDialog;
 import ca.ubc.cs.reverb.eclipseplugin.views.UploadLogsDialog;
 import ca.ubc.cs.reverb.indexer.messages.CodeQueryReply;
@@ -112,7 +114,7 @@ public class StudyActivityMonitor implements EditorMonitorListener {
         final RateRecommendationsDialog dialog = new RateRecommendationsDialog(shell, config, logger, studyState.recommendationsClicked);
         
         if (dialog.open() == Window.OK) {
-            Job uploadJob = new Job(null) {
+            Job uploadJob = new Job("Uploading ratings") {
 
                 @Override
                 protected IStatus run(IProgressMonitor monitor) {
@@ -130,7 +132,7 @@ public class StudyActivityMonitor implements EditorMonitorListener {
         
     }
     
-    private void uploadRatings(List<LocationAndRating> ratings) throws IOException, PluginException {
+    private void uploadRatings(List<LocationRating> ratings) throws IOException, PluginException {
         HttpClient httpClient = null;
         try {
             String report = generateReport(ratings);
@@ -163,7 +165,7 @@ public class StudyActivityMonitor implements EditorMonitorListener {
         }
     }
     
-    private String generateReport(List<LocationAndRating> locationRatings) throws IOException {
+    private String generateReport(List<LocationRating> locationRatings) throws IOException {
         StringWriter writer = new StringWriter();
         ObjectMapper mapper = new ObjectMapper();
         JsonGenerator jsonGenerator = mapper.getJsonFactory().createJsonGenerator(writer);

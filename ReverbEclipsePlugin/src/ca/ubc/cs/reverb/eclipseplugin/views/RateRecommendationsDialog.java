@@ -23,26 +23,25 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 
-import ca.ubc.cs.reverb.eclipseplugin.LocationAndRating;
 import ca.ubc.cs.reverb.eclipseplugin.PluginConfig;
 import ca.ubc.cs.reverb.eclipseplugin.PluginLogger;
+import ca.ubc.cs.reverb.eclipseplugin.reports.LocationRating;
 import ca.ubc.cs.reverb.indexer.messages.Location;
 
-import org.eclipse.swt.widgets.Text;
-import org.eclipse.wb.swt.SWTResourceManager;
 import org.eclipse.swt.widgets.Button;
 
 public class RateRecommendationsDialog extends TrayDialog {
     private Table table;
     private PluginLogger logger;
     private PluginConfig config;
-    private List<LocationAndRating> locationRatings;
-    private Text txtDidYouFind;
+    private List<LocationRating> locationRatings;
+    private Label lblDidYouFind;
     
     /**
      * Create the dialog.
@@ -55,23 +54,23 @@ public class RateRecommendationsDialog extends TrayDialog {
         this.config = config;
         this.logger = logger;
         
-        locationRatings = new ArrayList<LocationAndRating>();
+        locationRatings = new ArrayList<LocationRating>();
         
         for (Location location: locations) {
             // Skip duplicates.
             boolean found = false;
-            for (LocationAndRating locationRating: locationRatings) {
-                if (locationRating.location.url.equals(location.url)) {
+            for (LocationRating locationRating: locationRatings) {
+                if (locationRating.url.equals(location.url)) {
                     found = true;
                 }
             }
             if (!found) {
-                locationRatings.add(new LocationAndRating(location));
+                locationRatings.add(new LocationRating(location));
             }
         }
     }
 
-    public List<LocationAndRating> getLocationRatings() {
+    public List<LocationRating> getLocationRatings() {
         return locationRatings;
     }
     
@@ -92,12 +91,11 @@ public class RateRecommendationsDialog extends TrayDialog {
     protected Control createDialogArea(Composite parent) {
         Composite container = (Composite) super.createDialogArea(parent);
         
-        txtDidYouFind = new Text(container, SWT.WRAP);
-        txtDidYouFind.setBackground(SWTResourceManager.getColor(SWT.COLOR_WIDGET_BACKGROUND));
-        txtDidYouFind.setText("You clicked on the links below.  Did you find them useful?  Please rate " +
+        lblDidYouFind = new Label(container, SWT.WRAP);
+        lblDidYouFind.setText("You clicked on the links below.  Did you find them useful?  Please rate " +
                 "each one (5 most useful, 1 least useful), and let us know any comments you have.  You can " +
                 "double-click on a row to open the page in your browser.");
-        txtDidYouFind.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
+        lblDidYouFind.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
         
         table = new Table(container, SWT.BORDER | SWT.FULL_SELECTION);
         table.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
@@ -112,12 +110,12 @@ public class RateRecommendationsDialog extends TrayDialog {
             @Override
             public void widgetDefaultSelected(SelectionEvent event) {
                 TableItem item = (TableItem)event.item;
-                LocationAndRating locationAndRating = (LocationAndRating)item.getData();
-                if (locationAndRating != null) {
+                LocationRating locationRating = (LocationRating)item.getData();
+                if (locationRating != null) {
                     try {
-                        Desktop.getDesktop().browse(new URI(locationAndRating.location.url));
+                        Desktop.getDesktop().browse(new URI(locationRating.url));
                     } catch (Exception e) {
-                        logger.logError("Exception opening browser on URL " + locationAndRating.location.url, e);
+                        logger.logError("Exception opening browser on URL " + locationRating.url, e);
                     }
                 }
             }
@@ -132,11 +130,11 @@ public class RateRecommendationsDialog extends TrayDialog {
         TableViewerColumn titleViewerColumn = new TableViewerColumn(viewer, SWT.NONE);
         titleViewerColumn.setLabelProvider(new ColumnLabelProvider() {
             public String getText(Object item) {
-                return ((LocationAndRating)item).location.title;
+                return ((LocationRating)item).title;
             }
             
             public String getToolTipText(Object item) {
-                return ((LocationAndRating)item).location.url;
+                return ((LocationRating)item).url;
             }
         });
         
@@ -148,7 +146,7 @@ public class RateRecommendationsDialog extends TrayDialog {
         TableViewerColumn ratingViewerColumn = new TableViewerColumn(viewer, SWT.NONE);
         ratingViewerColumn.setLabelProvider(new ColumnLabelProvider() {
             public String getText(Object item) {
-                int rating = ((LocationAndRating)item).rating; 
+                int rating = ((LocationRating)item).rating; 
                 if (rating == 0) {
                     return "";
                 }
@@ -165,7 +163,7 @@ public class RateRecommendationsDialog extends TrayDialog {
         TableViewerColumn commentViewerColumn = new TableViewerColumn(viewer, SWT.NONE);
         commentViewerColumn.setLabelProvider(new ColumnLabelProvider() {
             public String getText(Object item) {
-                return ((LocationAndRating)item).comment;
+                return ((LocationRating)item).comment;
             }
         });
         commentViewerColumn.setEditingSupport(new CommentEditingSupport(viewer));
@@ -188,8 +186,9 @@ public class RateRecommendationsDialog extends TrayDialog {
         Button button = createButton(parent, IDialogConstants.OK_ID, IDialogConstants.OK_LABEL,
                 true);
         button.setText("Submit");
-        createButton(parent, IDialogConstants.CANCEL_ID,
+        Button button_1 = createButton(parent, IDialogConstants.CANCEL_ID,
                 IDialogConstants.CANCEL_LABEL, false);
+        button_1.setText("Skip");
     }
 
     /**
@@ -220,13 +219,13 @@ public class RateRecommendationsDialog extends TrayDialog {
 
         @Override
         protected Object getValue(Object element) {
-            String comment = ((LocationAndRating)element).comment; 
+            String comment = ((LocationRating)element).comment; 
             return (comment == null ? "" : comment);
         }
 
         @Override
         protected void setValue(Object element, Object value) {
-            ((LocationAndRating)element).comment = (value == null ? null : value.toString());
+            ((LocationRating)element).comment = (value == null ? null : value.toString());
             viewer.refresh();
         }
         
@@ -255,7 +254,7 @@ public class RateRecommendationsDialog extends TrayDialog {
 
         @Override
         protected Object getValue(Object element) {
-            int rating = ((LocationAndRating)element).rating;
+            int rating = ((LocationRating)element).rating;
             if (rating == 0) {
                 return 0;
             }
@@ -264,12 +263,12 @@ public class RateRecommendationsDialog extends TrayDialog {
 
         @Override
         protected void setValue(Object element, Object value) {
-            LocationAndRating locationAndRating = (LocationAndRating)element;
+            LocationRating locationRating = (LocationRating)element;
             int intValue = (Integer)value;
             if (intValue == 0) {
-                locationAndRating.rating = 0;
+                locationRating.rating = 0;
             } else {
-                locationAndRating.rating = Integer.parseInt(labels.get(intValue));
+                locationRating.rating = Integer.parseInt(labels.get(intValue));
             }
             viewer.refresh();
         }
