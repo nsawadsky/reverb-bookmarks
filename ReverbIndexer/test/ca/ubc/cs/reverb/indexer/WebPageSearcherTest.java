@@ -7,7 +7,6 @@ import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Date;
 
 import org.apache.lucene.search.IndexSearcher;
 import org.codehaus.jackson.JsonFactory;

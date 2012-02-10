@@ -45,6 +45,15 @@ public class LocationsDatabase {
         createLocationsTableIfNecessary();
     }
     
+    public synchronized void close() throws IndexerException {
+        commitChanges();
+        try {
+            connection.close();
+        } catch (SQLException e) {
+            throw new IndexerException("Error closing database connection: " + e, e);
+        }
+    }
+    
     public synchronized Map<String, LocationInfo> getLocationInfos(List<String> urls) throws IndexerException {
         Map<String, LocationInfo> results = new HashMap<String, LocationInfo>();
         if (urls.size() == 0) {

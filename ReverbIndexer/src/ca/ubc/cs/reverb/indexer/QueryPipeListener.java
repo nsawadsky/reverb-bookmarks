@@ -2,14 +2,12 @@ package ca.ubc.cs.reverb.indexer;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import org.codehaus.jackson.map.ObjectMapper;
 import xpnp.XpNamedPipe;
 
 import org.apache.log4j.Logger;
-import org.apache.lucene.index.IndexReader;
 
 import ca.ubc.cs.reverb.indexer.messages.BatchQueryReply;
 import ca.ubc.cs.reverb.indexer.messages.BatchQueryRequest;
@@ -50,12 +48,7 @@ public class QueryPipeListener implements Runnable {
     
     public void start() throws IndexerException {
         try {
-            try {
-                // IndexReader is thread-safe, share it for efficiency.
-                indexReader = new SharedIndexReader(IndexReader.open(indexer.getIndexWriter(), true));
-            } catch (Exception e) {
-                throw new IndexerException("Error creating IndexReader: " + e, e);
-            }
+            indexReader = indexer.getNewIndexReader();
             
             try {
                 listeningPipe = XpNamedPipe.createNamedPipe(config.getQueryPipeName(), true);
@@ -67,7 +60,7 @@ public class QueryPipeListener implements Runnable {
         } catch (IndexerException e) {
             if (indexReader != null) {
                 try {
-                    indexReader.get().close();
+                    indexReader.close();
                 } catch (IOException ioExcept) {}
             }
             throw e;

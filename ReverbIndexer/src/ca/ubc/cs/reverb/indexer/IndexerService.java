@@ -10,7 +10,6 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.spi.RootLogger;
 import org.apache.lucene.index.FieldInvertState;
-import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.search.DefaultSimilarity;
 import org.apache.lucene.search.Similarity;
 
@@ -66,13 +65,7 @@ public class IndexerService {
 
     private void runQuery(IndexerConfig config, WebPageIndexer indexer, LocationsDatabase locationsDatabase, 
             StudyDataCollector collector, String query) throws IndexerException {
-        SharedIndexReader indexReader;
-        try {
-            // IndexReader is thread-safe, share it for efficiency.
-            indexReader = new SharedIndexReader(IndexReader.open(indexer.getIndexWriter(), true));
-        } catch (Exception e) {
-            throw new IndexerException("Error creating IndexReader: " + e, e);
-        }
+        SharedIndexReader indexReader = indexer.getNewIndexReader();
 
         WebPageSearcher searcher = new WebPageSearcher(config, indexReader, locationsDatabase, null);
         
