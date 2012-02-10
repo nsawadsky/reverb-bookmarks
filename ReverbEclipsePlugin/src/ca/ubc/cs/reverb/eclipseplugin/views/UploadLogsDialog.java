@@ -22,12 +22,10 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.DirectoryDialog;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Link;
 
 import ca.ubc.cs.reverb.eclipseplugin.PluginConfig;
 import ca.ubc.cs.reverb.eclipseplugin.PluginLogger;
-import org.eclipse.wb.swt.SWTResourceManager;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.layout.GridLayout;
 
@@ -38,7 +36,7 @@ public class UploadLogsDialog extends TrayDialog implements SelectionListener {
     private PluginConfig config;
     private PluginLogger logger;
 
-    private Text txtReverbIsReady;
+    private Label lblReverbIsReady;
     private Button btnViewLogs;
     private Link lnkMoreInformation;
 
@@ -72,11 +70,10 @@ public class UploadLogsDialog extends TrayDialog implements SelectionListener {
         GridLayout gridLayout = (GridLayout) container.getLayout();
         gridLayout.numColumns = 2;
         
-        txtReverbIsReady = new Text(container, SWT.WRAP);
-        txtReverbIsReady.setBackground(SWTResourceManager.getColor(SWT.COLOR_WIDGET_BACKGROUND));
-        txtReverbIsReady.setText("Reverb is ready to upload scrubbed usage logs.  Recommendations and browser page visits are identified in the logs by numbers only.  No code or web page details are included.  ");
-        txtReverbIsReady.setBounds(10, 10, 424, 48);
-        txtReverbIsReady.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
+        lblReverbIsReady = new Label(container, SWT.WRAP);
+        lblReverbIsReady.setText("Reverb is ready to upload scrubbed usage logs.  Recommendations and browser page visits are identified in the logs by numbers only.  No code or web page details are included.  ");
+        lblReverbIsReady.setBounds(10, 10, 424, 48);
+        lblReverbIsReady.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
         
         btnViewLogs = new Button(container, SWT.NONE);
         btnViewLogs.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false, false, 1, 1));

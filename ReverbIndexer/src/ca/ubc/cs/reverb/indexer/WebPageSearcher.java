@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -256,7 +255,7 @@ public class WebPageSearcher {
     private List<Location> getLocationList(List<HitInfo> hits, long now) {
         List<Location> result = new ArrayList<Location>();
         for (HitInfo hitInfo: hits) {
-            result.add(new Location(now, hitInfo.hit.url, hitInfo.hit.title, hitInfo.combinedScore, 
+            result.add(new Location(now, hitInfo.hit.locationInfo.id, hitInfo.hit.url, hitInfo.hit.title, hitInfo.combinedScore, 
                     hitInfo.frecencyBoost, hitInfo.getOverallScore()));
         }
         return result;
