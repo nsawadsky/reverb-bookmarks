@@ -5,10 +5,10 @@ import java.util.Date;
 
 import ca.ubc.cs.reverb.indexer.LocationInfo;
 
-public abstract class StudyDataEvent {
+public abstract class LocationDataEvent {
     private final static String DATE_FORMAT_STRING = "yyyy-MM-dd'T'HH:mm:ss.SSS";
     
-    public StudyDataEvent(long timestamp, StudyEventType eventType, LocationInfo info, float frecencyBoost) {
+    public LocationDataEvent(long timestamp, StudyEventType eventType, LocationInfo info, float frecencyBoost) {
         this.timestamp = timestamp;
         this.eventType = eventType;
         this.locationId = info.id;

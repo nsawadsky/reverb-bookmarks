@@ -19,7 +19,12 @@ public enum StudyEventType {
     /**
      * Delete of a location.
      */
-    DELETE_LOCATION("DELETE");
+    DELETE_LOCATION("DELETE"),
+    
+    /**
+     * Reached a specified number of locations indexed.
+     */
+    INDEX_SIZE_MILEPOST("INDEX_SIZE");
     
     private String shortName;
     

@@ -2,7 +2,7 @@ package ca.ubc.cs.reverb.indexer.study;
 
 import ca.ubc.cs.reverb.indexer.LocationInfo;
 
-public class RecommendationClickEvent extends StudyDataEvent {
+public class RecommendationClickEvent extends LocationDataEvent {
 
     public RecommendationClickEvent(long timestamp, 
             LocationInfo info, float frecencyBoost, float relevance, float overallScore, long recommendationTimestamp) {

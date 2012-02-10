@@ -2,7 +2,7 @@ package ca.ubc.cs.reverb.indexer.study;
 
 import ca.ubc.cs.reverb.indexer.LocationInfo;
 
-public class BrowserVisitEvent extends StudyDataEvent {
+public class BrowserVisitEvent extends LocationDataEvent {
 
     public BrowserVisitEvent(long timestamp, 
             LocationInfo info, float frecencyBoost) {
