@@ -17,10 +17,12 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import ca.ubc.cs.reverb.indexer.LocationsDatabase.UpdateLocationResult;
 import ca.ubc.cs.reverb.indexer.messages.DeleteLocationRequest;
 import ca.ubc.cs.reverb.indexer.messages.UpdatePageInfoRequest;
 import ca.ubc.cs.reverb.indexer.study.BrowserVisitEvent;
 import ca.ubc.cs.reverb.indexer.study.DeleteLocationEvent;
+import ca.ubc.cs.reverb.indexer.study.LocationsIndexedMilestoneEvent;
 import ca.ubc.cs.reverb.indexer.study.StudyDataCollector;
 
 /**
@@ -104,9 +106,10 @@ public class WebPageIndexer {
     
     /**
      * The update is not committed immediately (a separate call to commitChanges is
-     * necessary).  The page will not be indexed at all if it was already indexed once
-     * today.  The page will also not be indexed (but may still be added to the locations
-     * database) if it matches certain filtering criteria.
+     * necessary).  The page will not be indexed if it matches certain filtering criteria.
+     * It will also not be indexed (but its entry in the locations database, if it exists, will still be updated)
+     * if the info.html field is null or empty.  This occurs if the browser plugin's cache indicates that the 
+     * page has already been indexed within the last 24 hours.
      * 
      * @return true if the page was indexed, false otherwise.
      */
@@ -114,63 +117,71 @@ public class WebPageIndexer {
         try {
             String normalizedUrl = normalizeUrl(info.url);
 
-            // make a new, empty document
-            Document doc = new Document();
+            Boolean isJavadoc = null;
+            Boolean isCodeRelated = null;
+            
+            boolean requireLocationExists = true;
+            
+            if (info.html != null && !info.html.isEmpty()) {
+                requireLocationExists = false;
+                
+                // make a new, empty document
+                Document doc = new Document();
+        
+                org.jsoup.nodes.Document jsoupDoc = Jsoup.parse(info.html);
     
-            org.jsoup.nodes.Document jsoupDoc = Jsoup.parse(info.html);
-
-            Elements framesets = jsoupDoc.select("frameset");
-            if (framesets.size() > 0) {
-                // Filter out parent frameset pages.  We may still want the child frames, but the frameset parent
-                // does not usually have useful content, and may add redundant results to the index 
-                // (e.g. if title of parent page matches title of a frame).
-                return false;
-            }
-            
-            // Add the URL of the page as a field named "url".  Use a
-            // field that is indexed (i.e. searchable), but don't tokenize 
-            // the field into separate words and don't index term frequency
-            // or positional information:
-            Field urlField = new Field(URL_FIELD_NAME, normalizedUrl, Field.Store.YES, Field.Index.NOT_ANALYZED_NO_NORMS);
-            urlField.setOmitTermFreqAndPositions(true);
-            doc.add(urlField);
-    
-            
-            Field titleField = new Field(TITLE_FIELD_NAME, jsoupDoc.title(), Field.Store.YES, Field.Index.ANALYZED);
-            titleField.setBoost(3.0F);
-            doc.add(titleField);
-            
-            Elements scripts = jsoupDoc.select("script");
-            for (Element script: scripts) {
-                script.remove();
-            }
-            Elements plaintext = jsoupDoc.select("plaintext");
-            for (Element element: plaintext) {
-                element.remove();
-            }
-            
-            boolean isJavadoc = WebPageClassifier.checkIsJavadoc(jsoupDoc);
-            
-            Elements allElements = jsoupDoc.getAllElements();
-            for (Element element: allElements) {
-                if (element.hasText()) {
-                    element.appendText(" ");
+                Elements framesets = jsoupDoc.select("frameset");
+                if (framesets.size() > 0) {
+                    // Filter out parent frameset pages.  We may still want the child frames, but the frameset parent
+                    // does not usually have useful content, and may add redundant results to the index 
+                    // (e.g. if title of parent page matches title of a frame).
+                    return false;
                 }
+                
+                // Add the URL of the page as a field named "url".  Use a
+                // field that is indexed (i.e. searchable), but don't tokenize 
+                // the field into separate words and don't index term frequency
+                // or positional information:
+                Field urlField = new Field(URL_FIELD_NAME, normalizedUrl, Field.Store.YES, Field.Index.NOT_ANALYZED_NO_NORMS);
+                urlField.setOmitTermFreqAndPositions(true);
+                doc.add(urlField);
+                
+                Field titleField = new Field(TITLE_FIELD_NAME, jsoupDoc.title(), Field.Store.YES, Field.Index.ANALYZED);
+                titleField.setBoost(3.0F);
+                doc.add(titleField);
+                
+                Elements scripts = jsoupDoc.select("script");
+                for (Element script: scripts) {
+                    script.remove();
+                }
+                Elements plaintext = jsoupDoc.select("plaintext");
+                for (Element element: plaintext) {
+                    element.remove();
+                }
+                
+                isJavadoc = WebPageClassifier.checkIsJavadoc(jsoupDoc);
+                
+                Elements allElements = jsoupDoc.getAllElements();
+                for (Element element: allElements) {
+                    if (element.hasText()) {
+                        element.appendText(" ");
+                    }
+                }
+                
+                String text = jsoupDoc.text();
+                
+                isCodeRelated = WebPageClassifier.checkIsCodeRelated(text);
+                
+                // Add the content of the page to a field named "content".  Specify a Reader,
+                // so that the text of the file is tokenized and indexed, but not stored.
+                Field contentField = new Field(CONTENT_FIELD_NAME, new StringReader(text));
+                doc.add(contentField);
+        
+                // An old copy of this page may have been indexed so 
+                // we use updateDocument instead to replace the old one matching the exact 
+                // URL, if present:
+                indexWriter.updateDocument(new Term(URL_FIELD_NAME, normalizedUrl), doc);
             }
-            
-            String text = jsoupDoc.text();
-            
-            boolean isCodeRelated = WebPageClassifier.checkIsCodeRelated(text);
-            
-            // Add the content of the page to a field named "content".  Specify a Reader,
-            // so that the text of the file is tokenized and indexed, but not stored.
-            Field contentField = new Field(CONTENT_FIELD_NAME, new StringReader(text));
-            doc.add(contentField);
-    
-            // An old copy of this page may have been indexed so 
-            // we use updateDocument instead to replace the old one matching the exact 
-            // URL, if present:
-            indexWriter.updateDocument(new Term(URL_FIELD_NAME, normalizedUrl), doc);
             
             long now = System.currentTimeMillis();
             
@@ -178,11 +189,30 @@ public class WebPageIndexer {
             // could still result in a page being absent from the index, but not indexable for up to a day.
             // We accept this risk to avoid the performance hit of synchronizing these three
             // methods (especially commitChanges).
-            LocationInfo updated = locationsDatabase.updateLocationInfo(normalizedUrl, info.visitTimes, isJavadoc, isCodeRelated, now);
+            UpdateLocationResult updated = locationsDatabase.updateLocationInfo(normalizedUrl, info.visitTimes, isJavadoc, 
+                    isCodeRelated, now, requireLocationExists);
+            
+            if (updated == null) {
+                // requireLocationExists was set to true, but no existing entry was found in the database.
+                return false;
+            }
+            
+            // Log event when maximum location ID crosses certain thresholds.
+            if (updated.rowCreated && updated.locationInfo.id > 1) {
+                int prevLogId = (int)Math.floor(Math.log10(updated.locationInfo.id-1));
+                int newLogId = (int)Math.floor(Math.log10(updated.locationInfo.id));
+                if (newLogId != prevLogId) {
+                    long maxId = locationsDatabase.getMaxLocationId();
+                    if (maxId == updated.locationInfo.id) {
+                        collector.logEvent(new LocationsIndexedMilestoneEvent(now, maxId));
+                    }
+                }
+            }
+            
             // Only record non-batch updates in the study data log
             if (info.visitTimes == null || info.visitTimes.isEmpty()) {
-                collector.logEvent(new BrowserVisitEvent(now, updated,
-                        updated.getFrecencyBoost(now)));
+                collector.logEvent(new BrowserVisitEvent(now, updated.locationInfo,
+                        updated.locationInfo.getFrecencyBoost(now)));
             }
 
             return true;

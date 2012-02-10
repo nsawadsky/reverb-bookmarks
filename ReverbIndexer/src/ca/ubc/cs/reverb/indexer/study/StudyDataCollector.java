@@ -53,7 +53,7 @@ public class StudyDataCollector implements Runnable {
      * Access must be synchronized on the events reference.  If both events and fileLock must
      * be locked, must make sure to acquire fileLock first.
      */
-    private List<LocationDataEvent> events = new ArrayList<LocationDataEvent>();
+    private List<StudyDataEvent> events = new ArrayList<StudyDataEvent>();
     
     private IndexerConfig config; 
 
@@ -82,7 +82,7 @@ public class StudyDataCollector implements Runnable {
         new Thread(this).start();
     }
 
-    public void logEvent(LocationDataEvent event) {
+    public void logEvent(StudyDataEvent event) {
         synchronized(events) {
             events.add(event);
         }
@@ -168,7 +168,7 @@ public class StudyDataCollector implements Runnable {
     private void flushEventsToFile(boolean forceCreateNewFile) throws IOException {
         synchronized (fileLock) {
             try {
-                List<LocationDataEvent> eventsToFlush = new ArrayList<LocationDataEvent>();
+                List<StudyDataEvent> eventsToFlush = new ArrayList<StudyDataEvent>();
                 synchronized (events) {
                     // Remove the events to be flushed from the event list.
                     eventsToFlush.addAll(events);
@@ -178,7 +178,7 @@ public class StudyDataCollector implements Runnable {
                 if (eventsToFlush.size() > 0) {
                     BufferedWriter writer = new BufferedWriter(new FileWriter(currentLogFileInfo.logFile, true));
                     try {
-                        for (LocationDataEvent event: eventsToFlush) {
+                        for (StudyDataEvent event: eventsToFlush) {
                             writeEvent(writer, event);
                         }
                     } finally {
@@ -205,7 +205,7 @@ public class StudyDataCollector implements Runnable {
         }
     }
     
-    private void writeEvent(BufferedWriter writer, LocationDataEvent event) throws IOException {
+    private void writeEvent(BufferedWriter writer, StudyDataEvent event) throws IOException {
         synchronized (fileLock) {
             writer.write(event.getLogLine());
             writer.newLine();

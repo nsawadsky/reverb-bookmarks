@@ -24,6 +24,11 @@ public class LocationsDatabase {
     private IndexerConfig config;
     private Connection connection;
 
+    public class UpdateLocationResult {
+        public LocationInfo locationInfo;
+        public boolean rowCreated = false;
+    }
+    
     public LocationsDatabase(IndexerConfig config) throws IndexerException {
         this.config = config;
         try {
@@ -143,14 +148,31 @@ public class LocationsDatabase {
         }
     }
     
+    public synchronized long getMaxLocationId() throws IndexerException {
+        try {
+            Statement stmt = connection.createStatement();
+    
+            String query = "SELECT MAX(id) FROM locations";
+            ResultSet rs = stmt.executeQuery(query);
+            if (rs.next()) {
+                return rs.getLong(1);
+            }
+            return 0;
+        } catch (SQLException e) {
+            throw new IndexerException("Error getting max location id"); 
+        }
+    }
+    
     /**
      * Note that the change is not committed immediately.  A separate call to commitChanges
      * is required.
      * 
-     * @return The updated location info.
+     * @param requireLocationExists If true, then no update is performed unless the location already exists in the database.
+     * 
+     * @return The updated location info, or null if requireLocationExists is true and the location is not found.
      */
-    public synchronized LocationInfo updateLocationInfo(String url, List<Long> inputVisitTimes, Boolean isJavadoc, Boolean isCodeRelated,
-            long currentTime) throws IndexerException { 
+    public synchronized UpdateLocationResult updateLocationInfo(String url, List<Long> inputVisitTimes, Boolean isJavadoc, Boolean isCodeRelated,
+            long currentTime, boolean requireLocationExists) throws IndexerException {
         try {
             List<Long> visitTimes = null;
             if (inputVisitTimes == null || inputVisitTimes.size() == 0) {
@@ -169,6 +191,8 @@ public class LocationsDatabase {
             boolean prevIsJavadoc = false;
             boolean prevIsCodeRelated = false;
             
+            UpdateLocationResult result = new UpdateLocationResult();
+
             Statement stmt = connection.createStatement();
     
             String query = "SELECT id, last_visit_time, visit_count, frecency_boost, is_javadoc, is_code_related FROM locations WHERE url = '" + escapeForSQL(url) + "'";
@@ -184,6 +208,11 @@ public class LocationsDatabase {
                 
                 prevIsJavadoc = (rs.getInt(5) != 0);
                 prevIsCodeRelated = (rs.getInt(6) != 0);
+            } else {
+                if (requireLocationExists) {
+                    return null;
+                }
+                result.rowCreated = true;
             }
             
             if (isJavadoc == null) {
@@ -216,10 +245,11 @@ public class LocationsDatabase {
             prep.execute();
             
             if (id != -1) {
-                return new LocationInfo(id, url, lastVisitTime, visitCount, frecencyBoost, isJavadoc, isCodeRelated);
+                result.locationInfo = new LocationInfo(id, url, lastVisitTime, visitCount, frecencyBoost, isJavadoc, isCodeRelated);
             } else {
-                return getLocationInfo(url);
+                result.locationInfo = getLocationInfo(url);
             }
+            return result;
         } catch (SQLException e) {
             throw new IndexerException("Error updating location info: " + e, e);
         } 
