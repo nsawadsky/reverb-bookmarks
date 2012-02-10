@@ -2,7 +2,7 @@ package ca.ubc.cs.reverb.indexer.study;
 
 import ca.ubc.cs.reverb.indexer.LocationInfo;
 
-public class DeleteLocationEvent extends StudyDataEvent {
+public class DeleteLocationEvent extends LocationDataEvent {
 
     public DeleteLocationEvent(long timestamp, 
             LocationInfo info, float frecencyBoost) {
