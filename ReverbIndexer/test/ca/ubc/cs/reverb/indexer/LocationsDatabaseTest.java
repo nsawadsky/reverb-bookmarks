@@ -8,6 +8,8 @@ import java.util.Map;
 
 import org.junit.Test;
 
+import ca.ubc.cs.reverb.indexer.LocationsDatabase.UpdateLocationResult;
+
 public class LocationsDatabaseTest {
     private final static long MSECS_PER_MONTH = 30 * 24 * 60 * 60 * 1000L;
     
@@ -31,8 +33,19 @@ public class LocationsDatabaseTest {
         assertNull(db.getLocationInfo(testUrl));
         assertNull(db.getLastVisitTime(testUrl));
         
-        LocationInfo updated = db.updateLocationInfo(testUrl, Arrays.asList(new Long[] {MSECS_PER_MONTH * 2, MSECS_PER_MONTH}), true, true, 
-                MSECS_PER_MONTH * 3);
+        UpdateLocationResult result = db.updateLocationInfo(testUrl, Arrays.asList(new Long[] {MSECS_PER_MONTH * 2, MSECS_PER_MONTH}), true, true, 
+                MSECS_PER_MONTH * 3, true);
+        assertNull(result);
+
+        assertEquals(0, db.getMaxLocationId());
+        
+        result = db.updateLocationInfo(testUrl, Arrays.asList(new Long[] {MSECS_PER_MONTH * 2, MSECS_PER_MONTH}), true, true, 
+                MSECS_PER_MONTH * 3, false);
+        assertTrue(result.rowCreated);
+        LocationInfo updated = result.locationInfo;
+
+        assertEquals(1, updated.id);
+        assertEquals(updated.id, db.getMaxLocationId());
         
         assertTrue(updated.isCodeRelated);
         assertTrue(updated.isJavadoc);
@@ -51,7 +64,9 @@ public class LocationsDatabaseTest {
         assertEquals(updated, dbInfo);
         
         // Test behavior with null inputs.
-        updated = db.updateLocationInfo(testUrl, null, null, null, MSECS_PER_MONTH * 3);
+        result = db.updateLocationInfo(testUrl, null, null, null, MSECS_PER_MONTH * 3, false);
+        assertFalse(result.rowCreated);
+        updated = result.locationInfo;
         db.commitChanges();
         
         dbInfo = db.getLocationInfo(testUrl);
@@ -71,7 +86,13 @@ public class LocationsDatabaseTest {
         assertEquals(expectedFrecencyBoost, dbInfo.storedFrecencyBoost, .0001);
         
         final String testUrl2 = "http://mytesturl2.com/testurl2";
-        LocationInfo dbInfo2 = db.updateLocationInfo(testUrl2, null, false, false, MSECS_PER_MONTH * 3);
+        result = db.updateLocationInfo(testUrl2, null, false, false, MSECS_PER_MONTH * 3, false);
+        
+        LocationInfo dbInfo2 = result.locationInfo;
+        
+        assertEquals(2, dbInfo2.id);
+        assertEquals(dbInfo2.id, db.getMaxLocationId());
+
         db.commitChanges();
         
         Map<String, LocationInfo> results = db.getLocationInfos(Arrays.asList(new String[] {testUrl, testUrl2, "missingurl"}));

@@ -24,7 +24,7 @@ public enum StudyEventType {
     /**
      * Reached a specified number of locations indexed.
      */
-    INDEX_SIZE_MILEPOST("INDEX_SIZE");
+    LOCATIONS_INDEXED_MILESTONE("LOC_INDEXED");
     
     private String shortName;
     
