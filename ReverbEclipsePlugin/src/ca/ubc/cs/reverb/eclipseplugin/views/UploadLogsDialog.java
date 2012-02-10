@@ -98,10 +98,8 @@ public class UploadLogsDialog extends TrayDialog implements SelectionListener {
     protected void createButtonsForButtonBar(Composite parent) {
         Button button_1 = createButton(parent, IDialogConstants.OK_ID, "Upload Now",
                 true);
-        button_1.setText("Upload now");
         Button button = createButton(parent, IDialogConstants.CANCEL_ID,
-                IDialogConstants.CANCEL_LABEL, false);
-        button.setText("Ask me later");
+                "Ask me later", false);
     }
 
     /**
