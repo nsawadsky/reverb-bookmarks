@@ -50,7 +50,7 @@ public class StudyActivityMonitor implements EditorMonitorListener {
     private final static int UPLOAD_RETRY_DELAY_MSECS = 15 * 60 * 1000;
     //private final static int UPLOAD_RETRY_DELAY_MSECS = 15 * 1000;
     
-    private final static int UPLOADS_TO_COMPLETE_STUDY = 2;
+    public final static int UPLOADS_TO_COMPLETE_STUDY = 2;
     
     private IndexerConnection indexerConnection;
     private StudyState studyState;
@@ -142,6 +142,10 @@ public class StudyActivityMonitor implements EditorMonitorListener {
         
     }
     
+    public int getSuccessfulLogUploads() {
+        return studyState.successfulLogUploads;
+    }
+    
     private void uploadRatings(List<LocationRating> ratings) throws IOException, PluginException {
         HttpClient httpClient = null;
         try {
@@ -223,7 +227,8 @@ public class StudyActivityMonitor implements EditorMonitorListener {
     }
     
     private void promptForUploadLogs() {
-        UploadLogsDialog uploadDialog = new UploadLogsDialog(shell, config, logger);
+        UploadLogsDialog uploadDialog = new UploadLogsDialog(shell, config, logger, 
+                getSuccessfulLogUploads() + 1, UPLOADS_TO_COMPLETE_STUDY);
         if (uploadDialog.open() != Dialog.OK) {
             schedulePromptForUploadLogs(UPLOAD_RETRY_DELAY_MSECS);
         } else {

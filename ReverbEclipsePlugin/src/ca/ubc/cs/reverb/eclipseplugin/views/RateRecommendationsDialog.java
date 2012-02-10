@@ -183,12 +183,8 @@ public class RateRecommendationsDialog extends TrayDialog {
      */
     @Override
     protected void createButtonsForButtonBar(Composite parent) {
-        Button button = createButton(parent, IDialogConstants.OK_ID, IDialogConstants.OK_LABEL,
-                true);
-        button.setText("Submit");
-        Button button_1 = createButton(parent, IDialogConstants.CANCEL_ID,
-                IDialogConstants.CANCEL_LABEL, false);
-        button_1.setText("Skip");
+        createButton(parent, IDialogConstants.OK_ID, "Submit", true);
+        createButton(parent, IDialogConstants.CANCEL_ID, "Skip", false);
     }
 
     /**

@@ -39,16 +39,21 @@ public class UploadLogsDialog extends TrayDialog implements SelectionListener {
     private Label lblReverbIsReady;
     private Button btnViewLogs;
     private Link lnkMoreInformation;
+    
+    private int uploadIndex;
+    private int totalUploads;
 
     /**
      * Create the dialog.
      * @param parentShell
      */
-    public UploadLogsDialog(Shell parentShell, PluginConfig config, PluginLogger logger) {
+    public UploadLogsDialog(Shell parentShell, PluginConfig config, PluginLogger logger, int uploadIndex, int totalUploads) {
         super(parentShell);
         setHelpAvailable(false);
         this.config = config;
         this.logger = logger;
+        this.uploadIndex = uploadIndex;
+        this.totalUploads = totalUploads;
     }
 
     /**
@@ -71,7 +76,15 @@ public class UploadLogsDialog extends TrayDialog implements SelectionListener {
         gridLayout.numColumns = 2;
         
         lblReverbIsReady = new Label(container, SWT.WRAP);
-        lblReverbIsReady.setText("Reverb is ready to upload scrubbed usage logs.  Recommendations and browser page visits are identified in the logs by numbers only.  No code or web page details are included.  ");
+        String buttonText = "Reverb is ready to upload scrubbed usage logs.  Recommendations and browser page visits are " +
+                "identified in the logs by numbers only.  No code or web page details are included.";
+        if (uploadIndex == totalUploads) {
+            buttonText += "\n\nThis is the final upload.";
+        } else {
+            buttonText += String.format("\n\nThis is upload %d of %d.", uploadIndex, totalUploads);
+        }
+                
+        lblReverbIsReady.setText(buttonText);
         lblReverbIsReady.setBounds(10, 10, 424, 48);
         lblReverbIsReady.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
         
@@ -96,10 +109,8 @@ public class UploadLogsDialog extends TrayDialog implements SelectionListener {
      */
     @Override
     protected void createButtonsForButtonBar(Composite parent) {
-        Button button_1 = createButton(parent, IDialogConstants.OK_ID, "Upload Now",
-                true);
-        Button button = createButton(parent, IDialogConstants.CANCEL_ID,
-                "Ask me later", false);
+        createButton(parent, IDialogConstants.OK_ID, "Upload Now", true);
+        createButton(parent, IDialogConstants.CANCEL_ID, "Ask me later", false);
     }
 
     /**

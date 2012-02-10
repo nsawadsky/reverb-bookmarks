@@ -39,7 +39,7 @@ public class StudyCompleteDialog extends TrayDialog {
     @Override
     protected void configureShell(Shell shell) {
         super.configureShell(shell);
-        shell.setText("User Study Complete");
+        shell.setText("Reverb User Study");
     }
     
     /**
