@@ -1,11 +1,13 @@
 package ca.ubc.cs.reverb.indexer;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.StringReader;
 
 import org.apache.log4j.Logger;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.Term;
@@ -26,8 +28,7 @@ import ca.ubc.cs.reverb.indexer.study.LocationsIndexedMilestoneEvent;
 import ca.ubc.cs.reverb.indexer.study.StudyDataCollector;
 
 /**
- * This class is thread-safe, because of the thread-safety of IndexerConfig, LocationsDatabase 
- * and IndexWriter.
+ * This class is thread-safe, because of the thread-safety of IndexerConfig, LocationsDatabase, and IndexWriter.
  */
 public class WebPageIndexer {
     private static Logger log = Logger.getLogger(WebPageIndexer.class);
@@ -39,8 +40,14 @@ public class WebPageIndexer {
     private IndexerConfig config;
     private IndexWriter indexWriter;
     private LocationsDatabase locationsDatabase;
+    /**
+     * May be null.
+     */
     private StudyDataCollector collector;
     
+    /**
+     * You can pass null for the collector parameter (e.g. for unit testing).
+     */
     public WebPageIndexer(IndexerConfig config, LocationsDatabase locationsDatabase, StudyDataCollector collector) throws IndexerException {
         this.config = config;
         this.locationsDatabase = locationsDatabase;
@@ -59,8 +66,21 @@ public class WebPageIndexer {
         }
     }
     
-    public IndexWriter getIndexWriter() {
-        return this.indexWriter;
+    public void close() throws IndexerException {
+        try {
+            indexWriter.close(true);
+        } catch (Exception e) {
+            throw new IndexerException("Error closing indexWriter: " + e, e);
+        }
+    }
+    
+    public SharedIndexReader getNewIndexReader() throws IndexerException {
+        try {
+            // IndexReader is thread-safe, share it for efficiency.
+            return new SharedIndexReader(IndexReader.open(indexWriter, true));
+        } catch (IOException e) {
+            throw new IndexerException("Error opening index reader: " + e, e);
+        }
     }
     
     public void commitChanges() throws IndexerException {
@@ -97,8 +117,10 @@ public class WebPageIndexer {
             indexWriter.deleteDocuments(new Term(URL_FIELD_NAME, request.url));
             indexWriter.commit();
             
-            long now = System.currentTimeMillis();
-            collector.logEvent(new DeleteLocationEvent(now, deletedInfo, deletedInfo.getFrecencyBoost(now)));
+            if (collector != null) {
+                long now = System.currentTimeMillis();
+                collector.logEvent(new DeleteLocationEvent(now, deletedInfo, deletedInfo.getFrecencyBoost(now)));
+            }
         } catch (Exception e) {
             throw new IndexerException("Exception deleting document: " + e, e);
         }
@@ -197,22 +219,24 @@ public class WebPageIndexer {
                 return false;
             }
             
-            // Log event when maximum location ID crosses certain thresholds.
-            if (updated.rowCreated && updated.locationInfo.id > 1) {
-                int prevLogId = (int)Math.floor(Math.log10(updated.locationInfo.id-1));
-                int newLogId = (int)Math.floor(Math.log10(updated.locationInfo.id));
-                if (newLogId != prevLogId) {
-                    long maxId = locationsDatabase.getMaxLocationId();
-                    if (maxId == updated.locationInfo.id) {
-                        collector.logEvent(new LocationsIndexedMilestoneEvent(now, maxId));
+            if (collector != null) {
+                // Log event when maximum location ID crosses certain thresholds.
+                if (updated.rowCreated && updated.locationInfo.id > 1) {
+                    int prevLogId = (int)Math.floor(Math.log10(updated.locationInfo.id-1));
+                    int newLogId = (int)Math.floor(Math.log10(updated.locationInfo.id));
+                    if (newLogId != prevLogId) {
+                        long maxId = locationsDatabase.getMaxLocationId();
+                        if (maxId == updated.locationInfo.id) {
+                            collector.logEvent(new LocationsIndexedMilestoneEvent(now, maxId));
+                        }
                     }
                 }
-            }
-            
-            // Only record non-batch updates in the study data log
-            if (info.visitTimes == null || info.visitTimes.isEmpty()) {
-                collector.logEvent(new BrowserVisitEvent(now, updated.locationInfo,
-                        updated.locationInfo.getFrecencyBoost(now)));
+                
+                // Only record non-batch updates in the study data log
+                if (info.visitTimes == null || info.visitTimes.isEmpty()) {
+                    collector.logEvent(new BrowserVisitEvent(now, updated.locationInfo,
+                            updated.locationInfo.getFrecencyBoost(now)));
+                }
             }
 
             return true;

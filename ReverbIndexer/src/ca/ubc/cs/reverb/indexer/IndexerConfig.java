@@ -30,11 +30,7 @@ public class IndexerConfig {
     private String userIdKey;
     
     public IndexerConfig() throws IndexerException {
-        String localAppDataPath = System.getenv(LOCAL_APPDATA_ENV_VAR);
-        if (localAppDataPath == null) {
-            throw new IndexerException("APPDATA environment variable not found");
-        }
-        String basePath = localAppDataPath + File.separator + "cs.ubc.ca" + File.separator + "Reverb";
+        String basePath = getBasePath();
         settingsPath = basePath + File.separator + "settings";
         String dataPath = basePath + File.separator + "data";
         indexPath = dataPath + File.separator + "index";
@@ -82,6 +78,14 @@ public class IndexerConfig {
     
     public String getUserIdKey() {
         return userIdKey;
+    }
+    
+    protected String getBasePath() throws IndexerException {
+        String localAppDataPath = System.getenv(LOCAL_APPDATA_ENV_VAR);
+        if (localAppDataPath == null) {
+            throw new IndexerException("APPDATA environment variable not found");
+        }
+        return localAppDataPath + File.separator + "cs.ubc.ca" + File.separator + "Reverb";
     }
     
     private void initializeUserId() throws IndexerException {
