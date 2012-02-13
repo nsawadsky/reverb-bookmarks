@@ -3,7 +3,6 @@ package ca.ubc.cs.reverb.eclipseplugin;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.http.HttpResponse;
@@ -95,16 +94,17 @@ public class StudyActivityMonitor implements EditorMonitorListener {
         
     }
     
-    public List<Location> getRecommendationsClicked() {
-        return new ArrayList<Location>(studyState.recommendationsClicked);
-    }
-    
     public void addRecommendationClicked(Location clicked) {
         // Log a warning if multiple threads are using a single instance of this class.
         if (Thread.currentThread().getId() != createdThreadId) {
             logger.logWarn("StudyActivityMonitor.addRecommendationClicked invoked from different thread than called constructor");
         }
-        studyState.recommendationsClicked.add(clicked);
+        for (LocationRating existing: studyState.locationRatings) {
+            if (existing.url.equals(clicked.url)) {
+                return;
+            }
+        }
+        studyState.locationRatings.add(new LocationRating(clicked));
         try {
             saveStudyState();
         } catch (PluginException e) {
@@ -113,9 +113,19 @@ public class StudyActivityMonitor implements EditorMonitorListener {
     }
     
     public void displayRateRecommendationsDialog() {
-        final RateRecommendationsDialog dialog = new RateRecommendationsDialog(shell, config, logger, studyState.recommendationsClicked);
+        final RateRecommendationsDialog dialog = new RateRecommendationsDialog(shell, config, logger, studyState.locationRatings);
         
-        if (dialog.open() == Window.OK) {
+        int result = dialog.open();
+        
+        // Save new ratings.
+        studyState.locationRatings = dialog.getLocationRatings();
+        try {
+            saveStudyState();
+        } catch (PluginException e) {
+            logger.logError("Error saving study state", e);
+        }
+        
+        if (result == Window.OK) {
             Job uploadJob = new Job("Uploading ratings") {
 
                 @Override
@@ -202,7 +212,7 @@ public class StudyActivityMonitor implements EditorMonitorListener {
     }
     
     private void handleSuccessfulRateRecommendations() {
-        studyState.recommendationsClicked.clear();
+        studyState.locationRatings.clear();
         try {
             saveStudyState();
         } catch (PluginException e) {
@@ -218,7 +228,7 @@ public class StudyActivityMonitor implements EditorMonitorListener {
         } catch (PluginException e) {
             logger.logError("Error saving study state", e);
         }
-        if (! studyState.recommendationsClicked.isEmpty()) {
+        if (! studyState.locationRatings.isEmpty()) {
             displayRateRecommendationsDialog();
         }
         if (studyState.successfulLogUploads == UPLOADS_TO_COMPLETE_STUDY) {
@@ -286,7 +296,7 @@ public class StudyActivityMonitor implements EditorMonitorListener {
                     JsonEncoding.UTF8);
             jsonGenerator.setPrettyPrinter(new DefaultPrettyPrinter());
 
-            mapper.writeValue(jsonGenerator, studyState);
+            mapper.viewWriter(StudyState.LocalUseOnly.class).writeValue(jsonGenerator, studyState);
         } catch (Exception e) {
             throw new PluginException("Error saving plugin state: " + e, e);
         } finally {

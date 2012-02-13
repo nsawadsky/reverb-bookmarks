@@ -1,6 +1,8 @@
 package ca.ubc.cs.reverb.eclipseplugin.reports;
 
+import ca.ubc.cs.reverb.eclipseplugin.StudyState.LocalUseOnly;
 import ca.ubc.cs.reverb.indexer.messages.Location;
+import org.codehaus.jackson.map.annotate.JsonView;
 
 public class LocationRating {
     public LocationRating() { }
@@ -23,9 +25,10 @@ public class LocationRating {
      */
     public long resultGenTimestamp;
 
-    // Tagging these two fields with the transient attribute ensures that they are not included 
-    // in the Jackson-generated JSON report which is uploaded to the server.
+    // Ensure these two fields are not included in the Jackson-generated JSON report which is uploaded to the server.
+    @JsonView(LocalUseOnly.class)
     public transient String url;
+    @JsonView(LocalUseOnly.class)
     public transient String title;
 
     public long locationId;

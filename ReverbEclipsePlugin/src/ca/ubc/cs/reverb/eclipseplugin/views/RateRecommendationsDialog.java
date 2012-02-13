@@ -32,9 +32,6 @@ import org.eclipse.swt.widgets.TableItem;
 import ca.ubc.cs.reverb.eclipseplugin.PluginConfig;
 import ca.ubc.cs.reverb.eclipseplugin.PluginLogger;
 import ca.ubc.cs.reverb.eclipseplugin.reports.LocationRating;
-import ca.ubc.cs.reverb.indexer.messages.Location;
-
-import org.eclipse.swt.widgets.Button;
 
 public class RateRecommendationsDialog extends TrayDialog {
     private Table table;
@@ -47,27 +44,14 @@ public class RateRecommendationsDialog extends TrayDialog {
      * Create the dialog.
      * @param parentShell
      */
-    public RateRecommendationsDialog(Shell parentShell, PluginConfig config, PluginLogger logger, List<Location> locations) {
+    public RateRecommendationsDialog(Shell parentShell, PluginConfig config, PluginLogger logger, List<LocationRating> locationRatings) {
         super(parentShell);
         setShellStyle(this.getShellStyle() | SWT.RESIZE);
         setHelpAvailable(false);
         this.config = config;
         this.logger = logger;
         
-        locationRatings = new ArrayList<LocationRating>();
-        
-        for (Location location: locations) {
-            // Skip duplicates.
-            boolean found = false;
-            for (LocationRating locationRating: locationRatings) {
-                if (locationRating.url.equals(location.url)) {
-                    found = true;
-                }
-            }
-            if (!found) {
-                locationRatings.add(new LocationRating(location));
-            }
-        }
+        this.locationRatings = new ArrayList<LocationRating>(locationRatings);
     }
 
     public List<LocationRating> getLocationRatings() {
@@ -171,9 +155,9 @@ public class RateRecommendationsDialog extends TrayDialog {
         TableColumn commentColumn = commentViewerColumn.getColumn();
         commentColumn.setResizable(true);
         commentColumn.setText("Comment");
-        commentColumn.setWidth(288);
+        commentColumn.setWidth(324);
         
-        viewer.setInput(this.locationRatings);
+        viewer.setInput(locationRatings);
         return container;
     }
 
@@ -192,7 +176,7 @@ public class RateRecommendationsDialog extends TrayDialog {
      */
     @Override
     protected Point getInitialSize() {
-        return new Point(630, 524);
+        return new Point(667, 446);
     }
     
     private class CommentEditingSupport extends EditingSupport {
