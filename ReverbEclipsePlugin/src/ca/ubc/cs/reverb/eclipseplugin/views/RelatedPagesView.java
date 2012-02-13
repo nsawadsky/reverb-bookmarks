@@ -285,7 +285,7 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
         Action uploadLogsAction = new Action() {
             public void run() {
                 UploadLogsDialog uploadDialog = new UploadLogsDialog(getSite().getShell(), config, logger,
-                        studyActivityMonitor.getSuccessfulLogUploads(), StudyActivityMonitor.UPLOADS_TO_COMPLETE_STUDY);
+                        studyActivityMonitor.getSuccessfulLogUploads()+1, StudyActivityMonitor.UPLOADS_TO_COMPLETE_STUDY);
                 if (uploadDialog.open() == Dialog.OK) {
                     Job job = new Job("Uploading Reverb logs") {
                         @Override
