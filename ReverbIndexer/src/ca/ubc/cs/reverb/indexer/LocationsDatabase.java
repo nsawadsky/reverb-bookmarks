@@ -176,12 +176,12 @@ public class LocationsDatabase {
      * Note that the change is not committed immediately.  A separate call to commitChanges
      * is required.
      * 
-     * @param requireLocationExists If true, then no update is performed unless the location already exists in the database.
+     * @param htmlProvided If false, then no update is performed unless the location already exists in the database.
      * 
-     * @return The updated location info, or null if requireLocationExists is true and the location is not found.
+     * @return The updated location info, or null if htmlProvided is false and the location is not found.
      */
-    public synchronized UpdateLocationResult updateLocationInfo(String url, List<Long> inputVisitTimes, Boolean isJavadoc, Boolean isCodeRelated,
-            long currentTime, boolean requireLocationExists) throws IndexerException {
+    public synchronized UpdateLocationResult updateLocationInfo(String url, List<Long> inputVisitTimes, boolean htmlProvided, boolean isJavadoc, boolean isCodeRelated,
+            long currentTime) throws IndexerException {
         try {
             List<Long> visitTimes = null;
             if (inputVisitTimes == null || inputVisitTimes.size() == 0) {
@@ -197,8 +197,6 @@ public class LocationsDatabase {
             int visitCount = 0;
             float frecencyBoost = 0.0F;
             long id = -1;
-            boolean prevIsJavadoc = false;
-            boolean prevIsCodeRelated = false;
             
             UpdateLocationResult result = new UpdateLocationResult();
 
@@ -206,7 +204,12 @@ public class LocationsDatabase {
     
             String query = "SELECT id, last_visit_time, visit_count, frecency_boost, is_javadoc, is_code_related FROM locations WHERE url = '" + escapeForSQL(url) + "'";
             ResultSet rs = stmt.executeQuery(query);
-            if (rs.next()) {
+            if (!rs.next()) {
+                if (!htmlProvided) {
+                    return null;
+                }
+                result.rowCreated = true;
+            } else {
                 id = rs.getLong(1);
                 
                 long oldLastVisitTime = rs.getLong(2);
@@ -215,23 +218,12 @@ public class LocationsDatabase {
                 
                 frecencyBoost = LocationInfo.adjustFrecencyBoost(frecencyBoost, oldLastVisitTime, lastVisitTime);
                 
-                prevIsJavadoc = (rs.getInt(5) != 0);
-                prevIsCodeRelated = (rs.getInt(6) != 0);
-            } else {
-                if (requireLocationExists) {
-                    return null;
+                if (!htmlProvided) {
+                    isJavadoc = (rs.getInt(5) != 0);
+                    isCodeRelated = (rs.getInt(6) != 0);
                 }
-                result.rowCreated = true;
-            }
+            } 
             
-            if (isJavadoc == null) {
-                isJavadoc = prevIsJavadoc;
-            }
-            
-            if (isCodeRelated == null) {
-                isCodeRelated = prevIsCodeRelated;
-            }
-
             visitCount += visitTimes.size();
             for (Long visitTime: visitTimes) {
                 frecencyBoost += LocationInfo.adjustFrecencyBoost(1.0F, visitTime, lastVisitTime);

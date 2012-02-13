@@ -33,14 +33,14 @@ public class LocationsDatabaseTest {
         assertNull(db.getLocationInfo(testUrl));
         assertNull(db.getLastVisitTime(testUrl));
         
-        UpdateLocationResult result = db.updateLocationInfo(testUrl, Arrays.asList(new Long[] {MSECS_PER_MONTH * 2, MSECS_PER_MONTH}), true, true, 
-                MSECS_PER_MONTH * 3, true);
+        UpdateLocationResult result = db.updateLocationInfo(testUrl, Arrays.asList(new Long[] {MSECS_PER_MONTH * 2, MSECS_PER_MONTH}), 
+                false, true, true, MSECS_PER_MONTH * 3);
         assertNull(result);
 
         assertEquals(0, db.getMaxLocationId());
         
-        result = db.updateLocationInfo(testUrl, Arrays.asList(new Long[] {MSECS_PER_MONTH * 2, MSECS_PER_MONTH}), true, true, 
-                MSECS_PER_MONTH * 3, false);
+        result = db.updateLocationInfo(testUrl, Arrays.asList(new Long[] {MSECS_PER_MONTH * 2, MSECS_PER_MONTH}), 
+                true, true, true, MSECS_PER_MONTH * 3);
         assertTrue(result.rowCreated);
         LocationInfo updated = result.locationInfo;
 
@@ -63,8 +63,8 @@ public class LocationsDatabaseTest {
         LocationInfo dbInfo = db.getLocationInfo(testUrl);
         assertEquals(updated, dbInfo);
         
-        // Test behavior with null inputs.
-        result = db.updateLocationInfo(testUrl, null, null, null, MSECS_PER_MONTH * 3, false);
+        // Test behavior when htmlProvided is false and location already exists in database. 
+        result = db.updateLocationInfo(testUrl, null, false, false, false, MSECS_PER_MONTH * 3);
         assertFalse(result.rowCreated);
         updated = result.locationInfo;
         db.commitChanges();
@@ -86,7 +86,7 @@ public class LocationsDatabaseTest {
         assertEquals(expectedFrecencyBoost, dbInfo.storedFrecencyBoost, .0001);
         
         final String testUrl2 = "http://mytesturl2.com/testurl2";
-        result = db.updateLocationInfo(testUrl2, null, false, false, MSECS_PER_MONTH * 3, false);
+        result = db.updateLocationInfo(testUrl2, null, true, false, false, MSECS_PER_MONTH * 3);
         
         LocationInfo dbInfo2 = result.locationInfo;
         

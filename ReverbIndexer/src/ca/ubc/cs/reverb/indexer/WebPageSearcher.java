@@ -47,9 +47,6 @@ public class WebPageSearcher {
     private final static Pattern VERSION_NUMBER_PATTERN = Pattern.compile(VERSION_NUMBER); 
     private final static Pattern TEXT_PLUS_VERSION_NUMBER_PATTERN = Pattern.compile("(.*?)(" + VERSION_NUMBER + ")");
     
-    // For testing
-    WebPageSearcher() { }
-    
     public WebPageSearcher(IndexerConfig config, SharedIndexReader reader, 
             LocationsDatabase locationsDatabase, StudyDataCollector collector) {
         this.config = config;
@@ -64,7 +61,7 @@ public class WebPageSearcher {
     }
     
     public BatchQueryReply performSearch(List<IndexerQuery> inputQueries) throws IndexerException {
-        long now = System.currentTimeMillis();
+        long now = getCurrentTime();
         
         IndexSearcher indexSearcher = getNewIndexSearcher();
         
@@ -112,13 +109,11 @@ public class WebPageSearcher {
             hitInfos = hitInfos.subList(0, MAX_RESULTS);
         }
 
-        if (collector != null) {
-            // Log the recommendations about to be sent.
-            for (HitInfo info: hitInfos) {
-                collector.logEvent(new RecommendationEvent(
-                        now, info.hit.locationInfo, info.frecencyBoost, info.combinedScore,
-                        info.getOverallScore()));
-            }
+        // Log the recommendations about to be sent.
+        for (HitInfo info: hitInfos) {
+            collector.logEvent(new RecommendationEvent(
+                    now, info.hit.locationInfo, info.frecencyBoost, info.combinedScore,
+                    info.getOverallScore()));
         }
         
         // Group results with the query that gave them the highest score.  Ensure that the resulting
@@ -172,6 +167,13 @@ public class WebPageSearcher {
                     mergedResult.queries, getLocationList(mergedResult.hits, now)));
         }
         return result;
+    }
+    
+    /**
+     * Factoring this out so we can override it for unit testing.
+     */
+    protected long getCurrentTime() {
+        return System.currentTimeMillis();
     }
     
     /**
@@ -278,7 +280,7 @@ public class WebPageSearcher {
         });
     }
     
-    protected class MergedQueryResult {
+    protected static class MergedQueryResult {
         public MergedQueryResult(IndexerQuery query, HitInfo info) {
             queries.add(query);
             hits.add(info);
@@ -304,7 +306,7 @@ public class WebPageSearcher {
         public List<HitInfo> hits = new ArrayList<HitInfo>();
     }
     
-    protected class Hit {
+    protected static class Hit {
         public Hit(String url, String title, float luceneScore) {
             this.url = url;
             this.title = title;
@@ -326,7 +328,7 @@ public class WebPageSearcher {
         public LocationInfo locationInfo;
     }
         
-    protected class HitInfo {
+    protected static class HitInfo {
         public HitInfo(Hit hit, IndexerQuery query, float score) {
             this.hit = hit;
             this.frecencyBoost = hit.frecencyBoost;
@@ -349,7 +351,7 @@ public class WebPageSearcher {
     }
 
     // TODO: Consider unescaping URL's before checking for version numbers.
-    protected class LatestVersionHitInfo {
+    protected static class LatestVersionHitInfo {
         public String[] splitUrl;
         public HitInfo hitInfo;
         

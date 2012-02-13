@@ -67,7 +67,7 @@ public class IndexerService {
             StudyDataCollector collector, String query) throws IndexerException {
         SharedIndexReader indexReader = indexer.getNewIndexReader();
 
-        WebPageSearcher searcher = new WebPageSearcher(config, indexReader, locationsDatabase, null);
+        WebPageSearcher searcher = new WebPageSearcher(config, indexReader, locationsDatabase, new StudyDataCollector(config));
         
         List<IndexerQuery> queries = new ArrayList<IndexerQuery>();
         queries.add(new IndexerQuery(query, query));

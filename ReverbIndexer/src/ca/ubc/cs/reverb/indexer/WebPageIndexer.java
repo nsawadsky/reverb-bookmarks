@@ -139,14 +139,12 @@ public class WebPageIndexer {
         try {
             String normalizedUrl = normalizeUrl(info.url);
 
-            Boolean isJavadoc = null;
-            Boolean isCodeRelated = null;
+            boolean isJavadoc = false;
+            boolean isCodeRelated = false;
             
-            boolean requireLocationExists = true;
+            boolean htmlProvided = info.html != null && !info.html.isEmpty();
             
-            if (info.html != null && !info.html.isEmpty()) {
-                requireLocationExists = false;
-                
+            if (htmlProvided) {
                 // make a new, empty document
                 Document doc = new Document();
         
@@ -211,32 +209,30 @@ public class WebPageIndexer {
             // could still result in a page being absent from the index, but not indexable for up to a day.
             // We accept this risk to avoid the performance hit of synchronizing these three
             // methods (especially commitChanges).
-            UpdateLocationResult updated = locationsDatabase.updateLocationInfo(normalizedUrl, info.visitTimes, isJavadoc, 
-                    isCodeRelated, now, requireLocationExists);
+            UpdateLocationResult updated = locationsDatabase.updateLocationInfo(normalizedUrl, info.visitTimes, 
+                    htmlProvided, isJavadoc, isCodeRelated, now);
             
             if (updated == null) {
                 // requireLocationExists was set to true, but no existing entry was found in the database.
                 return false;
             }
             
-            if (collector != null) {
-                // Log event when maximum location ID crosses certain thresholds.
-                if (updated.rowCreated && updated.locationInfo.id > 1) {
-                    int prevLogId = (int)Math.floor(Math.log10(updated.locationInfo.id-1));
-                    int newLogId = (int)Math.floor(Math.log10(updated.locationInfo.id));
-                    if (newLogId != prevLogId) {
-                        long maxId = locationsDatabase.getMaxLocationId();
-                        if (maxId == updated.locationInfo.id) {
-                            collector.logEvent(new LocationsIndexedMilestoneEvent(now, maxId));
-                        }
+            // Log event when maximum location ID crosses certain thresholds.
+            if (updated.rowCreated && updated.locationInfo.id > 1) {
+                int prevLogId = (int)Math.floor(Math.log10(updated.locationInfo.id-1));
+                int newLogId = (int)Math.floor(Math.log10(updated.locationInfo.id));
+                if (newLogId != prevLogId) {
+                    long maxId = locationsDatabase.getMaxLocationId();
+                    if (maxId == updated.locationInfo.id) {
+                        collector.logEvent(new LocationsIndexedMilestoneEvent(now, maxId));
                     }
                 }
-                
-                // Only record non-batch updates in the study data log
-                if (info.visitTimes == null || info.visitTimes.isEmpty()) {
-                    collector.logEvent(new BrowserVisitEvent(now, updated.locationInfo,
-                            updated.locationInfo.getFrecencyBoost(now)));
-                }
+            }
+            
+            // Only record non-batch updates in the study data log
+            if (info.visitTimes == null || info.visitTimes.isEmpty()) {
+                collector.logEvent(new BrowserVisitEvent(now, updated.locationInfo,
+                        updated.locationInfo.getFrecencyBoost(now)));
             }
 
             return true;

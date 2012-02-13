@@ -14,6 +14,7 @@ import ca.ubc.cs.reverb.indexer.messages.IndexerQuery;
 import ca.ubc.cs.reverb.indexer.messages.Location;
 import ca.ubc.cs.reverb.indexer.messages.QueryResult;
 import ca.ubc.cs.reverb.indexer.messages.UpdatePageInfoRequest;
+import ca.ubc.cs.reverb.indexer.study.StudyDataCollector;
 
 public class WebPageIndexerTest {
 
@@ -33,10 +34,11 @@ public class WebPageIndexerTest {
             };
             
             locationsDatabase = new LocationsDatabase(config);
-            indexer = new WebPageIndexer(config, locationsDatabase, null);
+            StudyDataCollector collector = new StudyDataCollector(config);
+            indexer = new WebPageIndexer(config, locationsDatabase, collector);
             reader = indexer.getNewIndexReader();
             
-            WebPageSearcher searcher = new WebPageSearcher(config, reader, locationsDatabase, null);
+            WebPageSearcher searcher = new WebPageSearcher(config, reader, locationsDatabase, collector);
             
             final String testUrl1 = "http://www.test.com/testurl1";
             final String pageText = "This page is about an elephant.";
