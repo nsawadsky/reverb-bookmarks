@@ -161,13 +161,10 @@ public class PluginConfig {
             File pluginSettingsFile = new File(getPluginSettingsPath());
             if (!pluginSettingsFile.exists()) {
                 pluginSettings = new PluginSettings();
-                savePluginSettings();
                 return;
             }
             ObjectMapper mapper = new ObjectMapper();
             pluginSettings = mapper.readValue(pluginSettingsFile, PluginSettings.class);
-        } catch (PluginException e) {
-            throw e;
         } catch (Exception e) {
             throw new PluginException("Error loading plugin settings: " + e, e);
         }
