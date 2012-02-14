@@ -78,7 +78,9 @@ public class UploadLogsDialog extends TrayDialog implements SelectionListener {
         lblReverbIsReady = new Label(container, SWT.WRAP);
         String buttonText = "Reverb is ready to upload scrubbed usage logs.  Recommendations and browser page visits are " +
                 "identified in the logs by numbers only.  No code or web page details are included.";
-        buttonText += String.format("\n\nThis is upload %d of %d.", uploadIndex, totalUploads);
+        if (uploadIndex <= totalUploads) {
+            buttonText += String.format("\n\nThis is upload %d of %d.", uploadIndex, totalUploads);
+        }
                 
         lblReverbIsReady.setText(buttonText);
         lblReverbIsReady.setBounds(10, 10, 424, 48);
