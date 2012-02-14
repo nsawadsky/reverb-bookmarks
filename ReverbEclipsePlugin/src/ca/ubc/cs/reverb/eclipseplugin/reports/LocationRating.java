@@ -27,9 +27,9 @@ public class LocationRating {
 
     // Ensure these two fields are not included in the Jackson-generated JSON report which is uploaded to the server.
     @JsonView(LocalUseOnly.class)
-    public transient String url;
+    public String url;
     @JsonView(LocalUseOnly.class)
-    public transient String title;
+    public String title;
 
     public long locationId;
     public float luceneScore;

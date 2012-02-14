@@ -195,7 +195,7 @@ public class StudyActivityMonitor implements EditorMonitorListener {
         JsonGenerator jsonGenerator = mapper.getJsonFactory().createJsonGenerator(writer);
         jsonGenerator.setPrettyPrinter(new DefaultPrettyPrinter());
 
-        mapper.writeValue(jsonGenerator, new RatingsReport(locationRatings));
+        mapper.viewWriter(Object.class).writeValue(jsonGenerator, new RatingsReport(locationRatings));
         
         return writer.toString();
     }
