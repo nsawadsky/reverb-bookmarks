@@ -300,13 +300,10 @@ public class StudyActivityMonitor implements EditorMonitorListener {
             File pluginStateFile = new File(config.getStudyStatePath());
             if (!pluginStateFile.exists()) {
                 studyState = new StudyState();
-                saveStudyState();
                 return;
             }
             ObjectMapper mapper = new ObjectMapper();
             studyState = mapper.readValue(pluginStateFile, StudyState.class);
-        } catch (PluginException e) {
-            throw e;
         } catch (Exception e) {
             throw new PluginException("Error loading plugin state: " + e, e);
         }
