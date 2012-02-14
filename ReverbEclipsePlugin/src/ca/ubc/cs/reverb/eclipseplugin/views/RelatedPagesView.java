@@ -284,28 +284,7 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
     private Action createUploadLogsAction() {
         Action uploadLogsAction = new Action() {
             public void run() {
-                UploadLogsDialog uploadDialog = new UploadLogsDialog(getSite().getShell(), config, logger,
-                        studyActivityMonitor.getSuccessfulLogUploads()+1, StudyActivityMonitor.UPLOADS_TO_COMPLETE_STUDY);
-                if (uploadDialog.open() == Dialog.OK) {
-                    Job job = new Job("Uploading Reverb logs") {
-                        @Override
-                        protected IStatus run(IProgressMonitor arg0) {
-                            try {
-                                UploadLogsReply reply = indexerConnection.sendUploadLogsRequest(
-                                        new UploadLogsRequest(), 60000);
-                                if (reply.errorOccurred) {
-                                    IStatus status = logger.createStatus(IStatus.ERROR, "Error uploading logs: " + reply.errorMessage, null);
-                                    return status;
-                                }
-                                return Status.OK_STATUS;
-                            } catch (Exception e) {
-                                IStatus status = logger.createStatus(IStatus.ERROR, "Error sending upload logs request", e);
-                                return status;
-                            }
-                        }
-                    };
-                    job.schedule();
-                }
+                studyActivityMonitor.promptForUploadLogs(false);
             }
         };
                 

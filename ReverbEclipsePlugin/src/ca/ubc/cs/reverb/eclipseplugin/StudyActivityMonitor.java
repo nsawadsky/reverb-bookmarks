@@ -112,6 +112,49 @@ public class StudyActivityMonitor implements EditorMonitorListener {
         }
     }
     
+    /**
+     * Prompt user to upload study log files.
+     * 
+     * @param rescheduleOnError If an error occurs, or user clicks Cancel, should another prompt
+     *                          be automatically scheduled in the future?
+     */
+    public void promptForUploadLogs(final boolean rescheduleOnError) {
+        UploadLogsDialog uploadDialog = new UploadLogsDialog(shell, config, logger, 
+                getSuccessfulLogUploads() + 1, UPLOADS_TO_COMPLETE_STUDY);
+        if (uploadDialog.open() != Dialog.OK) {
+            if (rescheduleOnError) {
+                schedulePromptForUploadLogs(UPLOAD_RETRY_DELAY_MSECS);
+            }
+        } else {
+            Job job = new Job("Uploading Reverb logs") {
+                @Override
+                protected IStatus run(IProgressMonitor arg0) {
+                    IStatus result = Status.OK_STATUS;
+                    try {
+                        UploadLogsReply reply = indexerConnection.sendUploadLogsRequest(
+                                new UploadLogsRequest(), 60000);
+                        if (reply.errorOccurred) {
+                            result = logger.createStatus(IStatus.ERROR, reply.errorMessage, null);
+                        } 
+                    } catch (Exception e) {
+                        result = logger.createStatus(IStatus.ERROR, "Error uploading logs", e);
+                    }
+                    if (result.isOK()) {
+                        PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
+                            public void run() { handleSuccessfulUploadLogs(); }
+                        });
+                    } else if (rescheduleOnError) {
+                        PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
+                            public void run() { schedulePromptForUploadLogs(UPLOAD_RETRY_DELAY_MSECS); }
+                        });
+                    }
+                    return result;
+                }
+            };
+            job.schedule();
+        }
+    }
+    
     public void displayRateRecommendationsDialog() {
         final RateRecommendationsDialog dialog = new RateRecommendationsDialog(shell, config, logger, studyState.locationRatings);
         
@@ -205,7 +248,7 @@ public class StudyActivityMonitor implements EditorMonitorListener {
 
             @Override
             public void run() {
-                promptForUploadLogs();
+                promptForUploadLogs(true);
             }
             
         });
@@ -233,41 +276,6 @@ public class StudyActivityMonitor implements EditorMonitorListener {
         }
         if (studyState.successfulLogUploads == UPLOADS_TO_COMPLETE_STUDY) {
             displayStudyCompleteDialog();
-        }
-    }
-    
-    private void promptForUploadLogs() {
-        UploadLogsDialog uploadDialog = new UploadLogsDialog(shell, config, logger, 
-                getSuccessfulLogUploads() + 1, UPLOADS_TO_COMPLETE_STUDY);
-        if (uploadDialog.open() != Dialog.OK) {
-            schedulePromptForUploadLogs(UPLOAD_RETRY_DELAY_MSECS);
-        } else {
-            Job job = new Job("Uploading Reverb logs") {
-                @Override
-                protected IStatus run(IProgressMonitor arg0) {
-                    IStatus result = Status.OK_STATUS;
-                    try {
-                        UploadLogsReply reply = indexerConnection.sendUploadLogsRequest(
-                                new UploadLogsRequest(), 60000);
-                        if (reply.errorOccurred) {
-                            result = logger.createStatus(IStatus.ERROR, reply.errorMessage, null);
-                        } 
-                    } catch (Exception e) {
-                        result = logger.createStatus(IStatus.ERROR, "Error uploading logs", e);
-                    }
-                    if (result.isOK()) {
-                        PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
-                            public void run() { handleSuccessfulUploadLogs(); }
-                        });
-                    } else {
-                        PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
-                            public void run() { schedulePromptForUploadLogs(UPLOAD_RETRY_DELAY_MSECS); }
-                        });
-                    }
-                    return result;
-                }
-            };
-            job.schedule();
         }
     }
     
