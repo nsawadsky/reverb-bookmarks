@@ -1,8 +1,11 @@
 package ca.ubc.cs.reverb.eclipseplugin;
 
+import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 
 import org.apache.http.HttpResponse;
@@ -30,6 +33,7 @@ import org.eclipse.ui.PlatformUI;
 import ca.ubc.cs.reverb.eclipseplugin.reports.LocationRating;
 import ca.ubc.cs.reverb.eclipseplugin.reports.RatingsReport;
 import ca.ubc.cs.reverb.eclipseplugin.views.RateRecommendationsDialog;
+import ca.ubc.cs.reverb.eclipseplugin.views.StudyCompleteDialog;
 import ca.ubc.cs.reverb.eclipseplugin.views.UploadLogsDialog;
 import ca.ubc.cs.reverb.indexer.messages.CodeQueryReply;
 import ca.ubc.cs.reverb.indexer.messages.Location;
@@ -77,21 +81,22 @@ public class StudyActivityMonitor implements EditorMonitorListener {
 
     @Override
     public void onInteractionEvent(long timeMsecs) {
-        long currentInterval = timeMsecs / StudyState.ACTIVITY_INTERVAL_MSECS;
-        if (currentInterval != studyState.lastActiveInterval) {
-            studyState.lastActiveInterval = currentInterval;
-            studyState.activeIntervals++;
-            if (!studyState.uploadPending && studyState.activeIntervals % StudyState.LOG_UPLOAD_INTERVALS == 0) {
-                studyState.uploadPending = true;
-                schedulePromptForUploadLogs(UPLOAD_PROMPT_DELAY_MSECS);
-            }
-            try {
-                saveStudyState();
-            } catch (PluginException e) {
-                logger.logError("Error saving study state", e);
+        if (studyState.successfulLogUploads < UPLOADS_TO_COMPLETE_STUDY) {
+            long currentInterval = timeMsecs / StudyState.ACTIVITY_INTERVAL_MSECS;
+            if (currentInterval != studyState.lastActiveInterval) {
+                studyState.lastActiveInterval = currentInterval;
+                studyState.activeIntervals++;
+                if (!studyState.uploadPending && studyState.activeIntervals % StudyState.LOG_UPLOAD_INTERVALS == 0) {
+                    studyState.uploadPending = true;
+                    schedulePromptForUploadLogs(UPLOAD_PROMPT_DELAY_MSECS);
+                }
+                try {
+                    saveStudyState();
+                } catch (PluginException e) {
+                    logger.logError("Error saving study state", e);
+                }
             }
         }
-        
     }
     
     public void addRecommendationClicked(Location clicked) {
@@ -192,7 +197,18 @@ public class StudyActivityMonitor implements EditorMonitorListener {
     }
     
     public void displayStudyCompleteDialog() {
-        
+        StudyCompleteDialog dialog = new StudyCompleteDialog(shell, config, logger);
+        dialog.open();
+        String query = "participant=" + config.getUserId() + "&key=" + config.getUserIdKey();
+        URI uri = null;
+        try {
+            uri = new URI("https", "www.cs.ubc.ca", "/~nicks/reverb/feedback.php", query, null);
+            Desktop.getDesktop().browse(uri);
+        } catch (URISyntaxException e) {
+            logger.logError("Error constructing URI", e);
+        } catch (IOException e) {
+            logger.logError("Error opening browser on URL '" + uri + "'", e);
+        }
     }
     
     public int getSuccessfulLogUploads() {
@@ -274,7 +290,7 @@ public class StudyActivityMonitor implements EditorMonitorListener {
         if (! studyState.locationRatings.isEmpty()) {
             displayRateRecommendationsDialog();
         }
-        if (studyState.successfulLogUploads == UPLOADS_TO_COMPLETE_STUDY) {
+        if (studyState.successfulLogUploads >= UPLOADS_TO_COMPLETE_STUDY) {
             displayStudyCompleteDialog();
         }
     }
