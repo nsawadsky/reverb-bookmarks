@@ -3,6 +3,7 @@ package ca.ubc.cs.reverb.eclipseplugin;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.UUID;
 
@@ -10,6 +11,10 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.apache.commons.codec.binary.Base64;
+import org.codehaus.jackson.JsonEncoding;
+import org.codehaus.jackson.JsonGenerator;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.util.DefaultPrettyPrinter;
 
 /**
  * Class must be thread-safe.
@@ -26,6 +31,8 @@ public class PluginConfig {
     private String userId;
     
     private String userIdKey;
+    
+    private PluginSettings pluginSettings;
     
     public PluginConfig() throws PluginException {
         String localAppDataPath = System.getenv(LOCAL_APPDATA_ENV_VAR);
@@ -45,6 +52,8 @@ public class PluginConfig {
             }
         }
 
+        loadPluginSettings();
+
         studyDataLogFolderPath = basePath + File.separator + "logs";
         File logFolder = new File(studyDataLogFolderPath);
         if (!logFolder.exists()) {
@@ -52,6 +61,7 @@ public class PluginConfig {
                 throw new PluginException("Could not create directory '" + studyDataLogFolderPath + "'");
             }
         }
+        
     }
     
     public String getUserId() {
@@ -68,6 +78,10 @@ public class PluginConfig {
 
     public String getStudyDataLogFolderPath() {
         return studyDataLogFolderPath;
+    }
+    
+    public PluginSettings getPluginSettings() {
+        return pluginSettings;
     }
     
     private void initializeUserId() throws PluginException {
@@ -136,6 +150,47 @@ public class PluginConfig {
     
     private String getUserIdPath() {
         return settingsPath + File.separator + "uid.txt";
+    }
+    
+    private String getPluginSettingsPath() {
+        return pluginStatePath + File.separator + "settings.txt";
+    }
+    
+    private void loadPluginSettings() throws PluginException {
+        try {
+            File pluginSettingsFile = new File(getPluginSettingsPath());
+            if (!pluginSettingsFile.exists()) {
+                pluginSettings = new PluginSettings();
+                savePluginSettings();
+                return;
+            }
+            ObjectMapper mapper = new ObjectMapper();
+            pluginSettings = mapper.readValue(pluginSettingsFile, PluginSettings.class);
+        } catch (PluginException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new PluginException("Error loading plugin settings: " + e, e);
+        }
+    }
+    
+    private void savePluginSettings() throws PluginException {
+        JsonGenerator jsonGenerator = null;
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            jsonGenerator = mapper.getJsonFactory().createJsonGenerator(new File(getPluginSettingsPath()), 
+                    JsonEncoding.UTF8);
+            jsonGenerator.setPrettyPrinter(new DefaultPrettyPrinter());
+
+            mapper.writeValue(jsonGenerator, pluginSettings);
+        } catch (Exception e) {
+            throw new PluginException("Error saving plugin settings: " + e, e);
+        } finally {
+            if (jsonGenerator != null) {
+                try { 
+                    jsonGenerator.close();
+                } catch (IOException e) { } 
+            }
+        }
     }
     
 }

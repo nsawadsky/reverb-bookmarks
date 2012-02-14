@@ -233,8 +233,10 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
                 manager.add(updateViewAction);
                 manager.add(deleteLocationAction);
                 manager.add(new Separator());
-                manager.add(uploadLogsAction);
-                manager.add(rateRecommendationsAction);
+                if (config.getPluginSettings().isDebugMode) {
+                    manager.add(uploadLogsAction);
+                    manager.add(rateRecommendationsAction);
+                }
                 manager.add(new Separator());
             }
             
