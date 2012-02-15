@@ -33,6 +33,8 @@ import ca.ubc.cs.reverb.indexer.study.StudyDataCollector;
 public class WebPageIndexer {
     private static Logger log = Logger.getLogger(WebPageIndexer.class);
     
+    private final static int COMMIT_INTERVAL_MSECS = 30000;
+
     public final static String URL_FIELD_NAME = "url";
     public final static String TITLE_FIELD_NAME = "title";
     public final static String CONTENT_FIELD_NAME = "content";
@@ -64,6 +66,29 @@ public class WebPageIndexer {
         } catch (Exception e) {
             throw new IndexerException("Exception initializing web page indexer: " + e, e);
         }
+    }
+    
+    /**
+     * Starts a thread which periodically commits changes.
+     */
+    public void startCommitter() {
+        class IndexCommitter implements Runnable {
+
+            @Override
+            public void run() {
+                Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
+                while (true) {
+                    try {
+                        Thread.sleep(COMMIT_INTERVAL_MSECS);
+                        commitChanges();
+                    } catch (Exception e) {
+                        log.error("Error committing changes", e);
+                    }
+                }
+            }
+        }
+        
+        new Thread(new IndexCommitter()).start();
     }
     
     public void close() throws IndexerException {

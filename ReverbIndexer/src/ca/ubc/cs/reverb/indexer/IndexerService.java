@@ -47,6 +47,7 @@ public class IndexerService {
             if (query != null) {
                 runQuery(config, indexer, locationsDatabase, collector, query);
             } else {
+                indexer.startCommitter();
                 
                 IndexPipeListener indexPipeListener = new IndexPipeListener(config, indexer);
                 
