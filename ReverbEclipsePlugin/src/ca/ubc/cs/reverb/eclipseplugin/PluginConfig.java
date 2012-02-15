@@ -39,12 +39,12 @@ public class PluginConfig {
         if (localAppDataPath == null) {
             throw new PluginException("APPDATA environment variable not found");
         }
-        String basePath = localAppDataPath + File.separator + "cs.ubc.ca" + File.separator + "Reverb";
-        settingsPath = basePath + File.separator + "settings";
+        String dataPath = localAppDataPath + File.separator + "cs.ubc.ca" + File.separator + "Reverb" + File.separator + "data";
+        settingsPath = dataPath + File.separator + "settings";
 
         initializeUserId();
         
-        pluginStatePath = basePath + File.separator + "plugin";
+        pluginStatePath = dataPath + File.separator + "plugin";
         File pluginStateDir = new File(pluginStatePath);
         if (!pluginStateDir.exists()) {
             if (!pluginStateDir.mkdirs()) {
@@ -54,7 +54,7 @@ public class PluginConfig {
 
         loadPluginSettings();
 
-        studyDataLogFolderPath = basePath + File.separator + "logs";
+        studyDataLogFolderPath = dataPath + File.separator + "logs";
         File logFolder = new File(studyDataLogFolderPath);
         if (!logFolder.exists()) {
             if (!logFolder.mkdirs()) {
