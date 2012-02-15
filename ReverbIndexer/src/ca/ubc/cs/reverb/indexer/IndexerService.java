@@ -21,7 +21,9 @@ import ca.ubc.cs.reverb.indexer.study.StudyDataCollector;
 
 public class IndexerService {
     private static Logger log = Logger.getLogger(IndexerService.class);
-
+    private LocationsDatabase locationsDatabase;
+    private WebPageIndexer indexer;
+    
     public static void main(String[] args) {
         IndexerService service = new IndexerService();
         service.start(args);
@@ -39,8 +41,8 @@ public class IndexerService {
             StudyDataCollector collector = new StudyDataCollector(config);
             collector.start();
             
-            LocationsDatabase locationsDatabase = new LocationsDatabase(config);
-            WebPageIndexer indexer = new WebPageIndexer(config, locationsDatabase, collector);
+            locationsDatabase = new LocationsDatabase(config);
+            indexer = new WebPageIndexer(config, locationsDatabase, collector);
             
             Map<String, String> parsed = parseArgs(args);
             String query = parsed.get("-query");
@@ -49,7 +51,7 @@ public class IndexerService {
             } else {
                 indexer.startCommitter();
                 
-                IndexPipeListener indexPipeListener = new IndexPipeListener(config, indexer);
+                IndexPipeListener indexPipeListener = new IndexPipeListener(this, config, indexer);
                 
                 QueryPipeListener queryPipeListener = new QueryPipeListener(config, indexer, locationsDatabase, collector);
                 
@@ -61,6 +63,23 @@ public class IndexerService {
             }
         } catch (IndexerException e) {
             log.error("Exception starting service", e);
+        }
+    }
+    
+    /**
+     * For now, our shutdown method is minimal.  Just make sure changes are committed to the database and
+     * the index.
+     */
+    public void shutdown() {
+        try {
+            indexer.shutdown();
+        } catch (IndexerException e) {
+            log.error("Error shutting down web page indexer", e);
+        }
+        try {
+            locationsDatabase.close();
+        } catch (IndexerException e) {
+            log.error("Error closing locations database", e);
         }
     }
 
