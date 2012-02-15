@@ -14,7 +14,6 @@ import ca.ubc.cs.reverb.indexer.messages.UpdatePageInfoRequest;
 
 public class IndexPipeListener implements Runnable {
     private static Logger log = Logger.getLogger(IndexPipeListener.class);
-    private final static int COMMIT_INTERVAL_MSECS = 30000;
 
     private IndexerConfig config;
     private WebPageIndexer indexer;
@@ -32,25 +31,6 @@ public class IndexPipeListener implements Runnable {
             throw new IndexerException("Failed to create index pipe: " + e, e);
         }
         new Thread(this).start();
-        
-        // Start a thread which periodically commits changes.
-        class IndexCommitter implements Runnable {
-
-            @Override
-            public void run() {
-                Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
-                while (true) {
-                    try {
-                        Thread.sleep(COMMIT_INTERVAL_MSECS);
-                        indexer.commitChanges();
-                    } catch (Exception e) {
-                        log.error("Error committing changes", e);
-                    }
-                }
-            }
-        }
-        
-        new Thread(new IndexCommitter()).start();
     }
     
     public void run() {
