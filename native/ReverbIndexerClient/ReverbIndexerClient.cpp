@@ -93,11 +93,6 @@ public:
                 throwXpnpError();
             }
 
-            indexPipe = XPNP_openPipe(pipeName, true);
-            if (indexPipe == NULL) {
-                throwXpnpError();
-            }
-            
             if (!SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST)) {
                 throwWindowsError("SetThreadPriority");
             }
@@ -105,10 +100,9 @@ public:
             setStatus("Thread running");
 
             bool done = false;
-            bool connected = false;
             while (!done) {
-                if (!connected) {
-                    connected = connectToIndexer(indexPipe);
+                if (indexPipe == NULL) {
+                    indexPipe = connectToIndexer(pipeName);
                 }
                 boost::shared_ptr<BackgroundThreadMessage> msg = getNextMessage();
                 switch (msg->getType()) {
@@ -139,10 +133,13 @@ public:
     }
 
 private:
-    bool connectToIndexer(XPNP_PipeHandle& pipe) {
-        bool result = false;
-        try {
+    XPNP_PipeHandle connectToIndexer(const char* pipeName) {
+        
+        XPNP_PipeHandle result = XPNP_openPipe(pipeName, true);
+        if (result == NULL) {
             if (indexerPath.empty()) {
+                char* userProfilePath = getenv("USERPROFILE");
+                
                 wchar_t pathBuffer[MAX_PATH+1] = L"";
                 HRESULT result = SHGetFolderPath(NULL, CSIDL_LOCAL_APPDATA, NULL, SHGFP_TYPE_CURRENT, pathBuffer);
                 if (!SUCCEEDED(result)) {
