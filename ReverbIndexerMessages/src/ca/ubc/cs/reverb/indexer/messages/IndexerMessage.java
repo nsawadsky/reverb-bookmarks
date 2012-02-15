@@ -16,6 +16,7 @@ import org.codehaus.jackson.annotate.JsonSubTypes;
                 @JsonSubTypes.Type(value=UploadLogsReply.class, name="uploadLogsReply"),
                 @JsonSubTypes.Type(value=LogClickRequest.class, name="logClickRequest"),
                 @JsonSubTypes.Type(value=LogClickReply.class, name="logClickReply"),
+                @JsonSubTypes.Type(value=ShutdownRequest.class, name="shutdownRequest"),
               })
 public interface IndexerMessage {
 }
