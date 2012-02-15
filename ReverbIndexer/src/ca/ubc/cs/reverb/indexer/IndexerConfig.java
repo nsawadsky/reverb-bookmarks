@@ -30,19 +30,19 @@ public class IndexerConfig {
     private String userIdKey;
     
     public IndexerConfig() throws IndexerException {
-        String basePath = getBasePath();
-        settingsPath = basePath + File.separator + "settings";
-        String dataPath = basePath + File.separator + "data";
-        indexPath = dataPath + File.separator + "index";
+        String dataPath = getBasePath() + File.separator + "data";
+        settingsPath = dataPath + File.separator + "settings";
+        String dbPath = dataPath + File.separator + "db";
+        indexPath = dbPath + File.separator + "index";
         File dir = new File(indexPath);
         if (!dir.exists()) {
             if (!dir.mkdirs()) {
                 throw new IndexerException("Could not create directory '" + indexPath + "'");
             }
         }
-        locationsDatabasePath = dataPath + File.separator + "locations.sqlite";
+        locationsDatabasePath = dbPath + File.separator + "locations.sqlite";
         
-        studyDataLogFolderPath = basePath + File.separator + "logs";
+        studyDataLogFolderPath = dataPath + File.separator + "logs";
         File logFolder = new File(studyDataLogFolderPath);
         if (!logFolder.exists()) {
             if (!logFolder.mkdirs()) {
