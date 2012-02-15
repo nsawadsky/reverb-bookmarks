@@ -21,10 +21,11 @@
       <perspectiveExtension
             targetID="org.eclipse.jdt.ui.JavaPerspective">
          <view
+               id="ca.ubc.cs.reverb.eclipseplugin.views.RelatedPagesView"
                ratio="0.5"
-               relative="org.eclipse.ui.views.TaskList"
-               relationship="right"
-               id="ca.ubc.cs.reverb.eclipseplugin.views.RelatedPagesView">
+               relationship="stack"
+               relative="org.eclipse.ui.views.ContentOutline"
+               visible="true">
          </view>
       </perspectiveExtension>
    </extension>
