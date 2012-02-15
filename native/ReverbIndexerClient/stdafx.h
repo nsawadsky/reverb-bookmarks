@@ -13,6 +13,7 @@
 #include <sddl.h>
 #include <Rpc.h>
 #include <WinSock2.h>
+#include <ShlObj.h>
 
 #include <string>
 #include <stdexcept>

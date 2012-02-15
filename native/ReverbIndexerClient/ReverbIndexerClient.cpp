@@ -105,7 +105,11 @@ public:
             setStatus("Thread running");
 
             bool done = false;
+            bool connected = false;
             while (!done) {
+                if (!connected) {
+                    connected = connectToIndexer(indexPipe);
+                }
                 boost::shared_ptr<BackgroundThreadMessage> msg = getNextMessage();
                 switch (msg->getType()) {
                 case PageContent: 
@@ -135,6 +139,25 @@ public:
     }
 
 private:
+    bool connectToIndexer(XPNP_PipeHandle& pipe) {
+        bool result = false;
+        try {
+            if (indexerPath.empty()) {
+                wchar_t pathBuffer[MAX_PATH+1] = L"";
+                HRESULT result = SHGetFolderPath(NULL, CSIDL_LOCAL_APPDATA, NULL, SHGFP_TYPE_CURRENT, pathBuffer);
+                if (!SUCCEEDED(result)) {
+                    std::stringstream errorMsg;
+                    errorMsg << "SHGetFolderpath failed with " << HRESULT_CODE(result);
+                    throw std::runtime_error(errorMsg.str());
+                }
+                indexerPath = util::toUtf8(pathBuffer);
+                indexerPath += "\\cs.ubc.ca\\reverb\\code\\ReverbIndexer.jar";
+
+            }
+        } catch (...) { }
+        return result;
+    }
+
     void handlePageContentMessage(boost::shared_ptr<PageContentMessage> msg, XPNP_PipeHandle pipe) {
         Json::Value root;
         Json::Value& pageInfo = root["message"]["updatePageInfoRequest"];
@@ -181,6 +204,8 @@ private:
     
     boost::mutex statusMutex;
     std::string status;
+
+    std::string indexerPath;
 };
 
 // Static instances
