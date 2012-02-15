@@ -101,6 +101,7 @@ public class IndexerService {
                 //return state.getBoost() * ((float) (1.0 / Math.sqrt(numTerms)));
               }
             
+            // Disable coord weighting.
             @Override 
             public float coord(int overlap, int maxOverlap) {
                 return 1.0F;
