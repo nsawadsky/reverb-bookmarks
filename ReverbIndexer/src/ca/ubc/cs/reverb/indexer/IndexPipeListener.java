@@ -9,17 +9,19 @@ import xpnp.XpNamedPipe;
 import org.apache.log4j.Logger;
 
 import ca.ubc.cs.reverb.indexer.messages.IndexerMessageEnvelope;
+import ca.ubc.cs.reverb.indexer.messages.ShutdownRequest;
 import ca.ubc.cs.reverb.indexer.messages.UpdatePageInfoRequest;
-
 
 public class IndexPipeListener implements Runnable {
     private static Logger log = Logger.getLogger(IndexPipeListener.class);
 
+    private IndexerService indexerService;
     private IndexerConfig config;
     private WebPageIndexer indexer;
     private XpNamedPipe listeningPipe;
     
-    public IndexPipeListener(IndexerConfig config, WebPageIndexer indexer) {
+    public IndexPipeListener(IndexerService indexerService, IndexerConfig config, WebPageIndexer indexer) {
+        this.indexerService = indexerService;
         this.config = config;
         this.indexer = indexer;
     }
@@ -63,30 +65,21 @@ public class IndexPipeListener implements Runnable {
                 ObjectMapper mapper = new ObjectMapper();
                 while (true) {
                     byte[] data = pipe.readMessage();
-                    UpdatePageInfoRequest info = null;
                     try {
                         IndexerMessageEnvelope envelope = mapper.readValue(data, IndexerMessageEnvelope.class);
                         if (envelope.message == null) {
                             throw new IndexerException("envelope.message is null");
                         }
-                        if (!(envelope.message instanceof UpdatePageInfoRequest)) {
+                        if (envelope.message instanceof ShutdownRequest) {
+                            indexerService.shutdown();
+                            System.exit(0);
+                        } else if (envelope.message instanceof UpdatePageInfoRequest) {
+                            handleUpdatePageInfoRequest((UpdatePageInfoRequest)envelope.message);
+                        } else {
                             throw new IndexerException("Unexpected message content: " + envelope.message.getClass());
                         }
-                        info = (UpdatePageInfoRequest)envelope.message;
                     } catch (Exception e) {
                         log.error("Exception parsing message from index pipe", e);
-                    }
-                    if (info != null) {
-                        if (info.html == null || info.html.isEmpty()) {
-                            log.info("Got page with empty html: " + info.url);
-                        } else {
-                            log.info("Got page: " + info.url);
-                        }
-                        try {
-                            indexer.indexPage(info);
-                        } catch (IndexerException e) {
-                            log.error("Error indexing page '" + info.url + "'", e);
-                        }
                     }
                 }
             } catch (IOException e) {
@@ -94,6 +87,19 @@ public class IndexPipeListener implements Runnable {
             } finally {
                 pipe.close();
             }
+        }
+    }
+    
+    private void handleUpdatePageInfoRequest(UpdatePageInfoRequest info) {
+        if (info.html == null || info.html.isEmpty()) {
+            log.info("Got page with empty html: " + info.url);
+        } else {
+            log.info("Got page: " + info.url);
+        }
+        try {
+            indexer.indexPage(info);
+        } catch (IndexerException e) {
+            log.error("Error indexing page '" + info.url + "'", e);
         }
     }
 }

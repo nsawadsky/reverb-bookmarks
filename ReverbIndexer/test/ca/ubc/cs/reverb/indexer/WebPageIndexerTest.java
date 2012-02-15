@@ -70,7 +70,7 @@ public class WebPageIndexerTest {
                 reader.close();
             }
             if (indexer != null) {
-                indexer.close();
+                indexer.shutdown();
             }
             if (locationsDatabase != null) {
                 locationsDatabase.close();

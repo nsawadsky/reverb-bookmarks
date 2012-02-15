@@ -91,7 +91,7 @@ public class WebPageIndexer {
         new Thread(new IndexCommitter()).start();
     }
     
-    public void close() throws IndexerException {
+    public void shutdown() throws IndexerException {
         try {
             indexWriter.close(true);
         } catch (Exception e) {
