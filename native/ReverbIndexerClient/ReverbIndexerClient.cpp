@@ -104,25 +104,31 @@ public:
                 if (indexPipe == NULL) {
                     indexPipe = connectToIndexer(pipeName);
                 }
-                boost::shared_ptr<BackgroundThreadMessage> msg = getNextMessage();
-                switch (msg->getType()) {
-                case PageContent: 
-                    {
-                        handlePageContentMessage(boost::static_pointer_cast<PageContentMessage>(msg), indexPipe);
-                        break;
-                    }
-                case ShutdownThread: 
-                    { 
-                        setStatus("Thread received shutdown message");
-                        done = true;
-                        break;
-                    }
-                default: 
-                    {
-                        break;
+                if (indexPipe == NULL) {
+                    boost::this_thread::sleep(boost::posix_time::seconds(15));
+                } else {
+                    boost::shared_ptr<BackgroundThreadMessage> msg = getNextMessage();
+                    switch (msg->getType()) {
+                    case PageContent: 
+                        {
+                            if (!handlePageContentMessage(boost::static_pointer_cast<PageContentMessage>(msg), indexPipe)) {
+                                XPNP_closePipe(indexPipe);
+                                indexPipe = NULL;
+                            }
+                            break;
+                        }
+                    case ShutdownThread: 
+                        { 
+                            setStatus("Thread received shutdown message");
+                            done = true;
+                            break;
+                        }
+                    default: 
+                        {
+                            break;
+                        }
                     }
                 }
-
             }
         } catch (std::exception& except) {
             setStatus(except.what());
@@ -133,29 +139,65 @@ public:
     }
 
 private:
+    // Returns NULL if fails to connect for "typical" reason (e.g. indexer service not installed/running).
+    // Throws exception if failure is "atypical", e.g. failed to get location of local appdata folder.
     XPNP_PipeHandle connectToIndexer(const char* pipeName) {
-        
-        XPNP_PipeHandle result = XPNP_openPipe(pipeName, true);
-        if (result == NULL) {
-            if (indexerPath.empty()) {
-                char* userProfilePath = getenv("USERPROFILE");
-                
-                wchar_t pathBuffer[MAX_PATH+1] = L"";
-                HRESULT result = SHGetFolderPath(NULL, CSIDL_LOCAL_APPDATA, NULL, SHGFP_TYPE_CURRENT, pathBuffer);
-                if (!SUCCEEDED(result)) {
-                    std::stringstream errorMsg;
-                    errorMsg << "SHGetFolderpath failed with " << HRESULT_CODE(result);
-                    throw std::runtime_error(errorMsg.str());
-                }
-                indexerPath = util::toUtf8(pathBuffer);
-                indexerPath += "\\cs.ubc.ca\\reverb\\code\\ReverbIndexer.jar";
-
+        XPNP_PipeHandle pipe = XPNP_openPipe(pipeName, true);
+        if (pipe != NULL) {
+            return pipe;
+        }
+        if (codePath.empty()) {
+            wchar_t pathBuffer[MAX_PATH] = L"";
+            HRESULT result = SHGetFolderPath(NULL, CSIDL_LOCAL_APPDATA, NULL, SHGFP_TYPE_CURRENT, pathBuffer);
+            if (!SUCCEEDED(result)) {
+                std::stringstream errorMsg;
+                errorMsg << "SHGetFolderpath failed with " << HRESULT_CODE(result);
+                throw std::runtime_error(errorMsg.str());
             }
-        } catch (...) { }
-        return result;
+            codePath = util::toUtf8(pathBuffer);
+            codePath += "\\cs.ubc.ca\\reverb\\code";
+        }
+        std::string indexerVersionPath = codePath + "\\indexer-version.txt";
+        std::ifstream inputStream(indexerVersionPath);
+        if (!inputStream) {
+            setStatus("Indexer service not yet installed");
+            return NULL;
+        }
+
+        int version = 0;
+        inputStream >> version;
+        if (!inputStream) {
+            inputStream.close();
+            setStatus("Indexer service not yet installed");
+            return NULL;
+        }
+        inputStream.close();
+
+        std::stringstream indexerJarPath;
+        indexerJarPath << codePath << "\\" << version;
+
+        STARTUPINFO startupInfo;
+        memset(&startupInfo, 0, sizeof(startupInfo));
+        startupInfo.cb = sizeof(startupInfo);
+
+        PROCESS_INFORMATION processInfo;
+        memset(&processInfo, 0, sizeof(processInfo));
+
+        wchar_t commandLine[256] = L"javaw.exe -Djava.library.path=native -Xmx1024m -jar ReverbIndexer.jar";
+
+        if (!CreateProcess(NULL, commandLine, NULL, NULL, FALSE, 0, NULL, 
+                util::toUtf16(indexerJarPath.str()).c_str(), &startupInfo, &processInfo)) {
+            setStatus(util::getWindowsErrorMessage("CreateProcess"));
+            return NULL;
+        }
+        CloseHandle(processInfo.hThread);
+        CloseHandle(processInfo.hProcess);
+
+        boost::this_thread::sleep(boost::posix_time::seconds(5));
+        return XPNP_openPipe(pipeName, true);
     }
 
-    void handlePageContentMessage(boost::shared_ptr<PageContentMessage> msg, XPNP_PipeHandle pipe) {
+    bool handlePageContentMessage(boost::shared_ptr<PageContentMessage> msg, XPNP_PipeHandle pipe) {
         Json::Value root;
         Json::Value& pageInfo = root["message"]["updatePageInfoRequest"];
         pageInfo["url"] = msg->getUrl();
@@ -166,8 +208,12 @@ private:
 
         int msgLength = output.length();
         msgLength = htonl(msgLength);
-        XPNP_writePipe(pipe, (const char*)&msgLength, sizeof(msgLength));
-        XPNP_writePipe(pipe, output.c_str(), output.length());
+        int writeResult = XPNP_writePipe(pipe, (const char*)&msgLength, sizeof(msgLength));
+        if (writeResult == 0) {
+            return false;
+        }
+        writeResult = XPNP_writePipe(pipe, output.c_str(), output.length());
+        return (writeResult != 0);
     }
 
     boost::shared_ptr<BackgroundThreadMessage> getNextMessage() {
@@ -202,7 +248,7 @@ private:
     boost::mutex statusMutex;
     std::string status;
 
-    std::string indexerPath;
+    std::string codePath;
 };
 
 // Static instances

@@ -92,9 +92,9 @@ public class IndexPipeListener implements Runnable {
     
     private void handleUpdatePageInfoRequest(UpdatePageInfoRequest info) {
         if (info.html == null || info.html.isEmpty()) {
-            log.info("Got page with empty html: " + info.url);
+            log.debug("Got page with empty html: " + info.url);
         } else {
-            log.info("Got page: " + info.url);
+            log.debug("Got page: " + info.url);
         }
         try {
             indexer.indexPage(info);

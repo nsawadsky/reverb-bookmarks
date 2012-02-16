@@ -18,6 +18,8 @@
 #include <string>
 #include <stdexcept>
 #include <queue>
+#include <iostream>
+#include <fstream>
 
 #include <boost/thread/tss.hpp>
 #include <boost/thread/locks.hpp>
