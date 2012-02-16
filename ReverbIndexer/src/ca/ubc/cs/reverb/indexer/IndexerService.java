@@ -1,5 +1,6 @@
 package ca.ubc.cs.reverb.indexer;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -8,6 +9,8 @@ import java.util.Map;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.apache.log4j.PatternLayout;
+import org.apache.log4j.RollingFileAppender;
 import org.apache.log4j.spi.RootLogger;
 import org.apache.lucene.index.FieldInvertState;
 import org.apache.lucene.search.DefaultSimilarity;
@@ -21,6 +24,8 @@ import ca.ubc.cs.reverb.indexer.study.StudyDataCollector;
 
 public class IndexerService {
     private static Logger log = Logger.getLogger(IndexerService.class);
+
+    private IndexerConfig config;
     private LocationsDatabase locationsDatabase;
     private WebPageIndexer indexer;
     
@@ -30,11 +35,13 @@ public class IndexerService {
     }
 
     public void start(String[] args) {
-        BasicConfigurator.configure();
-        RootLogger.getRootLogger().setLevel(Level.INFO);
+        configureConsoleDebugLogging();
 
         try {
-            IndexerConfig config = new IndexerConfig();
+            config = new IndexerConfig();
+
+            // We need config to be initialized before we can configure file logging.
+            configureFileDebugLogging();
             
             configLucene();
             
@@ -61,8 +68,9 @@ public class IndexerService {
                 Runtime runtime = Runtime.getRuntime();
                 log.info("Indexer service started, user ID = " + config.getUserId() + ", key = " + config.getUserIdKey() + ", max memory = " + runtime.maxMemory()/(1024*1024) + " MB");
             }
-        } catch (IndexerException e) {
-            log.error("Exception starting service", e);
+        } catch (Throwable t) {
+            log.error("Exception starting service", t);
+            System.exit(1);
         }
     }
     
@@ -83,6 +91,21 @@ public class IndexerService {
         }
     }
 
+    private void configureConsoleDebugLogging() {
+        BasicConfigurator.configure();
+        RootLogger.getRootLogger().setLevel(Level.INFO);
+    }
+    
+    private void configureFileDebugLogging() throws IOException {
+        RollingFileAppender fileAppender = new RollingFileAppender(new PatternLayout("%r [%t] %p %c %x - %m%n"),
+                config.getDebugLogFilePath());
+        
+        fileAppender.setMaxBackupIndex(2);
+        fileAppender.setMaxFileSize("2MB");
+        
+        RootLogger.getRootLogger().addAppender(fileAppender);
+    }
+    
     private void runQuery(IndexerConfig config, WebPageIndexer indexer, LocationsDatabase locationsDatabase, 
             StudyDataCollector collector, String query) throws IndexerException {
         SharedIndexReader indexReader = indexer.getNewIndexReader();
