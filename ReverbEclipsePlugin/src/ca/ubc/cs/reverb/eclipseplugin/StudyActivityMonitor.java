@@ -62,7 +62,8 @@ public class StudyActivityMonitor implements EditorMonitorListener {
     private long createdThreadId;
     private Shell shell;
     
-    public StudyActivityMonitor(Shell shell, PluginConfig config, PluginLogger logger, IndexerConnection indexerConnection) throws PluginException {
+    public StudyActivityMonitor(Shell shell, PluginConfig config, PluginLogger logger, IndexerConnection indexerConnection,
+            EditorMonitor editorMonitor) throws PluginException {
         this.createdThreadId = Thread.currentThread().getId();
         this.config = config;
         this.logger = logger;
@@ -72,6 +73,7 @@ public class StudyActivityMonitor implements EditorMonitorListener {
         if (studyState.uploadPending) {
             schedulePromptForUploadLogs(UPLOAD_PROMPT_DELAY_MSECS);
         }
+        editorMonitor.addListener(this);
     }
     
     @Override
