@@ -33,16 +33,13 @@ public class PluginConfig {
     
     private PluginSettings pluginSettings;
     
-    private String indexerCodePath;
-    
     public PluginConfig() throws PluginException {
         String localAppDataPath = System.getenv(LOCAL_APPDATA_ENV_VAR);
         if (localAppDataPath == null) {
             throw new PluginException("APPDATA environment variable not found");
         }
-        String basePath = localAppDataPath + File.separator + "cs.ubc.ca" + File.separator + "Reverb";
-        indexerCodePath = basePath + File.separator + "code";
-        String dataPath = basePath + File.separator + "data";
+        String dataPath = localAppDataPath + File.separator + "cs.ubc.ca" + File.separator + "Reverb" + 
+                File.separator + "data";
         settingsPath = dataPath + File.separator + "settings";
 
         initializeUserId();
@@ -57,7 +54,7 @@ public class PluginConfig {
 
         loadPluginSettings();
 
-        studyDataLogFolderPath = dataPath + File.separator + "logs";
+        studyDataLogFolderPath = dataPath + File.separator + "studylogs";
         File logFolder = new File(studyDataLogFolderPath);
         if (!logFolder.exists()) {
             if (!logFolder.mkdirs()) {
@@ -88,12 +85,11 @@ public class PluginConfig {
     }
     
     public String getCurrentIndexerInstallPath() throws PluginException {
-        File indexerVersionFile = new File(indexerCodePath + File.separator + "indexer-version.txt");
+        File indexerVersionFile = new File(settingsPath + File.separator + "indexer-install-path.txt");
         Scanner scanner = null;
         try {
             scanner = new Scanner(indexerVersionFile);
-            int version = scanner.nextInt();
-            return indexerCodePath + File.separator + version;
+            return scanner.nextLine().trim();
         } catch (Exception e) { 
             throw new PluginException("Failed to get current indexer install path: " + e, e);
         } finally {
