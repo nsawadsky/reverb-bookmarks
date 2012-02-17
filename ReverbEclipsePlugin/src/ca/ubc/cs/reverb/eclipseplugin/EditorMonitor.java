@@ -32,7 +32,11 @@ import ca.ubc.cs.reverb.indexer.messages.CodeQueryReply;
 import ca.ubc.cs.reverb.indexer.messages.CodeQueryRequest;
 import ca.ubc.cs.reverb.indexer.messages.IndexerQuery;
 
-public class EditorMonitor implements IPartListener, MouseListener, KeyListener, IViewportListener {
+/**
+ * This class is not thread-safe -- we expect it to be called only from the UI thread.  If a method
+ * may be called from a non-UI thread, it must delegate the call to the UI thread.
+ */
+public class EditorMonitor implements IPartListener, MouseListener, KeyListener, IViewportListener, IndexerConnectionListener {
     private final static int REFRESH_DELAY_MSECS = 1000;
     private final static long INVALID_TIME = -1;
     
@@ -58,6 +62,7 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener,
     public EditorMonitor(PluginLogger logger, IndexerConnection indexerConnection) {
        this.logger = logger;
        this.indexerConnection = indexerConnection;
+       this.indexerConnection.addListener(this);
     }
 
     // TODO: Add a stop() method?
@@ -155,6 +160,19 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener,
         } else {
             startRefreshTimer(System.currentTimeMillis());
         }
+    }
+    
+    @Override
+    public void onIndexerConnectionEstablished() {
+        // This method is called by the indexer connection thread, so we delegate to the UI thread.
+        PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
+
+            @Override
+            public void run() {
+                startRefreshTimer(System.currentTimeMillis());
+            }
+            
+        });
     }
     
     private void doRefresh() {
@@ -363,5 +381,5 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener,
             logger.logInfo("Query display = " + query.queryClientInfo + ", query detail = " + query.queryString);
         }
     }
-    
+
 }

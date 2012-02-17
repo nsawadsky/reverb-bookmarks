@@ -1,10 +1,9 @@
 package ca.ubc.cs.reverb.eclipseplugin;
 
 import java.io.File;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.Scanner;
 import java.util.UUID;
 
 import javax.crypto.Mac;
@@ -34,12 +33,16 @@ public class PluginConfig {
     
     private PluginSettings pluginSettings;
     
+    private String indexerCodePath;
+    
     public PluginConfig() throws PluginException {
         String localAppDataPath = System.getenv(LOCAL_APPDATA_ENV_VAR);
         if (localAppDataPath == null) {
             throw new PluginException("APPDATA environment variable not found");
         }
-        String dataPath = localAppDataPath + File.separator + "cs.ubc.ca" + File.separator + "Reverb" + File.separator + "data";
+        String basePath = localAppDataPath + File.separator + "cs.ubc.ca" + File.separator + "Reverb";
+        indexerCodePath = basePath + File.separator + "code";
+        String dataPath = basePath + File.separator + "data";
         settingsPath = dataPath + File.separator + "settings";
 
         initializeUserId();
@@ -84,6 +87,22 @@ public class PluginConfig {
         return pluginSettings;
     }
     
+    public String getCurrentIndexerInstallPath() throws PluginException {
+        File indexerVersionFile = new File(indexerCodePath + File.separator + "indexer-version.txt");
+        Scanner scanner = null;
+        try {
+            scanner = new Scanner(indexerVersionFile);
+            int version = scanner.nextInt();
+            return indexerCodePath + File.separator + version;
+        } catch (Exception e) { 
+            throw new PluginException("Failed to get current indexer install path: " + e, e);
+        } finally {
+            if (scanner != null) { 
+                scanner.close();
+            }
+        }
+    }
+    
     private void initializeUserId() throws PluginException {
         try {
             String userIdPath = getUserIdPath();
@@ -104,19 +123,10 @@ public class PluginConfig {
                 }
                 userId = uuid.toString();
             } else {
-                FileReader reader = new FileReader(userIdFile);
-                final int BUF_SIZE = 1024;
-                char[] buffer = new char[BUF_SIZE];
-                int charsRead = 0;
-                try {
-                    charsRead = reader.read(buffer);
-                } finally {
-                    reader.close();
-                }
-                if (charsRead <= 0) {
-                    throw new PluginException("Empty uid.txt file");
-                }
-                UUID uuid = UUID.fromString(new String(Arrays.copyOfRange(buffer, 0, charsRead)));
+                Scanner scanner = new Scanner(userIdFile);
+                String uuidString = scanner.nextLine();
+                scanner.close();
+                UUID uuid = UUID.fromString(uuidString);
                 userId = uuid.toString();
             }
             userIdKey = initializeUserIdKey(userId);

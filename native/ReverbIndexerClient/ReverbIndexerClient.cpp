@@ -101,32 +101,32 @@ public:
 
             bool done = false;
             while (!done) {
-                if (indexPipe == NULL) {
+                while (indexPipe == NULL) {
                     indexPipe = connectToIndexer(pipeName);
+                    if (indexPipe == NULL) {
+                        boost::this_thread::sleep(boost::posix_time::seconds(15));
+                    }
                 }
-                if (indexPipe == NULL) {
-                    boost::this_thread::sleep(boost::posix_time::seconds(15));
-                } else {
-                    boost::shared_ptr<BackgroundThreadMessage> msg = getNextMessage();
-                    switch (msg->getType()) {
-                    case PageContent: 
-                        {
-                            if (!handlePageContentMessage(boost::static_pointer_cast<PageContentMessage>(msg), indexPipe)) {
-                                XPNP_closePipe(indexPipe);
-                                indexPipe = NULL;
-                            }
-                            break;
+
+                boost::shared_ptr<BackgroundThreadMessage> msg = getNextMessage();
+                switch (msg->getType()) {
+                case PageContent: 
+                    {
+                        if (!handlePageContentMessage(boost::static_pointer_cast<PageContentMessage>(msg), indexPipe)) {
+                            XPNP_closePipe(indexPipe);
+                            indexPipe = NULL;
                         }
-                    case ShutdownThread: 
-                        { 
-                            setStatus("Thread received shutdown message");
-                            done = true;
-                            break;
-                        }
-                    default: 
-                        {
-                            break;
-                        }
+                        break;
+                    }
+                case ShutdownThread: 
+                    { 
+                        setStatus("Thread received shutdown message");
+                        done = true;
+                        break;
+                    }
+                default: 
+                    {
+                        break;
                     }
                 }
             }
@@ -146,7 +146,7 @@ private:
         if (pipe != NULL) {
             return pipe;
         }
-        if (codePath.empty()) {
+        if (indexerCodePath.empty()) {
             wchar_t pathBuffer[MAX_PATH] = L"";
             HRESULT result = SHGetFolderPath(NULL, CSIDL_LOCAL_APPDATA, NULL, SHGFP_TYPE_CURRENT, pathBuffer);
             if (!SUCCEEDED(result)) {
@@ -154,10 +154,10 @@ private:
                 errorMsg << "SHGetFolderpath failed with " << HRESULT_CODE(result);
                 throw std::runtime_error(errorMsg.str());
             }
-            codePath = util::toUtf8(pathBuffer);
-            codePath += "\\cs.ubc.ca\\reverb\\code";
+            indexerCodePath = util::toUtf8(pathBuffer);
+            indexerCodePath += "\\cs.ubc.ca\\reverb\\code";
         }
-        std::string indexerVersionPath = codePath + "\\indexer-version.txt";
+        std::string indexerVersionPath = indexerCodePath + "\\indexer-version.txt";
         std::ifstream inputStream(indexerVersionPath);
         if (!inputStream) {
             setStatus("Indexer service not yet installed");
@@ -168,13 +168,13 @@ private:
         inputStream >> version;
         if (!inputStream) {
             inputStream.close();
-            setStatus("Indexer service not yet installed");
+            setStatus("Failed to read version from indexer-version.txt");
             return NULL;
         }
         inputStream.close();
 
         std::stringstream indexerJarPath;
-        indexerJarPath << codePath << "\\" << version;
+        indexerJarPath << indexerCodePath << "\\" << version;
 
         STARTUPINFO startupInfo;
         memset(&startupInfo, 0, sizeof(startupInfo));
@@ -248,7 +248,7 @@ private:
     boost::mutex statusMutex;
     std::string status;
 
-    std::string codePath;
+    std::string indexerCodePath;
 };
 
 // Static instances

@@ -1,9 +1,8 @@
 package ca.ubc.cs.reverb.indexer;
 
 import java.io.File;
-import java.io.FileReader;
 import java.io.FileWriter;
-import java.util.Arrays;
+import java.util.Scanner;
 import java.util.UUID;
 
 import javax.crypto.Mac;
@@ -84,7 +83,7 @@ public class IndexerConfig {
     }
     
     public String getDebugLogFilePath() {
-        return debugLogFolderPath + File.separator + "debug";
+        return debugLogFolderPath + File.separator + "indexer-debug";
     }
     
     public String getUserId() {
@@ -123,19 +122,10 @@ public class IndexerConfig {
                 }
                 userId = uuid.toString();
             } else {
-                FileReader reader = new FileReader(userIdFile);
-                final int BUF_SIZE = 1024;
-                char[] buffer = new char[BUF_SIZE];
-                int charsRead = 0;
-                try {
-                    charsRead = reader.read(buffer);
-                } finally {
-                    reader.close();
-                }
-                if (charsRead <= 0) {
-                    throw new IndexerException("Empty uid.txt file");
-                }
-                UUID uuid = UUID.fromString(new String(Arrays.copyOfRange(buffer, 0, charsRead)));
+                Scanner scanner = new Scanner(userIdFile);
+                String uuidString = scanner.nextLine();
+                scanner.close();
+                UUID uuid = UUID.fromString(uuidString);
                 userId = uuid.toString();
             }
             userIdKey = initializeUserIdKey(userId);

@@ -96,17 +96,15 @@ public class PluginActivator extends AbstractUIPlugin {
                     }
                 }
 
-                indexerConnection = new IndexerConnection(logger);
+                indexerConnection = new IndexerConnection(config, logger);
     
-    	        indexerConnection.start();
-
     	        editorMonitor = new EditorMonitor(logger, indexerConnection);
                 
     	        studyActivityMonitor = new StudyActivityMonitor(window.getShell(), config, logger,
-    	                indexerConnection);
+    	                indexerConnection, editorMonitor);
     	        
-    	        editorMonitor.addListener(studyActivityMonitor);
-    	        
+                indexerConnection.start();
+
                 editorMonitor.start(activePage);
 	        } catch (Exception e) { 
 	            String errorMsg = "Error completing plugin initialization"; 
@@ -127,11 +125,6 @@ public class PluginActivator extends AbstractUIPlugin {
 	 */
 	public void stop(BundleContext context) throws Exception {
         plugin = null;
-	    try {
-	        if (indexerConnection != null) {
-	            indexerConnection.stop();
-	        }
-	    } catch (IOException e) { }
 		super.stop(context);
 	}
 
