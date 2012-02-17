@@ -94,6 +94,10 @@ public class IndexerConfig {
         return userIdKey;
     }
     
+    public String getIndexerInstallPointerPath() {
+        return settingsPath + File.separator + "indexer-install-path.txt";
+    }
+    
     protected String getBasePath() throws IndexerException {
         String localAppDataPath = System.getenv(LOCAL_APPDATA_ENV_VAR);
         if (localAppDataPath == null) {
