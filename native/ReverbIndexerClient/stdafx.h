@@ -27,6 +27,7 @@
 #include <boost/thread/condition_variable.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/scoped_array.hpp>
+#include <boost/algorithm/string/trim.hpp>
 
 #include <json.h>
 

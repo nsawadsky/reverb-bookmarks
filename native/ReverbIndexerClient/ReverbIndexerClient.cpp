@@ -146,7 +146,7 @@ private:
         if (pipe != NULL) {
             return pipe;
         }
-        if (indexerCodePath.empty()) {
+        if (settingsPath.empty()) {
             wchar_t pathBuffer[MAX_PATH] = L"";
             HRESULT result = SHGetFolderPath(NULL, CSIDL_LOCAL_APPDATA, NULL, SHGFP_TYPE_CURRENT, pathBuffer);
             if (!SUCCEEDED(result)) {
@@ -154,27 +154,19 @@ private:
                 errorMsg << "SHGetFolderpath failed with " << HRESULT_CODE(result);
                 throw std::runtime_error(errorMsg.str());
             }
-            indexerCodePath = util::toUtf8(pathBuffer);
-            indexerCodePath += "\\cs.ubc.ca\\reverb\\code";
+            settingsPath = util::toUtf8(pathBuffer);
+            settingsPath += "\\cs.ubc.ca\\reverb\\data\\settings";
         }
-        std::string indexerVersionPath = indexerCodePath + "\\indexer-version.txt";
-        std::ifstream inputStream(indexerVersionPath);
+        std::ifstream inputStream(settingsPath + "\\indexer-install-path.txt");
         if (!inputStream) {
             setStatus("Indexer service not yet installed");
             return NULL;
         }
 
-        int version = 0;
-        inputStream >> version;
-        if (!inputStream) {
-            inputStream.close();
-            setStatus("Failed to read version from indexer-version.txt");
-            return NULL;
-        }
+        std::string indexerInstallPath;
+        std::getline(inputStream, indexerInstallPath);
+        boost::trim_if(indexerInstallPath, boost::is_any_of(" \r\n"));
         inputStream.close();
-
-        std::stringstream indexerJarPath;
-        indexerJarPath << indexerCodePath << "\\" << version;
 
         STARTUPINFO startupInfo;
         memset(&startupInfo, 0, sizeof(startupInfo));
@@ -186,7 +178,7 @@ private:
         wchar_t commandLine[256] = L"javaw.exe -Djava.library.path=native -Xmx1024m -jar ReverbIndexer.jar";
 
         if (!CreateProcess(NULL, commandLine, NULL, NULL, FALSE, 0, NULL, 
-                util::toUtf16(indexerJarPath.str()).c_str(), &startupInfo, &processInfo)) {
+                util::toUtf16(indexerInstallPath).c_str(), &startupInfo, &processInfo)) {
             setStatus(util::getWindowsErrorMessage("CreateProcess"));
             return NULL;
         }
@@ -248,7 +240,7 @@ private:
     boost::mutex statusMutex;
     std::string status;
 
-    std::string indexerCodePath;
+    std::string settingsPath;
 };
 
 // Static instances
