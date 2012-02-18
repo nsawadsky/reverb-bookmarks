@@ -1,11 +1,18 @@
 package ca.ubc.cs.reverb.indexer;
 
+import java.awt.Color;
+import java.awt.SystemColor;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import javax.swing.JDialog;
+import javax.swing.JOptionPane;
+import javax.swing.JTextArea;
+import javax.swing.SwingUtilities;
 
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
@@ -20,6 +27,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 
 import xpnp.XpNamedPipe;
 
+import ca.ubc.cs.reverb.indexer.installer.UninstallDialog;
 import ca.ubc.cs.reverb.indexer.messages.BatchQueryReply;
 import ca.ubc.cs.reverb.indexer.messages.IndexerMessageEnvelope;
 import ca.ubc.cs.reverb.indexer.messages.IndexerQuery;
@@ -51,6 +59,20 @@ public class IndexerService {
             if (argsInfo.mode == IndexerMode.UNINSTALL) {
                 unregisterAndShutdownService();
                 log.info("Unregistered and shutdown service successfully");
+                String message = "The indexer service has been stopped and unregistered.  You can delete this folder to complete the uninstall.\n\n" +
+                        "To remove the index, as well as all logs and settings, delete the folder.";
+                JTextArea textArea = new JTextArea(message);
+                textArea.setColumns(30);
+                textArea.setLineWrap(true);
+                textArea.setWrapStyleWord(true);
+                textArea.setSize(textArea.getPreferredSize().width, 1);
+                textArea.setBackground(SystemColor.control);
+                JOptionPane.showMessageDialog(null, textArea, "Reverb Indexer Uninstalled", JOptionPane.INFORMATION_MESSAGE);
+                /*
+                UninstallDialog dialog = new UninstallDialog();
+                dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+                dialog.setVisible(true);
+                */
                 return;
             }
 
@@ -199,8 +221,7 @@ public class IndexerService {
             byte [] jsonData = mapper.writeValueAsBytes(envelope);
             
             pipe.writeMessage(jsonData);
-        } catch (Exception e) {
-            throw new IndexerException("Error sending shutdown request to indexer service: " + e, e);
+        } catch (Exception e) { 
         } finally {
             if (pipe != null) {
                 pipe.close();
