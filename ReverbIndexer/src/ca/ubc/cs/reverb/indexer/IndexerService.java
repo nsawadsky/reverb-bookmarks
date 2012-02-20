@@ -2,8 +2,11 @@ package ca.ubc.cs.reverb.indexer;
 
 import java.awt.SystemColor;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.StringWriter;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -115,12 +118,34 @@ public class IndexerService {
     }
 
     private int installService() throws IndexerException {
-        try { 
-            unregisterAndShutdownService();
-            return 0;
-        } catch (IndexerException e) { 
+        final Integer[] result = new Integer[] {0};
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+                @Override 
+                public void run() {
+                    try {
+                        unregisterAndShutdownService();
+                        String installLocation = registerService();
+                        log.info("Registered service successfully");
+                        if (argsInfo.showUI) { 
+                            String message = "The indexer service has been registered at:\n" + installLocation; 
+                            showMessageWithWrap(message, "Reverb Indexer Installed", JOptionPane.INFORMATION_MESSAGE);
+                        }
+                    } catch (IndexerException e) {
+                        log.error("Error installing service", e);
+                        if (argsInfo.showUI) {
+                            showMessageWithWrap("An error occurred during install: " + e, "Install Error", JOptionPane.ERROR_MESSAGE);
+                        }
+                        result[0] = 1;
+                        return;
+                    }
+                }
+            });
+        } catch (Exception e) {
+            log.error("Error launching install", e);
             return 1;
         }
+        return result[0];
     }
     
     private int uninstallService() {
@@ -131,19 +156,18 @@ public class IndexerService {
                 public void run() {
                     try {
                         unregisterAndShutdownService();
+                        log.info("Unregistered and shutdown service successfully");
+                        if (argsInfo.showUI) { 
+                            String message = "The indexer service has been stopped and unregistered.\n\n" +
+                                    "To remove the index, as well as all logs and settings, delete the folder:\n\n" + config.getDataPath();
+                            showMessageWithWrap(message, "Reverb Indexer Uninstalled", JOptionPane.INFORMATION_MESSAGE);
+                        }
                     } catch (IndexerException e) {
                         log.error("Error uninstalling service", e);
                         if (argsInfo.showUI) {
                             showMessageWithWrap("An error occurred during uninstall: " + e, "Uninstall Error", JOptionPane.ERROR_MESSAGE);
                         }
                         result[0] = 1;
-                        return;
-                    }
-                    log.info("Unregistered and shutdown service successfully");
-                    if (argsInfo.showUI) { 
-                        String message = "The indexer service has been stopped and unregistered.  You can delete the program files to complete the uninstall.\n\n" +
-                                "To remove the index, as well as all logs and settings, delete the folder:\n\n" + config.getDataPath();
-                        showMessageWithWrap(message, "Reverb Indexer Uninstalled", JOptionPane.INFORMATION_MESSAGE);
                     }
                 }
             });
@@ -242,10 +266,38 @@ public class IndexerService {
             byte [] jsonData = mapper.writeValueAsBytes(envelope);
             
             pipe.writeMessage(jsonData);
-        } catch (Exception e) { } finally {
+        } catch (Exception e) { 
+        } finally {
             if (pipe != null) {
                 pipe.close();
             }
+        }
+        
+    }
+    
+    /**
+     * Registers service and returns the path where service was registered.
+     */
+    private String registerService() throws IndexerException {
+        String installLocation = argsInfo.installLocation;
+        if (installLocation == null) {
+            installLocation = System.getProperty("user.dir");
+            if (installLocation == null) {
+                throw new IndexerException("Failed to get current working directory");
+            }
+        }
+        File installPointer = new File(config.getIndexerInstallPointerPath());
+        OutputStreamWriter writer = null;
+        try {
+            writer = new OutputStreamWriter(new FileOutputStream(installPointer), "UTF-8");
+            writer.write(installLocation);
+            return installLocation;
+        } catch (Exception e) {
+            throw new IndexerException("Error registering service: " + e, e);
+        } finally {
+            try {
+                writer.close();
+            } catch (IOException e) { }
         }
         
     }
@@ -312,6 +364,7 @@ public class IndexerService {
         }
         if (argsMap.containsKey("install")) {
             result.mode = IndexerMode.INSTALL;
+            result.installLocation = argsMap.get("install");
         }
         if (argsMap.containsKey("uninstall")) {
             result.mode = IndexerMode.UNINSTALL;
@@ -336,6 +389,7 @@ public class IndexerService {
         String query;
         IndexerMode mode = IndexerMode.NORMAL;
         boolean showUI = true;
+        String installLocation;
     }
     
     private void showMessageWithWrap(String message, String title, int messageType) {

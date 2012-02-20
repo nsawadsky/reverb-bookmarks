@@ -5,8 +5,8 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -176,7 +176,7 @@ public class StudyDataCollector implements Runnable {
                 }
                 LogFileInfo currentLogFileInfo = getCurrentLogFileInfo();
                 if (eventsToFlush.size() > 0) {
-                    BufferedWriter writer = new BufferedWriter(new FileWriter(currentLogFileInfo.logFile, true));
+                    BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(currentLogFileInfo.logFile, true), "UTF-8"));
                     try {
                         for (StudyDataEvent event: eventsToFlush) {
                             writeEvent(writer, event);
