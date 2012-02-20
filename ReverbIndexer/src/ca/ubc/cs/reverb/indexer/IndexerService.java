@@ -1,15 +1,14 @@
 package ca.ubc.cs.reverb.indexer;
 
-import java.awt.Color;
 import java.awt.SystemColor;
 import java.io.File;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.swing.JDialog;
 import javax.swing.JOptionPane;
 import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
@@ -23,16 +22,15 @@ import org.apache.log4j.spi.RootLogger;
 import org.apache.lucene.index.FieldInvertState;
 import org.apache.lucene.search.DefaultSimilarity;
 import org.apache.lucene.search.Similarity;
+import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.util.DefaultPrettyPrinter;
 
 import xpnp.XpNamedPipe;
 
-import ca.ubc.cs.reverb.indexer.installer.UninstallDialog;
-import ca.ubc.cs.reverb.indexer.messages.BatchQueryReply;
+import ca.ubc.cs.reverb.indexer.messages.BatchQueryRequest;
 import ca.ubc.cs.reverb.indexer.messages.IndexerMessageEnvelope;
 import ca.ubc.cs.reverb.indexer.messages.IndexerQuery;
-import ca.ubc.cs.reverb.indexer.messages.Location;
-import ca.ubc.cs.reverb.indexer.messages.QueryResult;
 import ca.ubc.cs.reverb.indexer.messages.ShutdownRequest;
 import ca.ubc.cs.reverb.indexer.study.StudyDataCollector;
 
@@ -40,6 +38,7 @@ public class IndexerService {
     private static Logger log = Logger.getLogger(IndexerService.class);
 
     private IndexerConfig config;
+    private IndexerArgsInfo argsInfo;
     private LocationsDatabase locationsDatabase;
     private WebPageIndexer indexer;
     
@@ -54,35 +53,22 @@ public class IndexerService {
         try {
             config = new IndexerConfig();
 
-            IndexerArgsInfo argsInfo = parseArgs(args);
+            argsInfo = parseArgs(args);
+            
+            if (argsInfo.mode == IndexerMode.INSTALL) {
+                System.exit(installService());
+            }
             
             if (argsInfo.mode == IndexerMode.UNINSTALL) {
-                unregisterAndShutdownService();
-                log.info("Unregistered and shutdown service successfully");
-                String message = "The indexer service has been stopped and unregistered.  You can delete this folder to complete the uninstall.\n\n" +
-                        "To remove the index, as well as all logs and settings, delete the folder.";
-                JTextArea textArea = new JTextArea(message);
-                textArea.setColumns(30);
-                textArea.setLineWrap(true);
-                textArea.setWrapStyleWord(true);
-                textArea.setSize(textArea.getPreferredSize().width, 1);
-                textArea.setBackground(SystemColor.control);
-                JOptionPane.showMessageDialog(null, textArea, "Reverb Indexer Uninstalled", JOptionPane.INFORMATION_MESSAGE);
-                /*
-                UninstallDialog dialog = new UninstallDialog();
-                dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-                dialog.setVisible(true);
-                */
-                return;
+                System.exit(uninstallService());
             }
 
-            if (argsInfo.mode == IndexerMode.INSTALL){
-                installService();
-                return;
+            if (argsInfo.mode == IndexerMode.QUERY) {
+                System.exit(runQuery());
             }
             
             // We need config to be initialized before we can configure file logging.
-            // Also, for certain startup modes, we do not want to compete with the main service
+            // Also, for other startup modes, we do not want to compete with the main service
             // for access to the log file.
             configureFileDebugLogging();
             
@@ -93,11 +79,6 @@ public class IndexerService {
             
             locationsDatabase = new LocationsDatabase(config);
             indexer = new WebPageIndexer(config, locationsDatabase, collector);
-            
-            if (argsInfo.mode == IndexerMode.QUERY) {
-                runQuery(config, indexer, locationsDatabase, collector, argsInfo.query);
-                return;
-            }
             
             indexer.startCommitter();
             
@@ -133,39 +114,137 @@ public class IndexerService {
         }
     }
 
-    private void configureConsoleDebugLogging() {
-        BasicConfigurator.configure();
-        RootLogger.getRootLogger().setLevel(Level.INFO);
+    private int installService() throws IndexerException {
+        try { 
+            unregisterAndShutdownService();
+            return 0;
+        } catch (IndexerException e) { 
+            return 1;
+        }
     }
     
-    private void configureFileDebugLogging() throws IOException {
-        RollingFileAppender fileAppender = new RollingFileAppender(new PatternLayout("%r [%t] %p %c %x - %m%n"),
-                config.getDebugLogFilePath());
-        
-        fileAppender.setMaxBackupIndex(2);
-        fileAppender.setMaxFileSize("2MB");
-        
-        RootLogger.getRootLogger().addAppender(fileAppender);
+    private int uninstallService() {
+        final Integer[] result = new Integer[] {0};
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+                @Override 
+                public void run() {
+                    try {
+                        unregisterAndShutdownService();
+                    } catch (IndexerException e) {
+                        log.error("Error uninstalling service", e);
+                        if (argsInfo.showUI) {
+                            showMessageWithWrap("An error occurred during uninstall: " + e, "Uninstall Error", JOptionPane.ERROR_MESSAGE);
+                        }
+                        result[0] = 1;
+                        return;
+                    }
+                    log.info("Unregistered and shutdown service successfully");
+                    if (argsInfo.showUI) { 
+                        String message = "The indexer service has been stopped and unregistered.  You can delete the program files to complete the uninstall.\n\n" +
+                                "To remove the index, as well as all logs and settings, delete the folder:\n\n" + config.getDataPath();
+                        showMessageWithWrap(message, "Reverb Indexer Uninstalled", JOptionPane.INFORMATION_MESSAGE);
+                    }
+                }
+            });
+        } catch (Exception e) {
+            log.error("Error launching uninstall", e);
+            return 1;
+        }
+        return result[0];
     }
     
-    private void runQuery(IndexerConfig config, WebPageIndexer indexer, LocationsDatabase locationsDatabase, 
-            StudyDataCollector collector, String query) throws IndexerException {
-        SharedIndexReader indexReader = indexer.getNewIndexReader();
+    private int runQuery() throws IndexerException {
+        String query = argsInfo.query;
+        XpNamedPipe indexerConnection = null;
+        try {
+            indexerConnection = startServiceAndConnect();
+            
+            List<IndexerQuery> queries = new ArrayList<IndexerQuery>();
+            queries.add(new IndexerQuery(query, null));
+            BatchQueryRequest request = new BatchQueryRequest(queries);
+            
+            IndexerMessageEnvelope requestEnvelope = new IndexerMessageEnvelope(null, request);
+    
+            ObjectMapper mapper = new ObjectMapper();
+            byte [] requestBytes = mapper.writeValueAsBytes(requestEnvelope);
+            
+            indexerConnection.writeMessage(requestBytes);
+            
+            byte[] replyBytes = indexerConnection.readMessage(10000);
+            IndexerMessageEnvelope replyEnvelope = mapper.readValue(replyBytes, IndexerMessageEnvelope.class);
 
-        WebPageSearcher searcher = new WebPageSearcher(config, indexReader, locationsDatabase, new StudyDataCollector(config));
-        
-        List<IndexerQuery> queries = new ArrayList<IndexerQuery>();
-        queries.add(new IndexerQuery(query, query));
-        BatchQueryReply batchResult = searcher.performSearch(queries);
-        if (batchResult.queryResults.isEmpty()) {
-            System.out.println("No results.");
-        } else {
-            System.out.println("Result list:");
-            QueryResult result = batchResult.queryResults.get(0);
-            for (Location loc: result.locations) {
-                String display = String.format("%s (%.1f,%.1f,%.1f)", loc.title, loc.luceneScore, loc.frecencyBoost, loc.overallScore);
-                System.out.println(display);
-                System.out.println("    " + loc.url);
+            StringWriter output = new StringWriter();
+            JsonGenerator jsonGenerator = mapper.getJsonFactory().createJsonGenerator(output);
+            jsonGenerator.setPrettyPrinter(new DefaultPrettyPrinter());
+            mapper.writeValue(jsonGenerator, replyEnvelope.message);
+            System.out.println(output.toString());
+
+            return 0;
+        } catch (Exception e) {
+            log.error("Error running query", e);
+            return 1;
+        } finally {
+            if (indexerConnection != null) {
+                indexerConnection.close();
+            }
+        }
+    }
+    
+    /**
+     * Tries to connect to service.  If it fails, then launches service and tries for up to 5 seconds to connect.
+     * 
+     * @throw IndexerException If any error occurs. 
+     * @return Connection to service.
+     */
+    private XpNamedPipe startServiceAndConnect() throws IndexerException {
+        XpNamedPipe result = null;
+        try {
+            result = XpNamedPipe.openNamedPipe("reverb-query", true);
+        } catch (IOException e) { }
+        if (result == null) {
+            try {
+                Runtime.getRuntime().exec(
+                        "javaw.exe -Djava.library.path=native -Xmx1024m -jar ReverbIndexer.jar", 
+                        null, new File(config.getCurrentIndexerInstallPath()));
+                int tries = 0;
+                while (result == null && tries++ < 10) {
+                    try { 
+                        Thread.sleep(500);
+                        result = XpNamedPipe.openNamedPipe("reverb-query", true);
+                    } catch (Exception e) { }
+                }
+            } catch (IndexerException e) { 
+                throw e;
+            } catch (IOException e) {
+                throw new IndexerException("Error launching service: " + e, e);
+            }
+        }
+        if (result == null) {
+            throw new IndexerException("Failed to connect to service.");
+        }
+        return result;
+    }
+    
+    private void unregisterAndShutdownService() throws IndexerException {
+        File installPointer = new File(config.getIndexerInstallPointerPath());
+        if (installPointer.exists()) {
+            if (!installPointer.delete()) {
+                throw new IndexerException("Failed to delete indexer install pointer file");
+            }
+        }
+        XpNamedPipe pipe = null;
+        try {
+            pipe = XpNamedPipe.openNamedPipe("reverb-index", true);
+            IndexerMessageEnvelope envelope = new IndexerMessageEnvelope(null, new ShutdownRequest());
+
+            ObjectMapper mapper = new ObjectMapper();
+            byte [] jsonData = mapper.writeValueAsBytes(envelope);
+            
+            pipe.writeMessage(jsonData);
+        } catch (Exception e) { } finally {
+            if (pipe != null) {
+                pipe.close();
             }
         }
         
@@ -196,41 +275,24 @@ public class IndexerService {
         
     }
     
-    private void installService() throws IndexerException {
-        try { 
-            unregisterAndShutdownService();
-        } catch (IndexerException e) { }
-        
-        
-        
+    private void configureConsoleDebugLogging() {
+        BasicConfigurator.configure();
+        RootLogger.getRootLogger().setLevel(Level.INFO);
     }
     
-    private void unregisterAndShutdownService() throws IndexerException {
-        File installPointer = new File(config.getIndexerInstallPointerPath());
-        if (installPointer.exists()) {
-            if (!installPointer.delete()) {
-                throw new IndexerException("Failed to delete indexer install pointer file");
-            }
-        }
-        XpNamedPipe pipe = null;
-        try {
-            pipe = XpNamedPipe.openNamedPipe("reverb-index", true);
-            IndexerMessageEnvelope envelope = new IndexerMessageEnvelope(null, new ShutdownRequest());
-
-            ObjectMapper mapper = new ObjectMapper();
-            byte [] jsonData = mapper.writeValueAsBytes(envelope);
-            
-            pipe.writeMessage(jsonData);
-        } catch (Exception e) { 
-        } finally {
-            if (pipe != null) {
-                pipe.close();
-            }
-        }
+    private void configureFileDebugLogging() throws IOException {
+        RollingFileAppender fileAppender = new RollingFileAppender(new PatternLayout("%r [%t] %p %c %x - %m%n"),
+                config.getDebugLogFilePath());
         
+        fileAppender.setMaxBackupIndex(2);
+        fileAppender.setMaxFileSize("2MB");
+        
+        RootLogger.getRootLogger().addAppender(fileAppender);
     }
     
     private IndexerArgsInfo parseArgs(String[] args) {
+        IndexerArgsInfo result = new IndexerArgsInfo();
+        
         Map<String, String> argsMap = new HashMap<String, String>();
         for (int i = 0; i < args.length; i++) {
             String arg = args[i];
@@ -245,17 +307,19 @@ public class IndexerService {
             }
         }
         if (argsMap.containsKey("query")) {
-            IndexerArgsInfo result = new IndexerArgsInfo(IndexerMode.QUERY);
+            result.mode = IndexerMode.QUERY;
             result.query = argsMap.get("query");
-            return result;
         }
         if (argsMap.containsKey("install")) {
-            return new IndexerArgsInfo(IndexerMode.INSTALL);
+            result.mode = IndexerMode.INSTALL;
         }
         if (argsMap.containsKey("uninstall")) {
-            return new IndexerArgsInfo(IndexerMode.UNINSTALL);
+            result.mode = IndexerMode.UNINSTALL;
         }
-        return new IndexerArgsInfo(IndexerMode.NORMAL);
+        if (argsMap.containsKey("noui")) {
+            result.showUI = false;
+        }
+        return result;
     }
     
     private enum IndexerMode {
@@ -266,12 +330,22 @@ public class IndexerService {
     }
     
     private class IndexerArgsInfo {
-        IndexerArgsInfo(IndexerMode mode) {
-            this.mode = mode;
+        IndexerArgsInfo() {
         }
         
         String query;
-        IndexerMode mode;
+        IndexerMode mode = IndexerMode.NORMAL;
+        boolean showUI = true;
     }
     
+    private void showMessageWithWrap(String message, String title, int messageType) {
+        JTextArea textArea = new JTextArea(message);
+        textArea.setColumns(30);
+        textArea.setLineWrap(true);
+        textArea.setWrapStyleWord(true);
+        textArea.setSize(textArea.getPreferredSize().width, 1);
+        textArea.setBackground(SystemColor.control);
+        textArea.setEditable(false);
+        JOptionPane.showMessageDialog(null, textArea, title, messageType);
+    }
 }

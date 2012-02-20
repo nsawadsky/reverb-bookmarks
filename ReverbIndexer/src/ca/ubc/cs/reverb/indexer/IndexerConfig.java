@@ -30,8 +30,10 @@ public class IndexerConfig {
     
     private String userIdKey;
     
+    private String dataPath;
+    
     public IndexerConfig() throws IndexerException {
-        String dataPath = getBasePath() + File.separator + "data";
+        dataPath = getBasePath() + File.separator + "data";
         settingsPath = dataPath + File.separator + "settings";
         String dbPath = dataPath + File.separator + "db";
         indexPath = dbPath + File.separator + "index";
@@ -60,6 +62,10 @@ public class IndexerConfig {
         }
         
         initializeUserId();
+    }
+    
+    public String getDataPath() {
+        return dataPath;
     }
     
     public String getIndexerPipeName() {
@@ -92,6 +98,21 @@ public class IndexerConfig {
     
     public String getUserIdKey() {
         return userIdKey;
+    }
+    
+    public String getCurrentIndexerInstallPath() throws IndexerException {
+        File indexerVersionFile = new File(getIndexerInstallPointerPath());
+        Scanner scanner = null;
+        try {
+            scanner = new Scanner(indexerVersionFile);
+            return scanner.nextLine().trim();
+        } catch (Exception e) { 
+            throw new IndexerException("Failed to get current indexer install path: " + e, e);
+        } finally {
+            if (scanner != null) { 
+                scanner.close();
+            }
+        }
     }
     
     public String getIndexerInstallPointerPath() {
