@@ -7,17 +7,17 @@ import org.codehaus.jackson.map.annotate.JsonView;
 public class LocationRating {
     public LocationRating() { }
 
-    public LocationRating(Location location) {
+    public LocationRating(Location location, long resultGenTimestamp) {
         this.locationId = location.id;
         
         this.url = location.url;
         this.title = location.title;
         
-        this.luceneScore = location.luceneScore;
+        this.luceneScore = location.relevance;
         this.frecencyBoost = location.frecencyBoost;
         this.overallScore = location.overallScore;
         
-        this.resultGenTimestamp = location.resultGenTimestamp;
+        this.resultGenTimestamp = resultGenTimestamp;
     }
     
     /**

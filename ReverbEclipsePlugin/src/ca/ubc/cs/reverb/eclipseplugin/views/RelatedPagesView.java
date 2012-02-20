@@ -147,7 +147,7 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
             } else if (obj instanceof Location) {
                 Location loc = (Location)obj;
                 return String.format("%s (%.1f,%.1f,%.1f)", loc.title, 
-                        loc.luceneScore, loc.frecencyBoost, loc.overallScore);
+                        loc.relevance, loc.frecencyBoost, loc.overallScore);
             } 
             return obj.toString();
         }
@@ -348,9 +348,13 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
                         logger.logError(
                                 "Exception opening browser on '" + location.url + "'", e);
                     }
+                    long resultGenTimestamp = 0;
+                    if (contentProvider.getQueryReply() != null) {
+                        resultGenTimestamp = contentProvider.getQueryReply().resultGenTimestamp;
+                    }
                     indexerConnection.sendRequestAsync(
-                            new LogClickRequest(location), null, null);
-                    studyActivityMonitor.addRecommendationClicked(location);
+                            new LogClickRequest(location, resultGenTimestamp), null, null);
+                    studyActivityMonitor.addRecommendationClicked(location, resultGenTimestamp);
                 }
             }
         };

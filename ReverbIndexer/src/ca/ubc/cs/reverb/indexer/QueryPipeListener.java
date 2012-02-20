@@ -132,8 +132,8 @@ public class QueryPipeListener implements Runnable {
             LocationInfo info = locationsDatabase.getLocationInfo(request.location.url);
             if (info != null) {
                 RecommendationClickEvent event = new RecommendationClickEvent(System.currentTimeMillis(), 
-                        info, request.location.frecencyBoost, request.location.luceneScore, 
-                        request.location.overallScore, request.location.resultGenTimestamp);
+                        info, request.location.frecencyBoost, request.location.relevance, 
+                        request.location.overallScore, request.resultGenTimestamp);
                 collector.logEvent(event);
             }
             sendReply(clientRequestId, new LogClickReply());
@@ -168,7 +168,7 @@ public class QueryPipeListener implements Runnable {
                 builder.buildQueries();
                 BatchQueryReply batchQueryReply = searcher.performSearch(
                         builder.getQueries());
-                codeQueryReply = new CodeQueryReply();
+                codeQueryReply = new CodeQueryReply(batchQueryReply.resultGenTimestamp);
                 codeQueryReply.errorElements = builder.getErrorElements();
                 for (QueryResult result: batchQueryReply.queryResults) {
                     List<String> allKeywords = new ArrayList<String>();
