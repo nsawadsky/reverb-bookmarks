@@ -1,7 +1,8 @@
 package ca.ubc.cs.reverb.indexer;
 
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
 import java.util.Scanner;
 import java.util.UUID;
 
@@ -139,7 +140,7 @@ public class IndexerConfig {
                     }
                 }
                 UUID uuid = UUID.randomUUID();
-                FileWriter writer = new FileWriter(userIdFile);
+                OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(userIdFile), "UTF-8");
                 try { 
                     writer.write(uuid.toString());
                 } finally { 
