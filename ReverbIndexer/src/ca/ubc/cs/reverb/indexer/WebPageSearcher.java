@@ -161,10 +161,10 @@ public class WebPageSearcher {
         // Create the result structure to be sent to the client.
         // It is important for data analysis purposes that the 'now' value used here be 
         // the same as the 'now' value used above when logging the recommendations.
-        BatchQueryReply result = new BatchQueryReply();
+        BatchQueryReply result = new BatchQueryReply(now);
         for (MergedQueryResult mergedResult: nextMergedResults) {
             result.queryResults.add(new QueryResult(
-                    mergedResult.queries, getLocationList(mergedResult.hits, now)));
+                    mergedResult.queries, getLocationList(mergedResult.hits)));
         }
         return result;
     }
@@ -254,10 +254,10 @@ public class WebPageSearcher {
         }
     }
     
-    private List<Location> getLocationList(List<HitInfo> hits, long now) {
+    private List<Location> getLocationList(List<HitInfo> hits) {
         List<Location> result = new ArrayList<Location>();
         for (HitInfo hitInfo: hits) {
-            result.add(new Location(now, hitInfo.hit.locationInfo.id, hitInfo.hit.url, hitInfo.hit.title, hitInfo.combinedScore, 
+            result.add(new Location(hitInfo.hit.locationInfo.id, hitInfo.hit.url, hitInfo.hit.title, hitInfo.combinedScore, 
                     hitInfo.frecencyBoost, hitInfo.getOverallScore()));
         }
         return result;

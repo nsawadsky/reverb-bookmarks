@@ -101,7 +101,7 @@ public class StudyActivityMonitor implements EditorMonitorListener {
         }
     }
     
-    public void addRecommendationClicked(Location clicked) {
+    public void addRecommendationClicked(Location clicked, long resultGenTimestamp) {
         // Log a warning if multiple threads are using a single instance of this class.
         if (Thread.currentThread().getId() != createdThreadId) {
             logger.logWarn("StudyActivityMonitor.addRecommendationClicked invoked from different thread than called constructor");
@@ -111,7 +111,7 @@ public class StudyActivityMonitor implements EditorMonitorListener {
                 return;
             }
         }
-        studyState.locationRatings.add(new LocationRating(clicked));
+        studyState.locationRatings.add(new LocationRating(clicked, resultGenTimestamp));
         try {
             saveStudyState();
         } catch (PluginException e) {
