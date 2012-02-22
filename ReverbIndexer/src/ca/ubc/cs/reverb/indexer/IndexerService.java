@@ -15,6 +15,7 @@ import java.util.Map;
 import javax.swing.JOptionPane;
 import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
@@ -57,6 +58,8 @@ public class IndexerService {
         try {
             config = new IndexerConfig();
 
+            configSwing();
+            
             argsInfo = parseArgs(args);
             
             if (argsInfo.mode == IndexerMode.INSTALL) {
@@ -119,6 +122,7 @@ public class IndexerService {
     }
 
     private int installService() throws IndexerException {
+        final Integer[] result = new Integer[] {0};
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
                 @Override 
@@ -127,18 +131,24 @@ public class IndexerService {
                         unregisterAndShutdownService();
                         String installLocation = registerService();
                         log.info("Registered service successfully");
-                        IndexHistoryDialog historyDialog = new IndexHistoryDialog();
-                        historyDialog.setVisible(true);
+                        if (argsInfo.showUI) {
+                            IndexHistoryDialog historyDialog = new IndexHistoryDialog(config, installLocation);
+                            historyDialog.setVisible(true);
+                        }
                     } catch (IndexerException e) {
                         log.error("Error installing service", e);
-                        showMessageWithWrap("An error occurred during install: " + e, "Install Error", JOptionPane.ERROR_MESSAGE);
+                        if (argsInfo.showUI) {
+                            showMessageWithWrap("An error occurred during install: " + e, "Install Error", JOptionPane.ERROR_MESSAGE);
+                        }
+                        result[0] = 1;
                     }
                 }
             });
         } catch (Exception e) {
             log.error("Error launching install", e);
+            return 1;
         }
-        return 0;
+        return result[0];
     }
     
     private int uninstallService() {
@@ -295,6 +305,11 @@ public class IndexerService {
         
     }
     
+    private void configSwing() {
+        Font f = new Font("Dialog", Font.PLAIN, 12);
+        UIManager.put("Button.font", f);    
+    }
+    
     private void configLucene() {
         Similarity.setDefault(new DefaultSimilarity() {
             // Implementation based on Lucene 3.3.0 source code.
@@ -393,7 +408,7 @@ public class IndexerService {
         textArea.setSize(textArea.getPreferredSize().width, 1);
         textArea.setBackground(SystemColor.control);
         textArea.setEditable(false);
-        textArea.setFont(new Font("Tahoma", Font.PLAIN, 11));
+        textArea.setFont(new Font("Dialog", Font.PLAIN, 12));
         JOptionPane.showMessageDialog(null, textArea, title, messageType);
     }
 }

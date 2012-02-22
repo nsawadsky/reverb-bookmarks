@@ -10,7 +10,6 @@ public class HistoryVisit {
     public String title;
     public Date visitDate;
     public int visitType;
-    public boolean isGoogleSearch = false;
     public WebBrowserType browserType;
     
     /**

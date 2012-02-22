@@ -22,6 +22,8 @@ public abstract class HistoryExtractor {
         }
     }
     
+    public abstract boolean historyDbExists();
+    
     public abstract Date getEarliestVisitDate() throws IndexerException;
     
     public abstract List<HistoryVisit> extractHistory(Date startDate, Date endDate) throws IndexerException;    

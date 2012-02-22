@@ -1,9 +1,11 @@
 package ca.ubc.cs.reverb.indexer.installer;
 
+import java.io.File;
 import java.io.IOException;
 
 import org.codehaus.jackson.map.ObjectMapper;
 
+import ca.ubc.cs.reverb.indexer.IndexerConfig;
 import ca.ubc.cs.reverb.indexer.IndexerException;
 import ca.ubc.cs.reverb.indexer.messages.IndexerMessage;
 import ca.ubc.cs.reverb.indexer.messages.IndexerMessageEnvelope;
@@ -15,12 +17,8 @@ public class IndexerConnection {
 
     private XpNamedPipe pipe;
     
-    public IndexerConnection() throws IndexerException {
-        try {
-            pipe = XpNamedPipe.openNamedPipe("reverb-index", true);
-        } catch (IOException e) {
-            throw new IndexerException("Failed to open pipe: " + e, e);
-        }
+    public IndexerConnection(IndexerConfig config, boolean launchIndexerIfNecessary) throws IndexerException {
+        pipe = createPipe(config, launchIndexerIfNecessary);
     }
     
     public void close() {
@@ -50,4 +48,31 @@ public class IndexerConnection {
         }
     }
     
+    private XpNamedPipe createPipe(IndexerConfig config, boolean launchIndexerIfNecessary) throws IndexerException {
+        try {
+            try {
+                return XpNamedPipe.openNamedPipe("reverb-index", true);
+            } catch (IOException e1) { 
+                if (!launchIndexerIfNecessary) {
+                    throw e1;
+                }
+                Runtime.getRuntime().exec(
+                        "javaw.exe -Djava.library.path=native -Xmx1024m -jar ReverbIndexer.jar", 
+                        null, new File(config.getCurrentIndexerInstallPath()));
+                int tries = 0;
+                IOException lastException = null;
+                while (tries++ < 10) {
+                    try { 
+                        Thread.sleep(500);
+                        return XpNamedPipe.openNamedPipe("reverb-index", true);
+                    } catch (IOException e2) { 
+                        lastException = e2;
+                    }
+                }
+                throw lastException;
+            }
+        } catch (Exception e) {
+            throw new IndexerException("Failed to connect to indexer service: " + e, e);
+        }
+    }
 }
