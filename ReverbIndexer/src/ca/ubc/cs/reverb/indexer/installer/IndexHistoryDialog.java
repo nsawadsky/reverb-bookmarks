@@ -64,7 +64,7 @@ public class IndexHistoryDialog extends JDialog {
         setIconImage(Toolkit.getDefaultToolkit().getImage(IndexHistoryDialog.class.getResource("/ca/ubc/cs/reverb/indexer/installer/reverb-16.png")));
         setModal(true);
         setTitle("Reverb Indexer Installation");
-        setBounds(100, 100, 450, 282);
+        setBounds(100, 100, 450, 306);
         getContentPane().setLayout(new BorderLayout());
         
         JPanel contentPanel = new JPanel();
