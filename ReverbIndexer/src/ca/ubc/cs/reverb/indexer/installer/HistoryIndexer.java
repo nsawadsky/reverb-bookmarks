@@ -8,12 +8,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.regex.Pattern;
 
 import org.jsoup.Jsoup;
@@ -90,7 +90,7 @@ public class HistoryIndexer {
             }
         }
         
-        Map<Long, LocationAndVisits> locationsById = new HashMap<Long, LocationAndVisits>();
+        Map<Long, LocationAndVisits> locationsById = new TreeMap<Long, LocationAndVisits>();
         for (HistoryVisit visit: googleVisitsFiltered) {
             LocationAndVisits locationAndVisits = locationsById.get(visit.locationId);
             if (locationAndVisits == null) {

@@ -33,7 +33,7 @@ import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
+import java.awt.event.WindowAdapter;
 
 import javax.swing.SpringLayout;
 
@@ -51,12 +51,13 @@ public class IndexHistoryDialog extends JDialog {
     private IndexerConfig config;
     private boolean dialogClosed = false;
     private boolean closeBrowserWindowsRequested = false;
+    private boolean indexingCompleted = false;
     
     /**
      * Create the dialog.
      */
     public IndexHistoryDialog(IndexerConfig config, String installLocation) {
-        setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
         this.config = config;
         
         setModalityType(ModalityType.APPLICATION_MODAL);
@@ -104,6 +105,7 @@ public class IndexHistoryDialog extends JDialog {
         contentPanel.add(progressBar);
         
         progressBarLabel = new JLabel("");
+        progressBarLabel.setFont(new Font("Dialog", Font.PLAIN, 12));
         progressBarLabel.setHorizontalAlignment(SwingConstants.CENTER);
         sl_contentPanel.putConstraint(SpringLayout.SOUTH, progressBarLabel, -3, SpringLayout.NORTH, progressBar);
         sl_contentPanel.putConstraint(SpringLayout.EAST, progressBarLabel, -5, SpringLayout.EAST, contentPanel);
@@ -137,30 +139,33 @@ public class IndexHistoryDialog extends JDialog {
 
                     @Override
                     public void actionPerformed(ActionEvent e) {
-                        dialogClosed = true;
-                        // Note this generates neither a windowClosing nor a windowClosed call to window listeners.
-                        dispose();
+                        confirmCloseDialog();
                     }
                     
                 });
             }
         }
         
-        this.addWindowListener(new WindowListener() {
+        this.addWindowListener(new WindowAdapter() {
+            @Override
             public void windowClosing(WindowEvent e) {
                 // Handle the X button (for some reason, the X button does not generate a windowClosed call, just 
                 // a windowClosing call).
-                dialogClosed = true;
+                confirmCloseDialog();
             }
-
-            public void windowOpened(WindowEvent e) {}
-            public void windowClosed(WindowEvent e) {}
-            public void windowIconified(WindowEvent e) {}
-            public void windowDeiconified(WindowEvent e) {}
-            public void windowActivated(WindowEvent e) {}
-            public void windowDeactivated(WindowEvent e) {}
-            
         });
+    }
+    
+    private void confirmCloseDialog() {
+        if (!indexingCompleted) {
+            int result = showConfirmWithWrap("Are you sure you want to proceed without indexing browsing history?",
+                    "Browsing History Not Indexed", JOptionPane.YES_NO_OPTION);
+            if (result != JOptionPane.YES_OPTION) {
+                return;
+            }
+        }
+        dialogClosed = true;
+        dispose();
     }
     
     private void analyzeHistory() {
@@ -198,7 +203,7 @@ public class IndexHistoryDialog extends JDialog {
             if (closeBrowserWindowsRequested) {
                 progressBarText += " (now safe to restart browser)";
             }
-            progressBarLabel.setText("Indexing browsing history"); 
+            progressBarLabel.setText(progressBarText); 
             
             final HistoryIndexer indexer = new HistoryIndexer(config, allVisits);
             
@@ -212,11 +217,8 @@ public class IndexHistoryDialog extends JDialog {
 
                 @Override
                 public void actionPerformed(ActionEvent arg0) {
-                    boolean done = false;
                     try {
-                        if (dialogClosed) {
-                            done = true;
-                        } else {
+                        if (!dialogClosed) {
                             double fractionComplete = 100.0;
                             int locationsToClassifyCount = indexer.getLocationsToIndexCount();
                             int locationsClassifiedCount = indexer.getLocationsIndexedCount();
@@ -226,12 +228,12 @@ public class IndexHistoryDialog extends JDialog {
                             progressBar.setValue(15 + (int)(fractionComplete * 80));
                             iterationCount++;
                             
-                            done = (locationsClassifiedCount == locationsToClassifyCount);
+                            indexingCompleted = (locationsClassifiedCount == locationsToClassifyCount);
                             
-                            if (!done) {
+                            if (!indexingCompleted) {
                                 if (iterationCount % 8 == 0) {
                                     if (locationsClassifiedCount == prevLocationsClassified) {
-                                        done = true;
+                                        indexingCompleted = true;
                                     } else {
                                         prevLocationsClassified = locationsClassifiedCount;
                                     }
@@ -241,7 +243,7 @@ public class IndexHistoryDialog extends JDialog {
                     } catch (Exception e) {
                         log.error("Error monitoring indexer progress: " + e);
                     }
-                    if (done) {
+                    if (dialogClosed || indexingCompleted) {
                         indexer.shutdown();
                         if (!dialogClosed) {
                             dispose();
@@ -258,8 +260,8 @@ public class IndexHistoryDialog extends JDialog {
         } catch (IndexerException e) {
             log.error("Error extracting/indexing history", e);
 
-            showMessageWithWrap("An error occurred while indexing browsing history.  Please close all open browser windows " +
-                    "(you can restart your browser once indexing is in progress).",
+            showMessageWithWrap("An error occurred while indexing browsing history.  Please close all open browser windows.  " +
+                    "You can restart your browser once indexing is in progress.",
                     "Error Indexing Browsing History", JOptionPane.ERROR_MESSAGE);
 
             progressBar.setValue(0);
@@ -324,4 +326,18 @@ public class IndexHistoryDialog extends JDialog {
         textArea.setFont(new Font("Dialog", Font.PLAIN, 12));
         JOptionPane.showMessageDialog(this, textArea, title, messageType);
     }
+    
+    private int showConfirmWithWrap(String message, String title, int optionType) {
+        JTextArea textArea = new JTextArea(message);
+        textArea.setColumns(30);
+        textArea.setLineWrap(true);
+        textArea.setWrapStyleWord(true);
+        textArea.setSize(textArea.getPreferredSize().width, 1);
+        textArea.setBackground(SystemColor.control);
+        textArea.setEditable(false);
+        textArea.setFont(new Font("Dialog", Font.PLAIN, 12));
+        return JOptionPane.showConfirmDialog(this, textArea, title, optionType);
+    }
+    
+   
 }
