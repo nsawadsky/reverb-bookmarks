@@ -147,7 +147,7 @@ ORDER BY visits.id DESC;
                     // not written the code to correct the fromVisitId, so here we set it to 0.
                     // Also, it appears that the from_visit column in the "Archived History" database
                     // may always be set to 0.
-                    results.add(new HistoryVisit(visitId, visitDate, visitType, 0, locationId, url, title, 0, fromUrl));
+                    results.add(new HistoryVisit(WebBrowserType.GOOGLE_CHROME, visitId, visitDate, visitType, 0, locationId, url, title, 0, fromUrl));
                 }
             } finally {
                 if (stmt != null) { stmt.close(); }

@@ -1,12 +1,12 @@
 package ca.ubc.cs.reverb.indexer;
 
+import java.awt.Font;
 import java.awt.SystemColor;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.StringWriter;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -31,6 +31,7 @@ import org.codehaus.jackson.util.DefaultPrettyPrinter;
 
 import xpnp.XpNamedPipe;
 
+import ca.ubc.cs.reverb.indexer.installer.IndexHistoryDialog;
 import ca.ubc.cs.reverb.indexer.messages.BatchQueryRequest;
 import ca.ubc.cs.reverb.indexer.messages.IndexerMessageEnvelope;
 import ca.ubc.cs.reverb.indexer.messages.IndexerQuery;
@@ -118,7 +119,6 @@ public class IndexerService {
     }
 
     private int installService() throws IndexerException {
-        final Integer[] result = new Integer[] {0};
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
                 @Override 
@@ -127,25 +127,18 @@ public class IndexerService {
                         unregisterAndShutdownService();
                         String installLocation = registerService();
                         log.info("Registered service successfully");
-                        if (argsInfo.showUI) { 
-                            String message = "The indexer service has been registered at:\n" + installLocation; 
-                            showMessageWithWrap(message, "Reverb Indexer Installed", JOptionPane.INFORMATION_MESSAGE);
-                        }
+                        IndexHistoryDialog historyDialog = new IndexHistoryDialog();
+                        historyDialog.setVisible(true);
                     } catch (IndexerException e) {
                         log.error("Error installing service", e);
-                        if (argsInfo.showUI) {
-                            showMessageWithWrap("An error occurred during install: " + e, "Install Error", JOptionPane.ERROR_MESSAGE);
-                        }
-                        result[0] = 1;
-                        return;
+                        showMessageWithWrap("An error occurred during install: " + e, "Install Error", JOptionPane.ERROR_MESSAGE);
                     }
                 }
             });
         } catch (Exception e) {
             log.error("Error launching install", e);
-            return 1;
         }
-        return result[0];
+        return 0;
     }
     
     private int uninstallService() {
@@ -400,6 +393,7 @@ public class IndexerService {
         textArea.setSize(textArea.getPreferredSize().width, 1);
         textArea.setBackground(SystemColor.control);
         textArea.setEditable(false);
+        textArea.setFont(new Font("Tahoma", Font.PLAIN, 11));
         JOptionPane.showMessageDialog(null, textArea, title, messageType);
     }
 }
