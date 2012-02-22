@@ -6,13 +6,12 @@ public class HistoryVisit {
     public long visitId;
     public long locationId;
     public long sessionId;
-    // transient used for fields which must *not* be included in the report that is submitted.
-    public transient String url;
-    public transient String title;
+    public String url;
+    public String title;
     public Date visitDate;
     public int visitType;
     public boolean isGoogleSearch = false;
-    public boolean isJavadoc = false;
+    public WebBrowserType browserType;
     
     /**
      * These attributes cannot be trusted.  The Firefox database frequently has a null
@@ -24,7 +23,7 @@ public class HistoryVisit {
 
     public HistoryVisit() {}
     
-    public HistoryVisit(long visitId, Date visitDate, int visitType, long sessionId, long locationId, String url, 
+    public HistoryVisit(WebBrowserType browserType, long visitId, Date visitDate, int visitType, long sessionId, long locationId, String url, 
             String title, long fromVisitId, String fromUrl) {
         this.visitId = visitId;
         this.locationId = locationId;
@@ -35,6 +34,32 @@ public class HistoryVisit {
         this.visitType = visitType;
         this.fromVisitId = fromVisitId;
         this.fromUrl = fromUrl;
+        this.browserType = browserType;
     }
 
+    public boolean isRedirect() {
+        if (browserType == WebBrowserType.MOZILLA_FIREFOX) {
+            if (visitType == FirefoxVisitType.LINK ||
+                    visitType == FirefoxVisitType.TYPED ||
+                    visitType == FirefoxVisitType.BOOKMARK) {
+                return false;
+            }
+            return true;
+        } else if (browserType == WebBrowserType.GOOGLE_CHROME) {
+            if ((visitType & 0xF0000000) == 0 || (visitType & ChromeVisitType.CHAIN_END) != 0) {
+                int maskedVisitType = (visitType & ChromeVisitType.CORE_MASK);
+                if (maskedVisitType == ChromeVisitType.LINK ||
+                        maskedVisitType == ChromeVisitType.TYPED ||
+                        maskedVisitType == ChromeVisitType.AUTO_BOOKMARK ||
+                        maskedVisitType == ChromeVisitType.GENERATED ||
+                        maskedVisitType == ChromeVisitType.START_PAGE ||
+                        maskedVisitType == ChromeVisitType.FORM_SUBMIT ||
+                        maskedVisitType == ChromeVisitType.KEYWORD) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
 }

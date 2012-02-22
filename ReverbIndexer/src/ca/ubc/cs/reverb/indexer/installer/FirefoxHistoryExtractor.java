@@ -169,7 +169,7 @@ ORDER BY visits.visit_date DESC
                         log.trace(logMsg.toString());
                     }
                     
-                    results.add(new HistoryVisit(visitId, visitDate, visitType, sessionId, locationId, url, title, fromVisitId, fromUrl));
+                    results.add(new HistoryVisit(WebBrowserType.MOZILLA_FIREFOX, visitId, visitDate, visitType, sessionId, locationId, url, title, fromVisitId, fromUrl));
                 }
             } finally {
                 if (stmt != null) { stmt.close(); }

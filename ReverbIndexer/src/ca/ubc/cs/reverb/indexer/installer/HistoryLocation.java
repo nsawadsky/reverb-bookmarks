@@ -3,10 +3,8 @@ package ca.ubc.cs.reverb.indexer.installer;
 public class HistoryLocation {
 
     public long id;
-    // transient used for fields which must *not* be included in the report that is submitted.
-    public transient String url;
-    public transient String title;
-    public boolean isJavadoc = false;
+    public String url;
+    public String title;
     
     public HistoryLocation() {}
     
