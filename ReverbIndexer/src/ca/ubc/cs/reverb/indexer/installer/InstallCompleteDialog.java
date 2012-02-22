@@ -63,7 +63,7 @@ public class InstallCompleteDialog extends JDialog {
                     @Override
                     public void actionPerformed(ActionEvent event) {
                         try {
-                            Desktop.getDesktop().browse(new URI("http://code.google.com/p/reverb-plugin/wiki/Installation"));
+                            Desktop.getDesktop().browse(new URI("http://cs.ubc.ca/~nicks/reverb/installreverb.html"));
                         } catch (Exception e) { }
                         dispose();
                     }
