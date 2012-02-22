@@ -182,6 +182,15 @@ ORDER BY visits.visit_date DESC
         return results;
     }
     
+    @Override
+    public boolean historyDbExists() {
+        boolean result = false;
+        try {
+            result = new File(getFirefoxHistoryDbPath()).exists();
+        } catch (Exception e) { } 
+        return result;
+    }
+    
     private long dateToPRTime(Date date) {
         return date.getTime() * 1000;
     }

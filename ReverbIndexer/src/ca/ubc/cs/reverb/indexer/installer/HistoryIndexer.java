@@ -33,6 +33,7 @@ import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 import org.apache.log4j.Logger;
 
+import ca.ubc.cs.reverb.indexer.IndexerConfig;
 import ca.ubc.cs.reverb.indexer.IndexerException;
 import ca.ubc.cs.reverb.indexer.messages.UpdatePageInfoRequest;
 
@@ -44,24 +45,26 @@ public class HistoryIndexer {
         "Mozilla/5.0 (Windows NT 6.0; rv:5.0) Gecko/20100101 Firefox/5.0";
     private final static int PAGE_TIMEOUT_MSECS = 8000;
     
+    public final static String GOOGLE_PREFIX = "http://www.google.";
+    public final static String GOOGLE_HTTPS_PREFIX = "https://www.google.";
+    public final static String GOOGLE_SEARCH_TITLE = "Google Search";
+    public final static String GOOGLE_SEARCH_PATTERN = "^https?://www\\.google\\.\\S+/search";
+    
     // Access to each list must be synchronized on the list.
     private List<LocationAndVisits> locationsToIndex = new LinkedList<LocationAndVisits>();
     private List<LocationAndVisits> locationsIndexed = new ArrayList<LocationAndVisits>(); 
     
     private volatile boolean isShutdown = false;
     
-    // TODO: Better handling for other locales
-    public final static String GOOGLE_PREFIX = "http://www.google.";
-    public final static String GOOGLE_HTTPS_PREFIX = "https://www.google.";
-    public final static String GOOGLE_SEARCH_TITLE = "Google Search";
-    public final static String GOOGLE_SEARCH_PATTERN = "^https?://www\\.google\\.\\S+/search";
-    
     private List<HistoryVisit> visitList;
     private Pattern googleSearchPattern;
     private int locationsToIndexCount = 0;
     private HttpClient httpClient = null;
+    private IndexerConfig config;
     
-    public HistoryIndexer(List<HistoryVisit> visitList) {
+    public HistoryIndexer(IndexerConfig config, List<HistoryVisit> visitList) {
+        this.config = config;
+        
         this.visitList = visitList;
         
         this.googleSearchPattern = Pattern.compile(GOOGLE_SEARCH_PATTERN);
@@ -82,9 +85,7 @@ public class HistoryIndexer {
         List<HistoryVisit> googleVisitsFiltered = new ArrayList<HistoryVisit>();
         
         for (HistoryVisit visit: redirectsFiltered) {
-            if (isGoogleSearch(visit.url, visit.title)) {
-                visit.isGoogleSearch = true;
-            } else { 
+            if (!isGoogleSearch(visit.url, visit.title)) {
                 googleVisitsFiltered.add(visit);
             }
         }
@@ -103,25 +104,34 @@ public class HistoryIndexer {
         locationsToIndexCount = locationsById.size();
         
         synchronized (locationsToIndex) {
-            for (LocationAndVisits locationAndVisits: locationsById.values()) {
-                locationsToIndex.add(locationAndVisits);
-            }
+            locationsToIndex.addAll(locationsById.values());
         }
         
         httpClient = createHttpClient();
+        
+        // Create connection, launching service if necessary;
+        IndexerConnection conn = new IndexerConnection(config, true);
+        conn.close();
+        
         for (int i = 0; i < POOL_SIZE; i++) {
-            final IndexerConnection indexerConnection = new IndexerConnection();
+            final IndexerConnection indexerConnection = new IndexerConnection(config, false);
             Thread thread = new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    LocationAndVisits next = null;
-                    do {
-                        next = getNextLocation();
-                        if (next != null) {
-                            indexLocation(next, false, indexerConnection);
-                            addIndexedLocation(next);
-                        }
-                    } while (!isShutdown && next != null);
+                    try {
+                        LocationAndVisits next = null;
+                        do {
+                            next = getNextLocation();
+                            if (next != null) {
+                                indexLocation(next, false, indexerConnection);
+                                addIndexedLocation(next);
+                            }
+                        } while (!isShutdown && next != null);
+                    } catch (IndexerException e) {
+                        log.error("Error in indexing thread", e);
+                    } finally {
+                        indexerConnection.close();
+                    }
                 }
             });
             thread.setDaemon(true);
@@ -160,13 +170,24 @@ public class HistoryIndexer {
     }
     
     protected boolean isGoogleSearch(String url, String title) {
+        /*
         return ((url.startsWith(GOOGLE_PREFIX) || url.startsWith(GOOGLE_HTTPS_PREFIX)) 
                 && title != null && title.contains(GOOGLE_SEARCH_TITLE)) ||
                 googleSearchPattern.matcher(url).find();
+        */
+        // To ensure we catch other locales (e.g. www.google.de), we are making this check a little broader than
+        // it needs to be.
+        return (url.startsWith(GOOGLE_PREFIX) || url.startsWith(GOOGLE_HTTPS_PREFIX)); 
     }
     
-    protected void indexLocation(LocationAndVisits locationAndVisits, boolean dumpFile, IndexerConnection indexerConnection) {
+    /**
+     * Index the specified location.
+
+     * @throws IndexerException Only if an error occurred in sending the page to the indexer service.
+     */
+    protected void indexLocation(LocationAndVisits locationAndVisits, boolean dumpFile, IndexerConnection indexerConnection) throws IndexerException {
         HistoryLocation location = locationAndVisits.location;
+        Document doc = null;
         try {
             long startTimeMsecs = System.currentTimeMillis();
             
@@ -221,27 +242,23 @@ public class HistoryIndexer {
             
             ByteArrayInputStream byteStream = new ByteArrayInputStream(page.toByteArray());
             
-            Document doc = Jsoup.parse(byteStream, null, location.url);
+            doc = Jsoup.parse(byteStream, null, location.url);
             
             long endTimeMsecs = System.currentTimeMillis();
             long pageGetTime = endTimeMsecs - startTimeMsecs;
             log.debug("Page get/parse time = " + pageGetTime + " msecs");
             
-            try {
-                if (indexerConnection != null) {
-                    UpdatePageInfoRequest info = new UpdatePageInfoRequest(location.url, doc.outerHtml());
-                    for (HistoryVisit visit: locationAndVisits.visits){
-                        info.visitTimes.add(visit.visitDate.getTime());
-                    }
-                    indexerConnection.indexPage(info);
-                }
-            } catch (IndexerException e) {
-                log.error("Error submitting page for indexing: " + location.url, e);
-            }
-            
         } catch (Exception e) {
-            log.info("Exception processing URL '" + location.url + "': " + e);
+            log.debug("Exception processing URL '" + location.url + "': " + e);
         } 
+        
+        if (doc != null) {
+            UpdatePageInfoRequest info = new UpdatePageInfoRequest(location.url, doc.outerHtml());
+            for (HistoryVisit visit: locationAndVisits.visits){
+                info.visitTimes.add(visit.visitDate.getTime());
+            }
+            indexerConnection.indexPage(info);
+        }
     }
     
     private String normalizeUrl(String inputUrl) {

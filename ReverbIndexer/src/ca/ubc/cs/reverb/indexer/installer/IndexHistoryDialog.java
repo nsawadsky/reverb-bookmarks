@@ -12,8 +12,8 @@ import javax.swing.JTextArea;
 import java.awt.SystemColor;
 import javax.swing.JProgressBar;
 
+import ca.ubc.cs.reverb.indexer.IndexerConfig;
 import ca.ubc.cs.reverb.indexer.IndexerException;
-import ca.ubc.cs.reverb.indexer.Util.RunnableWithResult;
 
 import java.awt.Toolkit;
 import java.util.ArrayList;
@@ -21,15 +21,19 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.SwingWorker;
 import javax.swing.Timer;
 import javax.swing.JCheckBox;
 import javax.swing.SwingConstants;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 
 import javax.swing.SpringLayout;
 
@@ -43,12 +47,17 @@ public class IndexHistoryDialog extends JDialog {
     private JLabel progressBarLabel;
     private JCheckBox indexChromeHistory;
     private JCheckBox indexFirefoxHistory;
-    private JButton okButton;
+    private JButton indexHistoryButton;
+    private IndexerConfig config;
+    private boolean dialogClosed = false;
     
     /**
      * Create the dialog.
      */
-    public IndexHistoryDialog() {
+    public IndexHistoryDialog(IndexerConfig config, String installLocation) {
+        setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        this.config = config;
+        
         setModalityType(ModalityType.APPLICATION_MODAL);
         setIconImage(Toolkit.getDefaultToolkit().getImage(IndexHistoryDialog.class.getResource("/ca/ubc/cs/reverb/indexer/installer/reverb-16.png")));
         setModal(true);
@@ -63,22 +72,22 @@ public class IndexHistoryDialog extends JDialog {
         contentPanel.setLayout(sl_contentPanel);
 
         JLabel txtrTheIndexerService = new JLabel();
-        txtrTheIndexerService.setFont(new Font("Tahoma", Font.PLAIN, 11));
+        txtrTheIndexerService.setFont(new Font("Dialog", Font.PLAIN, 12));
         sl_contentPanel.putConstraint(SpringLayout.NORTH, txtrTheIndexerService, 5, SpringLayout.NORTH, contentPanel);
         sl_contentPanel.putConstraint(SpringLayout.WEST, txtrTheIndexerService, 5, SpringLayout.WEST, contentPanel);
         sl_contentPanel.putConstraint(SpringLayout.EAST, txtrTheIndexerService, -5, SpringLayout.EAST, contentPanel);
-        txtrTheIndexerService.setText("<html>The indexer service has been registered at .... <br><br>Reverb can now index your Chrome and Firefox browsing history.  Indexing your browsing history is strongly recommended.  It takes about 10-15 minutes and will allow you to start receiving useful page suggestions right away.</html>");
+        txtrTheIndexerService.setText("<html>The indexer service has been registered at " + installLocation + ".<br><br>Reverb can now index your Chrome and Firefox browsing history.  Indexing your browsing history is strongly recommended.  It takes about 10-15 minutes and will allow you to start receiving useful page suggestions right away.</html>");
         contentPanel.add(txtrTheIndexerService);
 
         indexChromeHistory = new JCheckBox("Index Chrome history (need to shut down Chrome for a moment)");
-        indexChromeHistory.setFont(new Font("Tahoma", Font.PLAIN, 11));
+        indexChromeHistory.setFont(new Font("Dialog", Font.PLAIN, 12));
         indexChromeHistory.setSelected(true);
         sl_contentPanel.putConstraint(SpringLayout.NORTH, indexChromeHistory, 10, SpringLayout.SOUTH, txtrTheIndexerService);
         sl_contentPanel.putConstraint(SpringLayout.WEST, indexChromeHistory, 5, SpringLayout.WEST, contentPanel);
         contentPanel.add(indexChromeHistory);
 
         indexFirefoxHistory = new JCheckBox("Index Firefox history");
-        indexFirefoxHistory.setFont(new Font("Tahoma", Font.PLAIN, 11));
+        indexFirefoxHistory.setFont(new Font("Dialog", Font.PLAIN, 12));
         sl_contentPanel.putConstraint(SpringLayout.NORTH, indexFirefoxHistory, -2, SpringLayout.SOUTH, indexChromeHistory);
         sl_contentPanel.putConstraint(SpringLayout.WEST, indexFirefoxHistory, 0, SpringLayout.WEST, txtrTheIndexerService);
         indexFirefoxHistory.setSelected(true);
@@ -106,12 +115,11 @@ public class IndexHistoryDialog extends JDialog {
             buttonPane.setBorder(new EmptyBorder(0, 5, 0, 5));
             getContentPane().add(buttonPane, BorderLayout.SOUTH);
             {
-                okButton = new JButton("Index History");
-                okButton.setFont(new Font("Tahoma", Font.PLAIN, 11));
-                okButton.setActionCommand("OK");
-                buttonPane.add(okButton);
-                getRootPane().setDefaultButton(okButton);
-                okButton.addActionListener(new ActionListener() {
+                indexHistoryButton = new JButton("Index History");
+                indexHistoryButton.setFont(new Font("Dialog", Font.PLAIN, 12));
+                buttonPane.add(indexHistoryButton);
+                getRootPane().setDefaultButton(indexHistoryButton);
+                indexHistoryButton.addActionListener(new ActionListener() {
 
                     @Override
                     public void actionPerformed(ActionEvent e) {
@@ -122,39 +130,91 @@ public class IndexHistoryDialog extends JDialog {
             }
             {
                 JButton btnSkip = new JButton("Skip");
-                btnSkip.setFont(new Font("Tahoma", Font.PLAIN, 11));
-                btnSkip.setActionCommand("Skip");
+                btnSkip.setFont(new Font("Dialog", Font.PLAIN, 12));
                 buttonPane.add(btnSkip);
+                btnSkip.addActionListener(new ActionListener() {
+
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        dialogClosed = true;
+                        // Note this generates neither a windowClosing nor a windowClosed call to window listeners.
+                        dispose();
+                    }
+                    
+                });
             }
         }
+        
+        this.addWindowListener(new WindowListener() {
+
+            @Override
+            public void windowOpened(WindowEvent e) {
+            }
+
+            @Override
+            public void windowClosing(WindowEvent e) {
+                // Handle the X button (for some reason, the X button does not generate a windowClosed call, just 
+                // a windowClosing call).
+                dialogClosed = true;
+            }
+
+            @Override
+            public void windowClosed(WindowEvent e) {
+            }
+
+            @Override
+            public void windowIconified(WindowEvent e) {
+            }
+
+            @Override
+            public void windowDeiconified(WindowEvent e) {
+            }
+
+            @Override
+            public void windowActivated(WindowEvent e) {
+            }
+
+            @Override
+            public void windowDeactivated(WindowEvent e) {
+            }
+            
+        });
     }
     
     private void analyzeHistory() {
         try {
-            okButton.setEnabled(false);
+            indexHistoryButton.setEnabled(false);
 
             progressBar.setMaximum(100);
             progressBar.setValue(5);
+            progressBarLabel.setText("Extracting browsing history");
 
             GregorianCalendar calendar = new GregorianCalendar();
             calendar.add(Calendar.MONTH, -3);
             
-            final Date startTime = calendar.getTime();
-            final Date now = new Date();
+            Date startTime = calendar.getTime();
+            Date now = new Date();
             
             List<HistoryVisit> allVisits = new ArrayList<HistoryVisit>();
             
             if (indexChromeHistory.isSelected()) {
-                allVisits.addAll(extractHistory(WebBrowserType.GOOGLE_CHROME, "Chrome", startTime, now));
+                HistoryExtractor extractor = HistoryExtractor.getHistoryExtractor(WebBrowserType.GOOGLE_CHROME);
+                if (extractor.historyDbExists()) {
+                    allVisits.addAll(extractHistory(extractor, startTime, now));
+                }
             }
             
             if (indexFirefoxHistory.isSelected()) {
-                allVisits.addAll(extractHistory(WebBrowserType.MOZILLA_FIREFOX, "Firefox", startTime, now));
+                HistoryExtractor extractor = HistoryExtractor.getHistoryExtractor(WebBrowserType.MOZILLA_FIREFOX);
+                if (extractor.historyDbExists()) {
+                    allVisits.addAll(extractHistory(extractor, startTime, now));
+                }
             }
     
             progressBar.setValue(15);
+            progressBarLabel.setText("Indexing browsing history (now safe to restart browser)");
             
-            final HistoryIndexer indexer = new HistoryIndexer(allVisits);
+            final HistoryIndexer indexer = new HistoryIndexer(config, allVisits);
             
             indexer.startIndexing();
             
@@ -168,39 +228,40 @@ public class IndexHistoryDialog extends JDialog {
                 public void actionPerformed(ActionEvent arg0) {
                     boolean done = false;
                     try {
-                        double fractionComplete = 100.0;
-                        int locationsToClassifyCount = indexer.getLocationsToIndexCount();
-                        int locationsClassifiedCount = indexer.getLocationsIndexedCount();
-                        if ( locationsToClassifyCount > 0 ) {
-                            fractionComplete = (double)locationsClassifiedCount / locationsToClassifyCount;
-                        }
-                        progressBar.setValue(15 + (int)(fractionComplete * 80));
-                        iterationCount++;
-                        
-                        done = (locationsClassifiedCount == locationsToClassifyCount);
-                        
-                        if (!done) {
-                            if (iterationCount % 8 == 0) {
-                                if (locationsClassifiedCount == prevLocationsClassified) {
-                                    done = true;
-                                } else {
-                                    prevLocationsClassified = locationsClassifiedCount;
+                        if (dialogClosed) {
+                            done = true;
+                        } else {
+                            double fractionComplete = 100.0;
+                            int locationsToClassifyCount = indexer.getLocationsToIndexCount();
+                            int locationsClassifiedCount = indexer.getLocationsIndexedCount();
+                            if ( locationsToClassifyCount > 0 ) {
+                                fractionComplete = (double)locationsClassifiedCount / locationsToClassifyCount;
+                            }
+                            progressBar.setValue(15 + (int)(fractionComplete * 80));
+                            iterationCount++;
+                            
+                            done = (locationsClassifiedCount == locationsToClassifyCount);
+                            
+                            if (!done) {
+                                if (iterationCount % 8 == 0) {
+                                    if (locationsClassifiedCount == prevLocationsClassified) {
+                                        done = true;
+                                    } else {
+                                        prevLocationsClassified = locationsClassifiedCount;
+                                    }
                                 }
                             }
-                        }
-                        if (done) {
-                            try {
-                                indexer.shutdown();
-                            } catch (Exception e) {
-                                log.error("Error shutting down indexer: " + e);
-                            }
-                            
-                            progressBar.setValue(progressBar.getMaximum());
                         }
                     } catch (Exception e) {
                         log.error("Error monitoring indexer progress: " + e);
                     }
-                    if (!done) {
+                    if (done) {
+                        indexer.shutdown();
+                        try {
+                            // Do this inside try/catch, in case window has been destroyed.
+                            progressBar.setValue(progressBar.getMaximum());
+                        } catch (Exception e) { }
+                    } else {
                         Timer newTimer = new Timer(1000, this);
                         newTimer.setRepeats(false);
                         newTimer.start();
@@ -209,16 +270,17 @@ public class IndexHistoryDialog extends JDialog {
                 
             });
             timer.start();
-        } catch (Exception e) {
+        } catch (IndexerException e) {
             log.error("Error extracting/indexing history", e);
 
-            showMessageWithWrap("An error occurred while indexing browsing history.  Please close all open browser windows (you can restart " + 
-                    "your browser once indexing is under way).",
+            showMessageWithWrap("An error occurred while indexing browsing history.  Please close all open browser windows " +
+                    "(you can restart your browser once indexing is in progress).",
                     "Error Indexing Browsing History", JOptionPane.ERROR_MESSAGE);
 
             progressBar.setValue(0);
-            okButton.setEnabled(true);
-        }
+            progressBarLabel.setText("");
+            indexHistoryButton.setEnabled(true);
+        } 
     }
     
     private HistoryExtractor getMockHistoryExtractor() throws IndexerException {
@@ -234,36 +296,35 @@ public class IndexHistoryDialog extends JDialog {
             }
 
             @Override
+            public boolean historyDbExists() { return true; }
+            
+            @Override
             public Date getEarliestVisitDate() throws IndexerException {
                 return new Date();
             }
         };
     }
     
-    private List<HistoryVisit> extractHistory(final WebBrowserType browserType, String browserName, final Date startTime, final Date endTime) { 
-        RunnableWithResult<List<HistoryVisit>> historyExtractor = new RunnableWithResult<List<HistoryVisit>>(){
-            public List<HistoryVisit> call() throws Exception {
-                HistoryExtractor extractor = HistoryExtractor.getHistoryExtractor(browserType);
-                
-                return extractor.extractHistory(startTime, endTime);
+    private List<HistoryVisit> extractHistory(final HistoryExtractor historyExtractor, final Date startTime, final Date endTime) 
+                throws IndexerException {
+        SwingWorker<List<HistoryVisit>, Object> worker = new SwingWorker<List<HistoryVisit>, Object>() {
+
+            @Override
+            protected List<HistoryVisit> doInBackground() throws Exception {
+                return historyExtractor.extractHistory(startTime, endTime);
             }
+            
         };
         
-        Thread extractorThread = new Thread(historyExtractor);
+        worker.execute();
         
-        extractorThread.start();
         try {
-            extractorThread.join();
-        } catch (InterruptedException e) { }
-        
-        if (historyExtractor.getError() != null) {
-            showMessageWithWrap("Error extracting " + browserName + " history: " + historyExtractor.getError(),
-                    "Error Extracting " + browserName + " History", JOptionPane.ERROR_MESSAGE);
-            return null;
-        } else {
-            return historyExtractor.getResult();
+            return worker.get();
+        } catch (ExecutionException e) {
+            throw (IndexerException)e.getCause();
+        } catch (InterruptedException e) {
+            throw new IndexerException("Interrupted while waiting for history extraction to complete: " + e, e);
         }
-        
     }
     
     private void showMessageWithWrap(String message, String title, int messageType) {
@@ -274,7 +335,7 @@ public class IndexHistoryDialog extends JDialog {
         textArea.setSize(textArea.getPreferredSize().width, 1);
         textArea.setBackground(SystemColor.control);
         textArea.setEditable(false);
-        textArea.setFont(new Font("Tahoma", Font.PLAIN, 11));
+        textArea.setFont(new Font("Dialog", Font.PLAIN, 12));
         JOptionPane.showMessageDialog(this, textArea, title, messageType);
     }
 }

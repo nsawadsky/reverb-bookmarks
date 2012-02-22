@@ -72,6 +72,15 @@ public class ChromeHistoryExtractor extends HistoryExtractor {
         return results;
     }
     
+    @Override
+    public boolean historyDbExists() {
+        boolean result = false;
+        try {
+            result = new File(getChromeHistoryDbPath()).exists();
+        } catch (Exception e) { }
+        return result;
+    }
+    
     private void ensureIdsUnique(List<HistoryVisit> visits) {
         long currVisitId = 1;
         long currLocationId = 1;
