@@ -74,6 +74,10 @@ public class IndexerService {
                 System.exit(runQuery());
             }
             
+            if (argsInfo.verboseLogging) {
+                RootLogger.getRootLogger().setLevel(Level.DEBUG);
+            }
+            
             // We need config to be initialized before we can configure file logging.
             // Also, for other startup modes, we do not want to compete with the main service
             // for access to the log file.
@@ -380,6 +384,9 @@ public class IndexerService {
         if (argsMap.containsKey("noui")) {
             result.showUI = false;
         }
+        if (argsMap.containsKey("verbose")) {
+            result.verboseLogging = true;
+        }
         return result;
     }
     
@@ -398,6 +405,7 @@ public class IndexerService {
         IndexerMode mode = IndexerMode.NORMAL;
         boolean showUI = true;
         String installLocation;
+        boolean verboseLogging = false;
     }
     
     private void showMessageWithWrap(String message, String title, int messageType) {
