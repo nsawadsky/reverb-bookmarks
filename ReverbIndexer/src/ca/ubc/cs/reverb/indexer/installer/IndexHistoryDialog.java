@@ -243,10 +243,9 @@ public class IndexHistoryDialog extends JDialog {
                     }
                     if (done) {
                         indexer.shutdown();
-                        try {
-                            // Do this inside try/catch, in case window has been destroyed.
-                            progressBar.setValue(progressBar.getMaximum());
-                        } catch (Exception e) { }
+                        if (!dialogClosed) {
+                            dispose();
+                        }
                     } else {
                         Timer newTimer = new Timer(1000, this);
                         newTimer.setRepeats(false);

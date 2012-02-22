@@ -33,6 +33,7 @@ import org.codehaus.jackson.util.DefaultPrettyPrinter;
 import xpnp.XpNamedPipe;
 
 import ca.ubc.cs.reverb.indexer.installer.IndexHistoryDialog;
+import ca.ubc.cs.reverb.indexer.installer.InstallCompleteDialog;
 import ca.ubc.cs.reverb.indexer.messages.BatchQueryRequest;
 import ca.ubc.cs.reverb.indexer.messages.IndexerMessageEnvelope;
 import ca.ubc.cs.reverb.indexer.messages.IndexerQuery;
@@ -138,6 +139,9 @@ public class IndexerService {
                         if (argsInfo.showUI) {
                             IndexHistoryDialog historyDialog = new IndexHistoryDialog(config, installLocation);
                             historyDialog.setVisible(true);
+                            InstallCompleteDialog installCompleteDialog = new InstallCompleteDialog();
+                            installCompleteDialog.setLocation(historyDialog.getLocation());
+                            installCompleteDialog.setVisible(true);
                         }
                     } catch (IndexerException e) {
                         log.error("Error installing service", e);
