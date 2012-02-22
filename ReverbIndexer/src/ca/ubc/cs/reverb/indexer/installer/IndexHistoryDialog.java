@@ -50,6 +50,7 @@ public class IndexHistoryDialog extends JDialog {
     private JButton indexHistoryButton;
     private IndexerConfig config;
     private boolean dialogClosed = false;
+    private boolean closeBrowserWindowsRequested = false;
     
     /**
      * Create the dialog.
@@ -146,37 +147,18 @@ public class IndexHistoryDialog extends JDialog {
         }
         
         this.addWindowListener(new WindowListener() {
-
-            @Override
-            public void windowOpened(WindowEvent e) {
-            }
-
-            @Override
             public void windowClosing(WindowEvent e) {
                 // Handle the X button (for some reason, the X button does not generate a windowClosed call, just 
                 // a windowClosing call).
                 dialogClosed = true;
             }
 
-            @Override
-            public void windowClosed(WindowEvent e) {
-            }
-
-            @Override
-            public void windowIconified(WindowEvent e) {
-            }
-
-            @Override
-            public void windowDeiconified(WindowEvent e) {
-            }
-
-            @Override
-            public void windowActivated(WindowEvent e) {
-            }
-
-            @Override
-            public void windowDeactivated(WindowEvent e) {
-            }
+            public void windowOpened(WindowEvent e) {}
+            public void windowClosed(WindowEvent e) {}
+            public void windowIconified(WindowEvent e) {}
+            public void windowDeiconified(WindowEvent e) {}
+            public void windowActivated(WindowEvent e) {}
+            public void windowDeactivated(WindowEvent e) {}
             
         });
     }
@@ -212,7 +194,11 @@ public class IndexHistoryDialog extends JDialog {
             }
     
             progressBar.setValue(15);
-            progressBarLabel.setText("Indexing browsing history (now safe to restart browser)");
+            String progressBarText = "Indexing browsing history";
+            if (closeBrowserWindowsRequested) {
+                progressBarText += " (now safe to restart browser)";
+            }
+            progressBarLabel.setText("Indexing browsing history"); 
             
             final HistoryIndexer indexer = new HistoryIndexer(config, allVisits);
             
@@ -280,6 +266,7 @@ public class IndexHistoryDialog extends JDialog {
             progressBar.setValue(0);
             progressBarLabel.setText("");
             indexHistoryButton.setEnabled(true);
+            closeBrowserWindowsRequested = true;
         } 
     }
     
