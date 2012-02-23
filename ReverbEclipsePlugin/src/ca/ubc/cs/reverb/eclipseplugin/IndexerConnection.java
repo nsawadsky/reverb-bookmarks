@@ -14,7 +14,6 @@ import ca.ubc.cs.reverb.indexer.messages.CodeQueryRequest;
 import ca.ubc.cs.reverb.indexer.messages.IndexerMessage;
 import ca.ubc.cs.reverb.indexer.messages.IndexerMessageEnvelope;
 import ca.ubc.cs.reverb.indexer.messages.IndexerReply;
-import ca.ubc.cs.reverb.indexer.messages.UploadLogsReply;
 import ca.ubc.cs.reverb.indexer.messages.UploadLogsRequest;
 
 import xpnp.XpNamedPipe;
@@ -65,12 +64,8 @@ public class IndexerConnection implements Runnable {
         }
     }
     
-    public UploadLogsReply sendUploadLogsRequest(UploadLogsRequest request, int timeoutMsecs) throws IOException, InterruptedException {
-        IndexerReply reply = sendRequest(request, timeoutMsecs);
-        if (! (reply instanceof UploadLogsReply)) {
-            throw new IOException("Unexpected reply message type: " + reply.getClass());
-        }
-        return (UploadLogsReply)reply;
+    public IndexerReply sendUploadLogsRequest(UploadLogsRequest request, int timeoutMsecs) throws IOException, InterruptedException {
+        return sendRequest(request, timeoutMsecs);
     }
     
     public CodeQueryReply sendCodeQueryRequest(CodeQueryRequest request, int timeoutMsecs) throws IOException, InterruptedException {
@@ -108,9 +103,7 @@ public class IndexerConnection implements Runnable {
                 }
                 if (envelope != null) {
                     CallbackInfo callbackInfo = removeCallbackInfo(requestId);
-                    if (callbackInfo == null) {
-                        logger.logInfo("Callback not found for request ID " + requestId);
-                    } else {
+                    if (callbackInfo != null) {
                         try {
                             callbackInfo.callback.onIndexerMessage(envelope.message, callbackInfo.clientInfo);
                         } catch (Throwable t) {
@@ -205,7 +198,9 @@ public class IndexerConnection implements Runnable {
             tempPipe.writeMessage(jsonData);
         } catch (IOException e) {
             removeCallbackInfo(requestId);
-            callback.onIndexerError("Error sending request to indexer: " + e, e);
+            if (callback != null) {
+                callback.onIndexerError("Error sending request to indexer: " + e, e);
+            }
         }
     }
     

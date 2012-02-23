@@ -36,8 +36,8 @@ import ca.ubc.cs.reverb.eclipseplugin.views.RateRecommendationsDialog;
 import ca.ubc.cs.reverb.eclipseplugin.views.StudyCompleteDialog;
 import ca.ubc.cs.reverb.eclipseplugin.views.UploadLogsDialog;
 import ca.ubc.cs.reverb.indexer.messages.CodeQueryReply;
+import ca.ubc.cs.reverb.indexer.messages.IndexerReply;
 import ca.ubc.cs.reverb.indexer.messages.Location;
-import ca.ubc.cs.reverb.indexer.messages.UploadLogsReply;
 import ca.ubc.cs.reverb.indexer.messages.UploadLogsRequest;
 
 /**
@@ -61,6 +61,7 @@ public class StudyActivityMonitor implements EditorMonitorListener {
     private PluginLogger logger;
     private long createdThreadId;
     private Shell shell;
+    private EditorMonitor editorMonitor;
     
     public StudyActivityMonitor(Shell shell, PluginConfig config, PluginLogger logger, IndexerConnection indexerConnection,
             EditorMonitor editorMonitor) throws PluginException {
@@ -73,7 +74,9 @@ public class StudyActivityMonitor implements EditorMonitorListener {
         if (studyState.uploadPending) {
             schedulePromptForUploadLogs(UPLOAD_PROMPT_DELAY_MSECS);
         }
-        editorMonitor.addListener(this);
+        this.editorMonitor = editorMonitor;
+        this.editorMonitor.setStudyComplete(isStudyComplete());
+        this.editorMonitor.addListener(this);
     }
     
     @Override
@@ -83,7 +86,7 @@ public class StudyActivityMonitor implements EditorMonitorListener {
 
     @Override
     public void onInteractionEvent(long timeMsecs) {
-        if (!studyState.isStudyComplete()) {
+        if (!isStudyComplete()) {
             long currentInterval = timeMsecs / StudyState.ACTIVITY_INTERVAL_MSECS;
             if (currentInterval != studyState.lastActiveInterval) {
                 studyState.lastActiveInterval = currentInterval;
@@ -138,8 +141,9 @@ public class StudyActivityMonitor implements EditorMonitorListener {
                 protected IStatus run(IProgressMonitor arg0) {
                     IStatus result = Status.OK_STATUS;
                     try {
-                        UploadLogsReply reply = indexerConnection.sendUploadLogsRequest(
-                                new UploadLogsRequest(), 60000);
+                        boolean isFinalUpload = (studyState.successfulLogUploads >= UPLOADS_TO_COMPLETE_STUDY - 1);
+                        IndexerReply reply = indexerConnection.sendUploadLogsRequest(
+                                new UploadLogsRequest(isFinalUpload), 60000);
                         if (reply.errorOccurred) {
                             result = logger.createStatus(IStatus.ERROR, reply.errorMessage, null);
                         } 
@@ -218,7 +222,7 @@ public class StudyActivityMonitor implements EditorMonitorListener {
     }
     
     public boolean isStudyComplete() {
-        return studyState.isStudyComplete();
+        return (studyState.successfulLogUploads >= UPLOADS_TO_COMPLETE_STUDY);
     }
     
     private void uploadRatings(List<LocationRating> ratings) throws IOException, PluginException {
@@ -296,25 +300,26 @@ public class StudyActivityMonitor implements EditorMonitorListener {
         if (! studyState.locationRatings.isEmpty()) {
             displayRateRecommendationsDialog();
         }
-        if (studyState.isStudyComplete()) {
+        if (isStudyComplete()) {
+            editorMonitor.setStudyComplete(true);
             displayStudyCompleteDialog();
         }
     }
     
     private void loadStudyState() throws PluginException {
         try {
-            File pluginStateFile = new File(config.getStudyStatePath());
-            if (!pluginStateFile.exists()) {
+            File pluginStudyStateFile = new File(config.getStudyStatePath());
+            if (!pluginStudyStateFile.exists()) {
                 studyState = new StudyState();
                 saveStudyState();
                 return;
             }
             ObjectMapper mapper = new ObjectMapper();
-            studyState = mapper.readValue(pluginStateFile, StudyState.class);
+            studyState = mapper.readValue(pluginStudyStateFile, StudyState.class);
         } catch (PluginException e) {
             throw e;
         } catch (Exception e) {
-            throw new PluginException("Error loading plugin state: " + e, e);
+            throw new PluginException("Error loading plugin study state: " + e, e);
         }
     }
     
@@ -328,7 +333,7 @@ public class StudyActivityMonitor implements EditorMonitorListener {
 
             mapper.viewWriter(StudyState.LocalUseOnly.class).writeValue(jsonGenerator, studyState);
         } catch (Exception e) {
-            throw new PluginException("Error saving plugin state: " + e, e);
+            throw new PluginException("Error saving plugin study state: " + e, e);
         } finally {
             if (jsonGenerator != null) {
                 try { 

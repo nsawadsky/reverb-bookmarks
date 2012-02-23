@@ -48,6 +48,7 @@ import ca.ubc.cs.reverb.indexer.messages.DeleteLocationRequest;
 import ca.ubc.cs.reverb.indexer.messages.IndexerMessage;
 import ca.ubc.cs.reverb.indexer.messages.Location;
 import ca.ubc.cs.reverb.indexer.messages.LogClickRequest;
+import ca.ubc.cs.reverb.indexer.messages.LogPluginViewStateRequest;
 
 public class RelatedPagesView extends ViewPart implements EditorMonitorListener {
 
@@ -268,6 +269,8 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
         IToolBarManager toolbarManager = bars.getToolBarManager();
         toolbarManager.add(updateViewAction);
 
+        editorMonitor.setRelatedPagesViewOpen(true);
+
         editorMonitor.addListener(this);
         editorMonitor.requestRefresh(false);
    }
@@ -287,6 +290,7 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
     public void dispose() {
         if (editorMonitor != null) {
             editorMonitor.removeListener(this);
+            editorMonitor.setRelatedPagesViewOpen(false);
         }
         super.dispose();
     }

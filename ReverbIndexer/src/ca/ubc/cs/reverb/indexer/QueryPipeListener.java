@@ -15,17 +15,16 @@ import ca.ubc.cs.reverb.indexer.messages.CodeQueryReply;
 import ca.ubc.cs.reverb.indexer.messages.CodeQueryRequest;
 import ca.ubc.cs.reverb.indexer.messages.CodeQueryResult;
 import ca.ubc.cs.reverb.indexer.messages.DeleteLocationRequest;
-import ca.ubc.cs.reverb.indexer.messages.DeleteLocationReply;
 import ca.ubc.cs.reverb.indexer.messages.IndexerMessageEnvelope;
 import ca.ubc.cs.reverb.indexer.messages.IndexerQuery;
 import ca.ubc.cs.reverb.indexer.messages.IndexerReply;
-import ca.ubc.cs.reverb.indexer.messages.LogClickReply;
 import ca.ubc.cs.reverb.indexer.messages.LogClickRequest;
+import ca.ubc.cs.reverb.indexer.messages.LogPluginViewStateRequest;
 import ca.ubc.cs.reverb.indexer.messages.QueryResult;
-import ca.ubc.cs.reverb.indexer.messages.UploadLogsReply;
 import ca.ubc.cs.reverb.indexer.messages.UploadLogsRequest;
 import ca.ubc.cs.reverb.indexer.study.RecommendationClickEvent;
 import ca.ubc.cs.reverb.indexer.study.StudyDataCollector;
+import ca.ubc.cs.reverb.indexer.study.PluginViewStateChangedEvent;
 
 
 public class QueryPipeListener implements Runnable {
@@ -113,6 +112,8 @@ public class QueryPipeListener implements Runnable {
                             handleUploadLogsRequest(envelope.clientRequestId, (UploadLogsRequest)envelope.message);
                         } else if (envelope.message instanceof LogClickRequest) {
                             handleLogClickRequest(envelope.clientRequestId, (LogClickRequest)envelope.message);
+                        } else if (envelope.message instanceof LogPluginViewStateRequest) {
+                            handleLogViewStateRequest(envelope.clientRequestId, (LogPluginViewStateRequest)envelope.message);
                         } else {
                             throw new IndexerException("Unexpected message content: " + envelope.message.getClass());
                         }
@@ -128,6 +129,11 @@ public class QueryPipeListener implements Runnable {
             }
         }
         
+        private void handleLogViewStateRequest(String clientRequestId, LogPluginViewStateRequest request) throws IndexerException {
+            collector.logEvent(new PluginViewStateChangedEvent(System.currentTimeMillis(), request.isViewOpen));
+            sendReply(clientRequestId, new IndexerReply());
+        }
+        
         private void handleLogClickRequest(String clientRequestId, LogClickRequest request) throws IndexerException {
             LocationInfo info = locationsDatabase.getLocationInfo(request.location.url);
             if (info != null) {
@@ -136,13 +142,13 @@ public class QueryPipeListener implements Runnable {
                         request.location.overallScore, request.resultGenTimestamp);
                 collector.logEvent(event);
             }
-            sendReply(clientRequestId, new LogClickReply());
+            sendReply(clientRequestId, new IndexerReply());
         }
         
         private void handleUploadLogsRequest(String clientRequestId, UploadLogsRequest request) throws IndexerException {
-            UploadLogsReply reply = new UploadLogsReply();
+            IndexerReply reply = new IndexerReply();
             try {
-                collector.pushDataToServer();
+                collector.pushDataToServer(request.isFinalUpload);
             } catch (IndexerException e) {
                 reply.errorOccurred = true;
                 reply.errorMessage = e.toString();
@@ -151,7 +157,7 @@ public class QueryPipeListener implements Runnable {
         }
         
         private void handleDeleteLocationRequest(String clientRequestId, DeleteLocationRequest request) throws IndexerException {
-            DeleteLocationReply reply = new DeleteLocationReply();
+            IndexerReply reply = new IndexerReply();
             try {
                 indexer.deleteLocation(request);
             } catch (IndexerException e) {

@@ -64,7 +64,7 @@ public class IndexHistoryDialog extends JDialog {
         setIconImage(Toolkit.getDefaultToolkit().getImage(IndexHistoryDialog.class.getResource("/ca/ubc/cs/reverb/indexer/installer/reverb-16.png")));
         setModal(true);
         setTitle("Reverb Indexer Installation");
-        setBounds(100, 100, 450, 306);
+        setBounds(100, 100, 473, 306);
         getContentPane().setLayout(new BorderLayout());
         
         JPanel contentPanel = new JPanel();
@@ -81,7 +81,7 @@ public class IndexHistoryDialog extends JDialog {
         txtrTheIndexerService.setText("<html>The indexer service has been registered at " + installLocation + ".<br><br>Reverb can now index your Chrome and Firefox browsing history.  Indexing your browsing history is strongly recommended.  It takes about 10-15 minutes and will allow you to start receiving useful page suggestions right away.</html>");
         contentPanel.add(txtrTheIndexerService);
 
-        indexChromeHistory = new JCheckBox("Index Chrome history (need to shut down Chrome for a moment)");
+        indexChromeHistory = new JCheckBox("Index Chrome history (you will need to shut down Chrome for a moment)");
         indexChromeHistory.setFont(new Font("Dialog", Font.PLAIN, 12));
         indexChromeHistory.setSelected(true);
         sl_contentPanel.putConstraint(SpringLayout.NORTH, indexChromeHistory, 10, SpringLayout.SOUTH, txtrTheIndexerService);

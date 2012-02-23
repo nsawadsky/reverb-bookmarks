@@ -27,11 +27,6 @@ public class StudyState {
     //public final static int LOG_UPLOAD_INTERVALS = 2; 
 
     /**
-     * Number of successful log uploads to complete study.
-     */
-    public final static int LOG_UPLOADS_REQUIRED = 2;
-    
-    /**
      * Recommendations clicked by the user, along with rating information.
      */
     public List<LocationRating> locationRatings = new ArrayList<LocationRating>();
@@ -56,7 +51,4 @@ public class StudyState {
      */
     public int successfulLogUploads = 0;
     
-    public boolean isStudyComplete() {
-        return successfulLogUploads >= LOG_UPLOADS_REQUIRED;
-    }
 }
