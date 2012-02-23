@@ -223,15 +223,19 @@ public class IndexerConnection implements Runnable {
         } catch (IOException e) { }
         if (result == null) {
             try {
-                Runtime.getRuntime().exec(
-                        "javaw.exe -Djava.library.path=native -Xmx1024m -jar ReverbIndexer.jar", 
-                        null, new File(config.getCurrentIndexerInstallPath()));
-                int tries = 0;
-                while (result == null && tries++ < 10) {
-                    try { 
-                        Thread.sleep(500);
-                        result = XpNamedPipe.openNamedPipe("reverb-query", true);
-                    } catch (Exception e) { }
+                String indexerInstallPath = config.getCurrentIndexerInstallPath();
+                File indexerJarPath = new File(indexerInstallPath + File.separator + "ReverbIndexer.jar");
+                if (indexerJarPath.exists()) {
+                    Runtime.getRuntime().exec(
+                            "javaw.exe -Djava.library.path=native -Xmx1024m -jar ReverbIndexer.jar", 
+                            null, new File(indexerInstallPath));
+                    int tries = 0;
+                    while (result == null && tries++ < 10) {
+                        try { 
+                            Thread.sleep(500);
+                            result = XpNamedPipe.openNamedPipe("reverb-query", true);
+                        } catch (Exception e) { }
+                    }
                 }
             } catch (Exception e) { }
         }

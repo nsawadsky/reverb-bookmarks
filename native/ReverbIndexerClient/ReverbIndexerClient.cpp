@@ -74,7 +74,7 @@ public:
         }
         boost::lock_guard<boost::mutex> guard(queueMutex);
         bool wasEmpty = msgQueue.empty();
-        msgQueue.push(msg);
+        msgQueue.push_back(msg);
         if (wasEmpty) {
             queueHasData.notify_one();
         }
@@ -113,6 +113,7 @@ public:
                 case PageContent: 
                     {
                         if (!handlePageContentMessage(boost::static_pointer_cast<PageContentMessage>(msg), indexPipe)) {
+                            requeueMessage(msg);
                             XPNP_closePipe(indexPipe);
                             indexPipe = NULL;
                         }
@@ -168,6 +169,11 @@ private:
         boost::trim_if(indexerInstallPath, boost::is_any_of(" \r\n"));
         inputStream.close();
 
+        std::string indexerJarPath = indexerInstallPath + "\\ReverbIndexer.jar";
+        if (!boost::filesystem::exists(indexerJarPath)) {
+            return NULL;
+        }
+
         STARTUPINFO startupInfo;
         memset(&startupInfo, 0, sizeof(startupInfo));
         startupInfo.cb = sizeof(startupInfo);
@@ -214,8 +220,13 @@ private:
             queueHasData.wait(guard);
         }
         boost::shared_ptr<BackgroundThreadMessage> result = msgQueue.front();
-        msgQueue.pop();
+        msgQueue.pop_front();
         return result;
+    }
+
+    void requeueMessage(boost::shared_ptr<BackgroundThreadMessage> msg) {
+        boost::lock_guard<boost::mutex> guard(queueMutex);
+        msgQueue.push_front(msg);
     }
 
     void setStatus(const std::string& status) {
@@ -231,7 +242,7 @@ private:
 
     boost::mutex queueMutex;
     boost::condition_variable queueHasData;
-    std::queue<boost::shared_ptr<BackgroundThreadMessage>> msgQueue;
+    std::list<boost::shared_ptr<BackgroundThreadMessage>> msgQueue;
 
     boost::mutex startupMutex;
     volatile bool threadStarted;
