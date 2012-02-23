@@ -217,6 +217,7 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
         final Action updateViewAction = createUpdateViewAction();
         final Action uploadLogsAction = createUploadLogsAction();
         final Action rateRecommendationsAction = createRateRecommendationsAction();
+        final Action helpAction = createHelpAction();
         
         viewer.addSelectionChangedListener(new ISelectionChangedListener() {
 
@@ -268,6 +269,7 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
 
         IToolBarManager toolbarManager = bars.getToolBarManager();
         toolbarManager.add(updateViewAction);
+        toolbarManager.add(helpAction);
 
         editorMonitor.setRelatedPagesViewOpen(true);
 
@@ -339,13 +341,30 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
                 editorMonitor.requestRefresh(true);
             }
         };
-        updateViewAction.setText("Update Links");
-        updateViewAction.setToolTipText("Update Links");
+        updateViewAction.setText("Refresh View");
+        updateViewAction.setToolTipText("Refresh View");
         updateViewAction.setImageDescriptor(PluginActivator.getImageDescriptor("icons/refresh.gif"));
 
         return updateViewAction;
     }
     
+    private Action createHelpAction() {
+        Action helpAction = new Action() {
+            public void run() {
+                try {
+                    Desktop.getDesktop().browse(new URI("http://code.google.com/p/reverb-plugin/wiki/GettingStarted"));
+                } catch (Exception e) {
+                    logger.logError("Error opening help page", e);
+                }
+            }
+        };
+        helpAction.setText("Help");
+        helpAction.setToolTipText("Help");
+        helpAction.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages().getImageDescriptor(ISharedImages.IMG_LCL_LINKTO_HELP));
+
+        return helpAction;
+    }
+
     private Action createOpenBrowserAction() {
         Action openBrowserAction = new Action() {
             public void run() {
