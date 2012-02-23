@@ -55,4 +55,8 @@ public class StudyState {
      * Number of successful log uploads.
      */
     public int successfulLogUploads = 0;
+    
+    public boolean isStudyComplete() {
+        return successfulLogUploads >= LOG_UPLOADS_REQUIRED;
+    }
 }
