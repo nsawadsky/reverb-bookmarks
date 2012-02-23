@@ -24,7 +24,12 @@ public enum StudyEventType {
     /**
      * Reached a specified number of locations indexed.
      */
-    LOCATIONS_INDEXED_MILESTONE("LOC_INDEXED");
+    LOCATIONS_INDEXED_MILESTONE("LOC_INDEXED"),
+    
+    /**
+     * Eclipse plugin view was opened/closed.
+     */
+    PLUGIN_VIEW_STATE_CHANGED("VIEW_STATE_CHANGE");
     
     private String shortName;
     

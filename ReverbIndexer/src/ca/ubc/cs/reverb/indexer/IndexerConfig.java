@@ -101,6 +101,10 @@ public class IndexerConfig {
         return userIdKey;
     }
     
+    public String getIndexerStudyStatePath() {
+        return settingsPath + File.separator + "indexer-study-state.txt";
+    }
+    
     public String getCurrentIndexerInstallPath() throws IndexerException {
         File indexerVersionFile = new File(getIndexerInstallPointerPath());
         Scanner scanner = null;

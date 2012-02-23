@@ -1,7 +1,5 @@
 package ca.ubc.cs.reverb.eclipseplugin;
 
-import java.io.IOException;
-
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.IWorkbench;

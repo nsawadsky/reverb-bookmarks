@@ -31,6 +31,7 @@ import org.eclipse.ui.PlatformUI;
 import ca.ubc.cs.reverb.indexer.messages.CodeQueryReply;
 import ca.ubc.cs.reverb.indexer.messages.CodeQueryRequest;
 import ca.ubc.cs.reverb.indexer.messages.IndexerQuery;
+import ca.ubc.cs.reverb.indexer.messages.LogPluginViewStateRequest;
 
 /**
  * This class is not thread-safe -- we expect it to be called only from the UI thread.  If a method
@@ -48,6 +49,8 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener,
     private ITextViewer lastTextViewer = null;
     private int lastTopLine = 0;
     private int lastBottomLine = 0;
+    private boolean isRelatedPagesViewOpen = false;
+    private boolean isStudyComplete = false;
     
     /**
      * Access must be synchronized on the listeners reference.
@@ -170,9 +173,19 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener,
             @Override
             public void run() {
                 startRefreshTimer(System.currentTimeMillis());
+                indexerConnection.sendRequestAsync(new LogPluginViewStateRequest(isRelatedPagesViewOpen), null, null);
             }
             
         });
+    }
+    
+    public void setRelatedPagesViewOpen(boolean isViewOpen) {
+        isRelatedPagesViewOpen = isViewOpen;
+        indexerConnection.sendRequestAsync(new LogPluginViewStateRequest(isViewOpen), null, null);
+    }
+    
+    public void setStudyComplete(boolean isStudyComplete) {
+        this.isStudyComplete = isStudyComplete;
     }
     
     private void doRefresh() {
@@ -279,7 +292,9 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener,
     }
 
     private void handleNavigationEvent(long now) {
-        startRefreshTimer(now);
+        if (!isStudyComplete || isRelatedPagesViewOpen) {
+            startRefreshTimer(now);
+        }
     }
     
     private boolean listen(IEditorPart editorPart) {

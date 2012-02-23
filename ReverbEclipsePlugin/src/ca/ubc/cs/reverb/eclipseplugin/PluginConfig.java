@@ -74,7 +74,7 @@ public class PluginConfig {
     }
     
     public String getStudyStatePath() {
-        return pluginStatePath + File.separator + "studystate.txt";
+        return pluginStatePath + File.separator + "study-state.txt";
     }
 
     public String getStudyDataLogFolderPath() {

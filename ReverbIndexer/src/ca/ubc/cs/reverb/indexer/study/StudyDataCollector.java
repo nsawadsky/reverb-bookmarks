@@ -27,6 +27,10 @@ import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.apache.log4j.Logger;
+import org.codehaus.jackson.JsonEncoding;
+import org.codehaus.jackson.JsonGenerator;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.util.DefaultPrettyPrinter;
 
 import ca.ubc.cs.reverb.indexer.IndexerConfig;
 import ca.ubc.cs.reverb.indexer.IndexerException;
@@ -55,10 +59,17 @@ public class StudyDataCollector implements Runnable {
      */
     private List<StudyDataEvent> events = new ArrayList<StudyDataEvent>();
     
+    /**
+     * Access must be synchronized on the events reference.  If both events and fileLock must
+     * be locked, must make sure to acquire fileLock first.
+     */
+    private IndexerStudyState studyState;
+
     private IndexerConfig config; 
 
-    public StudyDataCollector(IndexerConfig config) {
+    public StudyDataCollector(IndexerConfig config) throws IndexerException {
         this.config = config;
+        loadStudyState();
     }
     
     @Override
@@ -84,11 +95,13 @@ public class StudyDataCollector implements Runnable {
 
     public void logEvent(StudyDataEvent event) {
         synchronized(events) {
-            events.add(event);
+            if (studyState.isDataCollectionEnabled) {
+                events.add(event);
+            }
         }
     }
     
-    public void pushDataToServer() throws IndexerException {
+    public void pushDataToServer(boolean isFinalUpload) throws IndexerException {
         try {
             flushEventsToFile(true);
             
@@ -147,6 +160,9 @@ public class StudyDataCollector implements Runnable {
                         EntityUtils.consume(response.getEntity());
                         if (line.getStatusCode() == HttpStatus.SC_OK) {
                             logFile.delete();
+                            if (isFinalUpload) {
+                                setDataCollectionEnabled(false);
+                            }
                         } else {
                             throw new IndexerException(Integer.toString(line.getStatusCode()) + " upload response: " + 
                                     line.getReasonPhrase());
@@ -163,6 +179,13 @@ public class StudyDataCollector implements Runnable {
         } catch (Exception e) {
             throw new IndexerException("Error while trying to push data to server: " + e, e);
         } 
+    }
+    
+    private void setDataCollectionEnabled(boolean enabled) throws IndexerException {
+        synchronized(events) {
+            studyState.isDataCollectionEnabled = enabled;
+            saveStudyState();
+        }
     }
     
     private void flushEventsToFile(boolean forceCreateNewFile) throws IOException {
@@ -259,6 +282,40 @@ public class StudyDataCollector implements Runnable {
         public LogFileInfo(File logFile, int logFileIndex) {
             this.logFile = logFile;
             this.logFileIndex = logFileIndex;
+        }
+    }
+    
+    private void loadStudyState() throws IndexerException {
+        try {
+            File indexerStudyStateFile = new File(config.getIndexerStudyStatePath());
+            if (!indexerStudyStateFile.exists()) {
+                studyState = new IndexerStudyState();
+                return;
+            }
+            ObjectMapper mapper = new ObjectMapper();
+            studyState = mapper.readValue(indexerStudyStateFile, IndexerStudyState.class);
+        } catch (Exception e) {
+            throw new IndexerException("Error loading indexer study state: " + e, e);
+        }
+    }
+    
+    private void saveStudyState() throws IndexerException {
+        JsonGenerator jsonGenerator = null;
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            jsonGenerator = mapper.getJsonFactory().createJsonGenerator(new File(config.getIndexerStudyStatePath()), 
+                    JsonEncoding.UTF8);
+            jsonGenerator.setPrettyPrinter(new DefaultPrettyPrinter());
+
+            mapper.writeValue(jsonGenerator, studyState);
+        } catch (Exception e) {
+            throw new IndexerException("Error saving indexer study state: " + e, e);
+        } finally {
+            if (jsonGenerator != null) {
+                try { 
+                    jsonGenerator.close();
+                } catch (IOException e) { } 
+            }
         }
     }
     
