@@ -172,8 +172,10 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener,
 
             @Override
             public void run() {
-                startRefreshTimer(System.currentTimeMillis());
-                indexerConnection.sendRequestAsync(new LogPluginViewStateRequest(isRelatedPagesViewOpen), null, null);
+                handleNavigationEvent(System.currentTimeMillis());
+                if (!isStudyComplete) {
+                    indexerConnection.sendRequestAsync(new LogPluginViewStateRequest(isRelatedPagesViewOpen), null, null);
+                }
             }
             
         });
@@ -181,7 +183,9 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener,
     
     public void setRelatedPagesViewOpen(boolean isViewOpen) {
         isRelatedPagesViewOpen = isViewOpen;
-        indexerConnection.sendRequestAsync(new LogPluginViewStateRequest(isViewOpen), null, null);
+        if (!isStudyComplete) {
+            indexerConnection.sendRequestAsync(new LogPluginViewStateRequest(isViewOpen), null, null);
+        }
     }
     
     public void setStudyComplete(boolean isStudyComplete) {
