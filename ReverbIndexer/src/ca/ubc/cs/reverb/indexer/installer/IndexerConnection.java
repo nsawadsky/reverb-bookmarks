@@ -56,6 +56,11 @@ public class IndexerConnection {
                 if (!launchIndexerIfNecessary) {
                     throw e1;
                 }
+                String indexerInstallPath = config.getCurrentIndexerInstallPath();
+                File indexerJarPath = new File(indexerInstallPath + File.separator + "ReverbIndexer.jar");
+                if (!indexerJarPath.exists()) {
+                    throw new IndexerException("Cannot find file '" + indexerJarPath + "'");
+                }
                 Runtime.getRuntime().exec(
                         "javaw.exe -Djava.library.path=native -Xmx1024m -jar ReverbIndexer.jar", 
                         null, new File(config.getCurrentIndexerInstallPath()));
