@@ -23,6 +23,7 @@ import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.BusyIndicator;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.IActionBars;
@@ -146,8 +147,13 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
                 return result.displayText;
             } else if (obj instanceof Location) {
                 Location loc = (Location)obj;
-                return String.format("%s (%.1f,%.1f,%.1f)", loc.title, 
-                        loc.relevance, loc.frecencyBoost, loc.overallScore);
+                String result = loc.title;
+                result = result.replace("\n", "");
+                if (config.getPluginSettings().isDebugMode) {
+                    result += String.format(" (%.1f,%.1f,%.1f)",  
+                            loc.relevance, loc.frecencyBoost, loc.overallScore); 
+                }
+                return result;
             } 
             return obj.toString();
         }
@@ -341,13 +347,18 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
             public void run() {
                 IStructuredSelection structured = (IStructuredSelection)viewer.getSelection();
                 if (structured.getFirstElement() instanceof Location) {
-                    Location location = (Location)structured.getFirstElement();
-                    try {
-                        Desktop.getDesktop().browse(new URI(location.url));
-                    } catch (Exception e) {
-                        logger.logError(
-                                "Exception opening browser on '" + location.url + "'", e);
-                    }
+                    final Location location = (Location)structured.getFirstElement();
+                    BusyIndicator.showWhile(PlatformUI.getWorkbench().getDisplay(), new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                Desktop.getDesktop().browse(new URI(location.url));
+                            } catch (Exception e) {
+                                logger.logError(
+                                        "Exception opening browser on '" + location.url + "'", e);
+                            }
+                        }
+                    });
                     long resultGenTimestamp = 0;
                     if (contentProvider.getQueryReply() != null) {
                         resultGenTimestamp = contentProvider.getQueryReply().resultGenTimestamp;
@@ -377,9 +388,7 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
                             new DeleteLocationRequest(location.url), new IndexerConnectionCallback() {
 
                                 @Override
-                                public void onIndexerMessage(
-                                        IndexerMessage message,
-                                        Object clientInfo) {
+                                public void onIndexerMessage(IndexerMessage message, Object clientInfo) {
                                     PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
 
                                         @Override
