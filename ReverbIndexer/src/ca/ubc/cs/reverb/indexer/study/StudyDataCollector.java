@@ -41,7 +41,7 @@ public class StudyDataCollector implements Runnable {
     private final static int LOG_FLUSH_INTERVAL_SECS = 30;
     private final static String UPLOAD_URL = "https://www.cs.ubc.ca/~nicks/reverb/study-data-uploader.php";
     private final static String FILE_INPUT_FIELD_NAME = "uploadedFile";
-    private final static String LOG_FILE_STEM = "studydata-";
+    private final static String LOG_FILE_STEM = "reverb-study-data-";
     private final static String LOG_FILE_EXTENSION = ".txt";
     private final static int MAX_LOG_FILE_SIZE_BYTES = 2000000; // 2 MB
     
