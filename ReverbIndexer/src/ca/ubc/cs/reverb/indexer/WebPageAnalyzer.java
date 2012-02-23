@@ -29,9 +29,11 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Filters {@link StandardTokenizer} with {@link StandardFilter}, {@link
- * LowerCaseFilter} and {@link StopFilter}, using a list of
+ * Filters {@link StandardTokenizer} with {@link StandardFilter} and {@link StopFilter}, using a list of
  * English stop words.
+ * 
+ * Based on StandardAnalyzer in the Lucene source code, but customized to omit the lower-case filter
+ * (i.e. this analyzer results in case-sensitive searches).
  *
  * <a name="version"/>
  * <p>You must specify the required {@link Version}
