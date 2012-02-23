@@ -174,6 +174,9 @@ public class UploadLogsDialog extends TrayDialog implements SelectionListener {
                         break;
                     }
                 }
+                try {
+                    Desktop.getDesktop().open(new File(targetFolderPath));
+                } catch (IOException e) { }
             }
         }
         
