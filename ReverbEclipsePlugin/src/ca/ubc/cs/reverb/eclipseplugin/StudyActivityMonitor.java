@@ -83,7 +83,7 @@ public class StudyActivityMonitor implements EditorMonitorListener {
 
     @Override
     public void onInteractionEvent(long timeMsecs) {
-        if (studyState.successfulLogUploads < UPLOADS_TO_COMPLETE_STUDY) {
+        if (!studyState.isStudyComplete()) {
             long currentInterval = timeMsecs / StudyState.ACTIVITY_INTERVAL_MSECS;
             if (currentInterval != studyState.lastActiveInterval) {
                 studyState.lastActiveInterval = currentInterval;
@@ -217,6 +217,10 @@ public class StudyActivityMonitor implements EditorMonitorListener {
         return studyState.successfulLogUploads;
     }
     
+    public boolean isStudyComplete() {
+        return studyState.isStudyComplete();
+    }
+    
     private void uploadRatings(List<LocationRating> ratings) throws IOException, PluginException {
         HttpClient httpClient = null;
         try {
@@ -292,7 +296,7 @@ public class StudyActivityMonitor implements EditorMonitorListener {
         if (! studyState.locationRatings.isEmpty()) {
             displayRateRecommendationsDialog();
         }
-        if (studyState.successfulLogUploads >= UPLOADS_TO_COMPLETE_STUDY) {
+        if (studyState.isStudyComplete()) {
             displayStudyCompleteDialog();
         }
     }

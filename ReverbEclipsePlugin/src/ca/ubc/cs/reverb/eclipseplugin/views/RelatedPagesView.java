@@ -359,13 +359,15 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
                             }
                         }
                     });
-                    long resultGenTimestamp = 0;
-                    if (contentProvider.getQueryReply() != null) {
-                        resultGenTimestamp = contentProvider.getQueryReply().resultGenTimestamp;
+                    if (!studyActivityMonitor.isStudyComplete()) {
+                        long resultGenTimestamp = 0;
+                        if (contentProvider.getQueryReply() != null) {
+                            resultGenTimestamp = contentProvider.getQueryReply().resultGenTimestamp;
+                        }
+                        indexerConnection.sendRequestAsync(
+                                new LogClickRequest(location, resultGenTimestamp), null, null);
+                        studyActivityMonitor.addRecommendationClicked(location, resultGenTimestamp);
                     }
-                    indexerConnection.sendRequestAsync(
-                            new LogClickRequest(location, resultGenTimestamp), null, null);
-                    studyActivityMonitor.addRecommendationClicked(location, resultGenTimestamp);
                 }
             }
         };
