@@ -19,7 +19,7 @@ import javax.swing.border.EmptyBorder;
 import org.apache.log4j.Logger;
 
 public class InstallCompleteDialog extends JDialog {
-    private Logger log = Logger.getLogger(InstallCompleteDialog.class);
+    private static Logger log = Logger.getLogger(InstallCompleteDialog.class);
     
     /**
      * Create the dialog.

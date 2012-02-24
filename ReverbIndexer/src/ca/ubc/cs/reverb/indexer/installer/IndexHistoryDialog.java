@@ -41,7 +41,7 @@ import org.apache.log4j.Logger;
 import java.awt.Font;
 
 public class IndexHistoryDialog extends JDialog {
-    private Logger log = Logger.getLogger(IndexHistoryDialog.class);
+    private static Logger log = Logger.getLogger(IndexHistoryDialog.class);
     
     private JProgressBar progressBar;
     private JLabel progressBarLabel;

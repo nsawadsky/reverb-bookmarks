@@ -61,9 +61,7 @@ public class IndexerConnection {
                 if (!indexerJarPath.exists()) {
                     throw new IndexerException("Cannot find file '" + indexerJarPath + "'");
                 }
-                Runtime.getRuntime().exec(
-                        "javaw.exe -Djava.library.path=native -Xmx1024m -jar ReverbIndexer.jar", 
-                        null, new File(config.getCurrentIndexerInstallPath()));
+                XpNamedPipe.startProcess("javaw.exe -Djava.library.path=native -Xmx1024m -jar ReverbIndexer.jar", indexerInstallPath);
                 int tries = 0;
                 IOException lastException = null;
                 while (tries++ < 10) {
