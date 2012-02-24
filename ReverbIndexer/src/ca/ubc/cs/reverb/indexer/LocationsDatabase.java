@@ -32,6 +32,15 @@ public class LocationsDatabase {
     public LocationsDatabase(IndexerConfig config) throws IndexerException {
         this.config = config;
         try {
+            // Very important to use pure Java version in the main service code.
+            // The installer needs to use native version (for compatibility with Firefox
+            // SQLite database version).  But if service also uses native version, there
+            // is potential for conflict -- if one JVM is 32-bit and the other 64-bit, 
+            // then the SQLite JDBC driver may try (and fail) to overwrite one version (say 
+            // 32-bit version) of the native DLL with the other version (say 64-bit).  
+            // SQLite JDBC driver tries to unpack these DLL's to the temp directory and uses the 
+            // same name for 32- and 64-bit versions.
+            System.setProperty("sqlite.purejava", "true");
             Class.forName("org.sqlite.JDBC");
         } catch (Exception e) {
             throw new IndexerException("Exception loading SQLite JDBC driver: " + e, e);
