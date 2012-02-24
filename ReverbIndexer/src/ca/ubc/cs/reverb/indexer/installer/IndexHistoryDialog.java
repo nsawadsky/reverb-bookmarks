@@ -21,11 +21,10 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
-import javax.swing.SwingWorker;
+import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.JCheckBox;
 import javax.swing.SwingConstants;
@@ -49,7 +48,7 @@ public class IndexHistoryDialog extends JDialog {
     private JCheckBox indexFirefoxHistory;
     private JButton indexHistoryButton;
     private IndexerConfig config;
-    private boolean dialogClosed = false;
+    private volatile boolean dialogClosed = false;
     private boolean closeBrowserWindowsRequested = false;
     private boolean indexingCompleted = false;
     
@@ -78,7 +77,7 @@ public class IndexHistoryDialog extends JDialog {
         sl_contentPanel.putConstraint(SpringLayout.NORTH, txtrTheIndexerService, 5, SpringLayout.NORTH, contentPanel);
         sl_contentPanel.putConstraint(SpringLayout.WEST, txtrTheIndexerService, 5, SpringLayout.WEST, contentPanel);
         sl_contentPanel.putConstraint(SpringLayout.EAST, txtrTheIndexerService, -5, SpringLayout.EAST, contentPanel);
-        txtrTheIndexerService.setText("<html>The indexer service has been registered at " + installLocation + ".<br><br>Reverb can now index your Chrome and Firefox browsing history.  Indexing your browsing history is strongly recommended.  It takes about 5-10 minutes and will allow you to start receiving useful page suggestions right away.</html>");
+        txtrTheIndexerService.setText("<html>The indexer service has been registered at " + installLocation + ".<br><br>Reverb can now index your Chrome and Firefox browsing history.  Indexing your browsing history is highly recommended.  It takes 5-10 minutes and will allow you to start receiving useful page suggestions right away.</html>");
         contentPanel.add(txtrTheIndexerService);
 
         indexChromeHistory = new JCheckBox("Index Chrome history (you will need to shut down Chrome for a moment)");
@@ -126,7 +125,7 @@ public class IndexHistoryDialog extends JDialog {
 
                     @Override
                     public void actionPerformed(ActionEvent e) {
-                        analyzeHistory();
+                        extractHistory();
                     }
                     
                 });
@@ -168,107 +167,142 @@ public class IndexHistoryDialog extends JDialog {
         dispose();
     }
     
-    private void analyzeHistory() {
-        try {
-            indexHistoryButton.setEnabled(false);
+    private void extractHistory() {
+        indexHistoryButton.setEnabled(false);
 
-            progressBar.setMaximum(100);
-            progressBar.setValue(5);
-            progressBarLabel.setText("Extracting browsing history");
+        progressBar.setMaximum(100);
+        progressBar.setValue(5);
+        progressBarLabel.setText("Extracting browsing history");
 
-            GregorianCalendar calendar = new GregorianCalendar();
-            calendar.add(Calendar.MONTH, -3);
-            
-            Date startTime = calendar.getTime();
-            Date now = new Date();
-            
-            List<HistoryVisit> allVisits = new ArrayList<HistoryVisit>();
-            
-            if (indexChromeHistory.isSelected()) {
-                HistoryExtractor extractor = HistoryExtractor.getHistoryExtractor(WebBrowserType.GOOGLE_CHROME);
-                if (extractor.historyDbExists()) {
-                    allVisits.addAll(extractHistory(extractor, startTime, now));
+        GregorianCalendar calendar = new GregorianCalendar();
+        calendar.add(Calendar.MONTH, -3);
+        
+        final Date startTime = calendar.getTime();
+        final Date now = new Date();
+        
+        final boolean indexChromeHistorySelected = indexChromeHistory.isSelected();
+        final boolean indexFirefoxHistorySelected = indexFirefoxHistory.isSelected();
+        
+        Runnable extractTask = new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    List<HistoryVisit> allVisits = new ArrayList<HistoryVisit>();
+                    
+                    if (indexChromeHistorySelected) {
+                        HistoryExtractor extractor = HistoryExtractor.getHistoryExtractor(WebBrowserType.GOOGLE_CHROME);
+                        if (extractor.historyDbExists()) {
+                            allVisits.addAll(extractor.extractHistory(startTime, now));
+                        }
+                    }
+                    
+                    if (indexFirefoxHistorySelected) {
+                        HistoryExtractor extractor = HistoryExtractor.getHistoryExtractor(WebBrowserType.MOZILLA_FIREFOX);
+                        if (extractor.historyDbExists()) {
+                            allVisits.addAll(extractor.extractHistory(startTime, now));
+                        }
+                    }
+                    
+                    indexHistory(allVisits);
+                } catch (final IndexerException e) {
+                    SwingUtilities.invokeLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            handleIndexingError(e);
+                        }
+                    });
                 }
             }
+        };
+        
+        new Thread(extractTask).start();
+    }
             
-            if (indexFirefoxHistory.isSelected()) {
-                HistoryExtractor extractor = HistoryExtractor.getHistoryExtractor(WebBrowserType.MOZILLA_FIREFOX);
-                if (extractor.historyDbExists()) {
-                    allVisits.addAll(extractHistory(extractor, startTime, now));
+    /**
+     * This method is invoked from a background (non-UI) thread.
+     */
+    private void indexHistory(List<HistoryVisit> allVisits) throws IndexerException {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                if (!dialogClosed) {
+                    progressBar.setValue(15);
+                    String progressBarText = "Indexing browsing history";
+                    if (closeBrowserWindowsRequested) {
+                        progressBarText += " (now safe to restart browser)";
+                    }
+                    progressBarLabel.setText(progressBarText);
                 }
             }
-    
-            progressBar.setValue(15);
-            String progressBarText = "Indexing browsing history";
-            if (closeBrowserWindowsRequested) {
-                progressBarText += " (now safe to restart browser)";
-            }
-            progressBarLabel.setText(progressBarText); 
-            
-            final HistoryIndexer indexer = new HistoryIndexer(config, allVisits);
-            
-            indexer.startIndexing();
-            
-            Timer timer = new Timer(1000, null);
-            timer.setRepeats(false);
-            timer.addActionListener(new ActionListener() {
-                private int prevLocationsClassified = 0;
-                private int iterationCount = 0;
+        });
 
+        HistoryIndexer indexer = new HistoryIndexer(config, allVisits);
+        
+        indexer.startIndexing();
+        
+        boolean indexingCompleted = false;
+        int prevLocationsClassified = 0;
+        int iterationCount = 0;
+        
+        while (!dialogClosed && !indexingCompleted) {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) { }
+            
+            double fractionComplete = 100.0;
+            int locationsToClassifyCount = indexer.getLocationsToIndexCount();
+            int locationsClassifiedCount = indexer.getLocationsIndexedCount();
+            if ( locationsToClassifyCount > 0 ) {
+                fractionComplete = (double)locationsClassifiedCount / locationsToClassifyCount;
+            }
+            final int progressBarValue = 15 + (int)(fractionComplete * 80);
+            SwingUtilities.invokeLater(new Runnable() {
                 @Override
-                public void actionPerformed(ActionEvent arg0) {
-                    try {
-                        if (!dialogClosed) {
-                            double fractionComplete = 100.0;
-                            int locationsToClassifyCount = indexer.getLocationsToIndexCount();
-                            int locationsClassifiedCount = indexer.getLocationsIndexedCount();
-                            if ( locationsToClassifyCount > 0 ) {
-                                fractionComplete = (double)locationsClassifiedCount / locationsToClassifyCount;
-                            }
-                            progressBar.setValue(15 + (int)(fractionComplete * 80));
-                            iterationCount++;
-                            
-                            indexingCompleted = (locationsClassifiedCount == locationsToClassifyCount);
-                            
-                            if (!indexingCompleted) {
-                                if (iterationCount % 8 == 0) {
-                                    if (locationsClassifiedCount == prevLocationsClassified) {
-                                        indexingCompleted = true;
-                                    } else {
-                                        prevLocationsClassified = locationsClassifiedCount;
-                                    }
-                                }
-                            }
-                        }
-                    } catch (Exception e) {
-                        log.error("Error monitoring indexer progress: " + e);
-                    }
-                    if (dialogClosed || indexingCompleted) {
-                        indexer.shutdown();
-                        if (!dialogClosed) {
-                            dispose();
-                        }
-                    } else {
-                        Timer newTimer = new Timer(1000, this);
-                        newTimer.setRepeats(false);
-                        newTimer.start();
+                public void run() {
+                    if (!dialogClosed) {
+                        progressBar.setValue(progressBarValue);
                     }
                 }
-                
             });
-            timer.start();
-        } catch (IndexerException e) {
-            log.error("Error extracting/indexing history", e);
+            iterationCount++;
+            
+            indexingCompleted = (locationsClassifiedCount == locationsToClassifyCount);
+            
+            if (!indexingCompleted) {
+                if (iterationCount % 8 == 0) {
+                    if (locationsClassifiedCount == prevLocationsClassified) {
+                        indexingCompleted = true;
+                    } else {
+                        prevLocationsClassified = locationsClassifiedCount;
+                    }
+                }
+            }
+        }
+        
+        indexer.shutdown();
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                if (!dialogClosed) {
+                    dispose();
+                }
+            }
+        });
+    }
+    
+    private void handleIndexingError(IndexerException e) {
+        log.error("Error extracting/indexing history", e);
 
-            showMessageWithWrap("An error occurred while indexing browsing history.  Please close all open browser windows.  " +
+        if (!dialogClosed) {
+            showMessageWithWrap("Please close all open browser windows.  " +
                     "You can restart your browser once indexing is in progress.",
-                    "Error Indexing Browsing History", JOptionPane.ERROR_MESSAGE);
-
+                    "Close Browser Windows", JOptionPane.ERROR_MESSAGE);
+    
             progressBar.setValue(0);
             progressBarLabel.setText("");
             indexHistoryButton.setEnabled(true);
             closeBrowserWindowsRequested = true;
-        } 
+        }
     }
     
     private HistoryExtractor getMockHistoryExtractor() throws IndexerException {
@@ -291,28 +325,6 @@ public class IndexHistoryDialog extends JDialog {
                 return new Date();
             }
         };
-    }
-    
-    private List<HistoryVisit> extractHistory(final HistoryExtractor historyExtractor, final Date startTime, final Date endTime) 
-                throws IndexerException {
-        SwingWorker<List<HistoryVisit>, Object> worker = new SwingWorker<List<HistoryVisit>, Object>() {
-
-            @Override
-            protected List<HistoryVisit> doInBackground() throws Exception {
-                return historyExtractor.extractHistory(startTime, endTime);
-            }
-            
-        };
-        
-        worker.execute();
-        
-        try {
-            return worker.get();
-        } catch (ExecutionException e) {
-            throw (IndexerException)e.getCause();
-        } catch (InterruptedException e) {
-            throw new IndexerException("Interrupted while waiting for history extraction to complete: " + e, e);
-        }
     }
     
     private void showMessageWithWrap(String message, String title, int messageType) {
