@@ -114,11 +114,12 @@ public class HistoryIndexer {
         conn.close();
         
         for (int i = 0; i < POOL_SIZE; i++) {
-            final IndexerConnection indexerConnection = new IndexerConnection(config, false);
             Thread thread = new Thread(new Runnable() {
                 @Override
                 public void run() {
+                    IndexerConnection indexerConnection = null;
                     try {
+                        indexerConnection = new IndexerConnection(config, false);
                         LocationAndVisits next = null;
                         do {
                             next = getNextLocation();
@@ -130,7 +131,9 @@ public class HistoryIndexer {
                     } catch (IndexerException e) {
                         log.error("Error in indexing thread", e);
                     } finally {
-                        indexerConnection.close();
+                        if (indexerConnection != null) {
+                            indexerConnection.close();
+                        }
                     }
                 }
             });
