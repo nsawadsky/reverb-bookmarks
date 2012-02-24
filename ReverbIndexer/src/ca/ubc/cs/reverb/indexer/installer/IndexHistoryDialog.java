@@ -78,7 +78,7 @@ public class IndexHistoryDialog extends JDialog {
         sl_contentPanel.putConstraint(SpringLayout.NORTH, txtrTheIndexerService, 5, SpringLayout.NORTH, contentPanel);
         sl_contentPanel.putConstraint(SpringLayout.WEST, txtrTheIndexerService, 5, SpringLayout.WEST, contentPanel);
         sl_contentPanel.putConstraint(SpringLayout.EAST, txtrTheIndexerService, -5, SpringLayout.EAST, contentPanel);
-        txtrTheIndexerService.setText("<html>The indexer service has been registered at " + installLocation + ".<br><br>Reverb can now index your Chrome and Firefox browsing history.  Indexing your browsing history is strongly recommended.  It takes about 10-15 minutes and will allow you to start receiving useful page suggestions right away.</html>");
+        txtrTheIndexerService.setText("<html>The indexer service has been registered at " + installLocation + ".<br><br>Reverb can now index your Chrome and Firefox browsing history.  Indexing your browsing history is strongly recommended.  It takes about 5-10 minutes and will allow you to start receiving useful page suggestions right away.</html>");
         contentPanel.add(txtrTheIndexerService);
 
         indexChromeHistory = new JCheckBox("Index Chrome history (you will need to shut down Chrome for a moment)");
