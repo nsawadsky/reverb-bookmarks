@@ -25,7 +25,6 @@ import java.util.List;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
-import javax.swing.Timer;
 import javax.swing.JCheckBox;
 import javax.swing.SwingConstants;
 import java.awt.Component;
