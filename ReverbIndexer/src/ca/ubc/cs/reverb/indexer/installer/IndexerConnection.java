@@ -62,15 +62,10 @@ public class IndexerConnection {
                     throw new IndexerException("Cannot find file '" + indexerJarPath + "'");
                 }
                 
-                //Runtime.getRuntime().exec(
-                //        "javaw.exe -Djava.library.path=native -Xmx1024m -jar ReverbIndexer.jar", 
-                //        null, new File(indexerInstallPath));
+                Runtime.getRuntime().exec(
+                        "javaw.exe -Djava.library.path=native -Xmx1024m -jar ReverbIndexer.jar", 
+                        null, new File(indexerInstallPath));
 
-                // For some reason, when we use the Runtime.exec() approach, we get a few
-                // failed connection attempts in the HistoryIndexer indexing threads (most still
-                // succeed).  Using the approach below, those connect failures do not seem to occur.
-                XpNamedPipe.startProcess("javaw.exe -Djava.library.path=native -Xmx1024m -jar ReverbIndexer.jar", indexerInstallPath);
-                
                 int tries = 0;
                 IOException lastException = null;
                 while (tries++ < 10) {

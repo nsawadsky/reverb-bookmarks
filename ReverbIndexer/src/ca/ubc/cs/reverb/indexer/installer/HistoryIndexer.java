@@ -108,7 +108,7 @@ public class HistoryIndexer {
         }
         
         httpClient = createHttpClient();
-        
+
         // Create connection, launching service if necessary;
         IndexerConnection conn = new IndexerConnection(config, true);
         conn.close();
@@ -139,6 +139,11 @@ public class HistoryIndexer {
             });
             thread.setDaemon(true);
             thread.start();
+            try {
+                // Allow some time for connection to complete, otherwise we can get pipe busy
+                // errors.
+                Thread.sleep(300);
+            } catch (InterruptedException e) { }
         }
     }
 
