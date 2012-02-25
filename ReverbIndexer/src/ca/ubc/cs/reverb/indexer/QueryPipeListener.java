@@ -72,8 +72,8 @@ public class QueryPipeListener implements Runnable {
                 XpNamedPipe newPipe = listeningPipe.acceptConnection();
                 log.info("Accepted connection on query pipe");
                 new Thread(new QueryPipeConnection(config, newPipe, indexReader, locationsDatabase, collector)).start();
-            } catch (IOException e) {
-                log.error("Error accepting connection on query pipe", e);
+            } catch (Throwable t) {
+                log.error("Error accepting connection on query pipe", t);
             }
         }
     }

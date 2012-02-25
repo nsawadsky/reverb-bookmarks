@@ -41,8 +41,8 @@ public class IndexPipeListener implements Runnable {
                 XpNamedPipe newPipe = listeningPipe.acceptConnection();
                 log.info("Accepted connection on index pipe");
                 new Thread(new IndexPipeConnection(config, newPipe, indexer)).start();
-            } catch (IOException e) {
-                log.error("Error accepting connection on query pipe", e);
+            } catch (Throwable t) {
+                log.error("Error accepting connection on query pipe", t);
             }
         }
     }
