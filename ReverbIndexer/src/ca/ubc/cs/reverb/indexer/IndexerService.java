@@ -32,8 +32,8 @@ import org.codehaus.jackson.util.DefaultPrettyPrinter;
 
 import xpnp.XpNamedPipe;
 
-import ca.ubc.cs.reverb.indexer.installer.IndexHistoryDialog;
-import ca.ubc.cs.reverb.indexer.installer.InstallCompleteDialog;
+import ca.ubc.cs.reverb.indexer.installer.IndexHistoryFrame;
+import ca.ubc.cs.reverb.indexer.installer.InstallCompleteFrame;
 import ca.ubc.cs.reverb.indexer.messages.BatchQueryRequest;
 import ca.ubc.cs.reverb.indexer.messages.IndexerMessageEnvelope;
 import ca.ubc.cs.reverb.indexer.messages.IndexerQuery;
@@ -64,7 +64,11 @@ public class IndexerService {
             argsInfo = parseArgs(args);
             
             if (argsInfo.mode == IndexerMode.INSTALL) {
-                System.exit(installService());
+                int result = installService();
+                if (!argsInfo.showUI) {
+                    System.exit(result);
+                }
+                return;
             }
             
             if (argsInfo.mode == IndexerMode.UNINSTALL) {
@@ -129,7 +133,7 @@ public class IndexerService {
     private int installService() throws IndexerException {
         final Integer[] result = new Integer[] {0};
         try {
-            SwingUtilities.invokeAndWait(new Runnable() {
+            SwingUtilities.invokeLater(new Runnable() {
                 @Override 
                 public void run() {
                     try {
@@ -137,11 +141,8 @@ public class IndexerService {
                         String installLocation = registerService();
                         log.info("Registered service successfully");
                         if (argsInfo.showUI) {
-                            IndexHistoryDialog historyDialog = new IndexHistoryDialog(config, installLocation);
-                            historyDialog.setVisible(true);
-                            InstallCompleteDialog installCompleteDialog = new InstallCompleteDialog();
-                            installCompleteDialog.setLocation(historyDialog.getLocation());
-                            installCompleteDialog.setVisible(true);
+                            IndexHistoryFrame historyFrame = new IndexHistoryFrame(config, installLocation);
+                            historyFrame.setVisible(true);
                         }
                     } catch (IndexerException e) {
                         log.error("Error installing service", e);

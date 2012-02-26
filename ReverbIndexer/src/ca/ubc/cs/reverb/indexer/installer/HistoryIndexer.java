@@ -142,7 +142,7 @@ public class HistoryIndexer {
             try {
                 // Allow some time for connection to complete, otherwise we can get pipe busy
                 // errors.
-                Thread.sleep(300);
+                Thread.sleep(200);
             } catch (InterruptedException e) { }
         }
     }

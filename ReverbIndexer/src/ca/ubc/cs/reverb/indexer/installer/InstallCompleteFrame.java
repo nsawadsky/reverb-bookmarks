@@ -9,8 +9,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.net.URI;
 
+import javax.swing.JFrame;
 import javax.swing.JButton;
-import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SpringLayout;
@@ -18,18 +18,16 @@ import javax.swing.border.EmptyBorder;
 
 import org.apache.log4j.Logger;
 
-public class InstallCompleteDialog extends JDialog {
-    private static Logger log = Logger.getLogger(InstallCompleteDialog.class);
+public class InstallCompleteFrame extends JFrame {
+    private static Logger log = Logger.getLogger(InstallCompleteFrame.class);
     
     /**
-     * Create the dialog.
+     * Create the frame.
      */
-    public InstallCompleteDialog() {
-        setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+    public InstallCompleteFrame() {
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         
-        setModalityType(ModalityType.APPLICATION_MODAL);
-        setIconImage(Toolkit.getDefaultToolkit().getImage(IndexHistoryDialog.class.getResource("/ca/ubc/cs/reverb/indexer/installer/reverb-16.png")));
-        setModal(true);
+        setIconImage(Toolkit.getDefaultToolkit().getImage(IndexHistoryFrame.class.getResource("/ca/ubc/cs/reverb/indexer/installer/reverb-16.png")));
         setTitle("Reverb Indexer Installed");
         setBounds(100, 100, 450, 141);
         getContentPane().setLayout(new BorderLayout());
