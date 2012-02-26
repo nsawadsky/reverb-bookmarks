@@ -5,7 +5,6 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 
 import javax.swing.JButton;
-import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.JTextArea;
@@ -22,6 +21,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
@@ -38,8 +38,8 @@ import javax.swing.SpringLayout;
 import org.apache.log4j.Logger;
 import java.awt.Font;
 
-public class IndexHistoryDialog extends JDialog {
-    private static Logger log = Logger.getLogger(IndexHistoryDialog.class);
+public class IndexHistoryFrame extends JFrame {
+    private static Logger log = Logger.getLogger(IndexHistoryFrame.class);
     
     private JProgressBar progressBar;
     private JLabel progressBarLabel;
@@ -47,20 +47,18 @@ public class IndexHistoryDialog extends JDialog {
     private JCheckBox indexFirefoxHistory;
     private JButton indexHistoryButton;
     private IndexerConfig config;
-    private volatile boolean dialogClosed = false;
+    private volatile boolean frameClosed = false;
     private boolean closeBrowserWindowsRequested = false;
     private boolean indexingCompleted = false;
     
     /**
-     * Create the dialog.
+     * Create the frame.
      */
-    public IndexHistoryDialog(IndexerConfig config, String installLocation) {
-        setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+    public IndexHistoryFrame(IndexerConfig config, String installLocation) {
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         this.config = config;
         
-        setModalityType(ModalityType.APPLICATION_MODAL);
-        setIconImage(Toolkit.getDefaultToolkit().getImage(IndexHistoryDialog.class.getResource("/ca/ubc/cs/reverb/indexer/installer/reverb-16.png")));
-        setModal(true);
+        setIconImage(Toolkit.getDefaultToolkit().getImage(IndexHistoryFrame.class.getResource("/ca/ubc/cs/reverb/indexer/installer/reverb-16.png")));
         setTitle("Reverb Indexer Installation");
         setBounds(100, 100, 473, 306);
         getContentPane().setLayout(new BorderLayout());
@@ -137,7 +135,7 @@ public class IndexHistoryDialog extends JDialog {
 
                     @Override
                     public void actionPerformed(ActionEvent e) {
-                        confirmCloseDialog();
+                        confirmCloseFrame();
                     }
                     
                 });
@@ -149,12 +147,12 @@ public class IndexHistoryDialog extends JDialog {
             public void windowClosing(WindowEvent e) {
                 // Handle the X button (for some reason, the X button does not generate a windowClosed call, just 
                 // a windowClosing call).
-                confirmCloseDialog();
+                confirmCloseFrame();
             }
         });
     }
     
-    private void confirmCloseDialog() {
+    private void confirmCloseFrame() {
         if (!indexingCompleted) {
             int result = showConfirmWithWrap("Are you sure you want to proceed without indexing browsing history?",
                     "Browsing History Not Indexed", JOptionPane.YES_NO_OPTION);
@@ -162,8 +160,16 @@ public class IndexHistoryDialog extends JDialog {
                 return;
             }
         }
-        dialogClosed = true;
+        frameClosed = true;
         dispose();
+        
+        displayInstallCompleteFrame();
+    }
+    
+    private void displayInstallCompleteFrame() {
+        InstallCompleteFrame installCompleteFrame = new InstallCompleteFrame();
+        installCompleteFrame.setLocation(this.getLocation());
+        installCompleteFrame.setVisible(true);
     }
     
     private void extractHistory() {
@@ -224,7 +230,7 @@ public class IndexHistoryDialog extends JDialog {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-                if (!dialogClosed) {
+                if (!frameClosed) {
                     progressBar.setValue(15);
                     String progressBarText = "Indexing browsing history";
                     if (closeBrowserWindowsRequested) {
@@ -243,7 +249,7 @@ public class IndexHistoryDialog extends JDialog {
         int prevLocationsClassified = 0;
         int iterationCount = 0;
         
-        while (!dialogClosed && !indexingCompleted) {
+        while (!frameClosed && !indexingCompleted) {
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) { }
@@ -258,7 +264,7 @@ public class IndexHistoryDialog extends JDialog {
             SwingUtilities.invokeLater(new Runnable() {
                 @Override
                 public void run() {
-                    if (!dialogClosed) {
+                    if (!frameClosed) {
                         progressBar.setValue(progressBarValue);
                     }
                 }
@@ -282,8 +288,9 @@ public class IndexHistoryDialog extends JDialog {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-                if (!dialogClosed) {
+                if (!frameClosed) {
                     dispose();
+                    displayInstallCompleteFrame();
                 }
             }
         });
@@ -292,7 +299,7 @@ public class IndexHistoryDialog extends JDialog {
     private void handleIndexingError(IndexerException e) {
         log.error("Error extracting/indexing history", e);
 
-        if (!dialogClosed) {
+        if (!frameClosed) {
             showMessageWithWrap("Please close all open browser windows.  " +
                     "You can restart your browser once indexing is in progress.",
                     "Close Browser Windows", JOptionPane.ERROR_MESSAGE);

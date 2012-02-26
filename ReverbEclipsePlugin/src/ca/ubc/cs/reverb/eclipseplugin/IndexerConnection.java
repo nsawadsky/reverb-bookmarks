@@ -226,9 +226,11 @@ public class IndexerConnection implements Runnable {
                 String indexerInstallPath = config.getCurrentIndexerInstallPath();
                 File indexerJarPath = new File(indexerInstallPath + File.separator + "ReverbIndexer.jar");
                 if (indexerJarPath.exists()) {
-                    Runtime.getRuntime().exec(
-                            "javaw.exe -Djava.library.path=native -Xmx1024m -jar ReverbIndexer.jar", 
-                            null, new File(indexerInstallPath));
+                    
+                    // Avoid problems of Runtime.exec (e.g. need to gobble the child process' output stream).
+                    XpNamedPipe.startProcess("javaw.exe -Djava.library.path=native -Xmx1024m -jar ReverbIndexer.jar", 
+                            indexerInstallPath);
+
                     int tries = 0;
                     while (result == null && tries++ < 10) {
                         try { 
