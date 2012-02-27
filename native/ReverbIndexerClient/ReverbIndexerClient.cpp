@@ -183,11 +183,28 @@ private:
 
         wchar_t commandLine[256] = L"javaw.exe -Djava.library.path=native -Xmx1024m -jar ReverbIndexer.jar";
 
-        if (!CreateProcess(NULL, commandLine, NULL, NULL, FALSE, 0, NULL, 
-                util::toUtf16(indexerInstallPath).c_str(), &startupInfo, &processInfo)) {
-            setStatus(util::getWindowsErrorMessage("CreateProcess"));
-            return NULL;
+        std::wstring indexerInstallPathUtf16 = util::toUtf16(indexerInstallPath);
+
+        // On x64, prefer the x64 javaw.exe, if present.  Avoid making additional function calls while
+        // redirection disabled, due to potential for unintended results.
+        PVOID oldWowState = NULL;
+        BOOL disableWowResult = Wow64DisableWow64FsRedirection(&oldWowState);
+
+        BOOL createResult = CreateProcess(NULL, commandLine, NULL, NULL, FALSE, 0, NULL, 
+                indexerInstallPathUtf16.c_str(), &startupInfo, &processInfo);
+
+        if (disableWowResult) {
+            Wow64RevertWow64FsRedirection(&oldWowState);
         }
+
+        if (!createResult) {
+            if (!disableWowResult || !CreateProcess(NULL, commandLine, NULL, NULL, FALSE, 0, NULL, 
+                    indexerInstallPathUtf16.c_str(), &startupInfo, &processInfo)) {
+                setStatus(util::getWindowsErrorMessage("CreateProcess"));
+                return NULL;
+            }
+        }
+
         CloseHandle(processInfo.hThread);
         CloseHandle(processInfo.hProcess);
 
