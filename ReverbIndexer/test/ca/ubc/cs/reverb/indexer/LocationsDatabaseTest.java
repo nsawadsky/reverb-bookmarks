@@ -85,6 +85,24 @@ public class LocationsDatabaseTest {
                 (float)Math.exp(LocationInfo.FRECENCY_DECAY * MSECS_PER_MONTH) + 1.0F;
         assertEquals(expectedFrecencyBoost, dbInfo.storedFrecencyBoost, .0001);
         
+        // Check that batch update overwrites existing visit count and frecency boost.
+        result = db.updateLocationInfo(testUrl, Arrays.asList(new Long[] {MSECS_PER_MONTH * 2, MSECS_PER_MONTH}), 
+                true, true, true, MSECS_PER_MONTH * 3);
+        assertFalse(result.rowCreated);
+        updated = result.locationInfo;
+        db.commitChanges();
+        
+        dbInfo = db.getLocationInfo(testUrl);
+        assertEquals(updated, dbInfo);
+
+        assertEquals(1, dbInfo.id);
+        
+        assertEquals(2, dbInfo.visitCount);
+        assertEquals(MSECS_PER_MONTH * 2, dbInfo.lastVisitTime);
+        expectedFrecencyBoost = (float)Math.exp(LocationInfo.FRECENCY_DECAY * MSECS_PER_MONTH) + 1.0F;
+        assertEquals(expectedFrecencyBoost, dbInfo.storedFrecencyBoost, .0001);
+        
+        // Add a second location.
         final String testUrl2 = "http://mytesturl2.com/testurl2";
         result = db.updateLocationInfo(testUrl2, null, true, false, false, MSECS_PER_MONTH * 3);
         
@@ -101,10 +119,12 @@ public class LocationsDatabaseTest {
         assertEquals(dbInfo2, results.get(testUrl2));
         assertEquals(2, results.size());
         
+        // Test delete.
         LocationInfo deletedInfo = db.deleteLocationInfo(testUrl);
         assertEquals(dbInfo, deletedInfo);
         assertNull(db.getLocationInfo(testUrl));
         assertNull(db.deleteLocationInfo(testUrl));
+        
     }
 
 }
