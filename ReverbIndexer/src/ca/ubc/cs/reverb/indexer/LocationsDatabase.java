@@ -184,11 +184,13 @@ public class LocationsDatabase {
             long currentTime) throws IndexerException {
         try {
             List<Long> visitTimes = null;
+            boolean isBatchUpdate = false;
             if (inputVisitTimes == null || inputVisitTimes.size() == 0) {
                 visitTimes = new ArrayList<Long>();
                 visitTimes.add(currentTime);
             } else {
                 visitTimes = new ArrayList<Long>(inputVisitTimes);
+                isBatchUpdate = true;
             }
             Collections.sort(visitTimes);
             
@@ -212,11 +214,13 @@ public class LocationsDatabase {
             } else {
                 id = rs.getLong(1);
                 
-                long oldLastVisitTime = rs.getLong(2);
-                visitCount = rs.getInt(3);
-                frecencyBoost = rs.getFloat(4);
-                
-                frecencyBoost = LocationInfo.adjustFrecencyBoost(frecencyBoost, oldLastVisitTime, lastVisitTime);
+                if (!isBatchUpdate) {
+                    long oldLastVisitTime = rs.getLong(2);
+                    visitCount = rs.getInt(3);
+                    frecencyBoost = rs.getFloat(4);
+                    
+                    frecencyBoost = LocationInfo.adjustFrecencyBoost(frecencyBoost, oldLastVisitTime, lastVisitTime);
+                }
                 
                 if (!htmlProvided) {
                     isJavadoc = (rs.getInt(5) != 0);
