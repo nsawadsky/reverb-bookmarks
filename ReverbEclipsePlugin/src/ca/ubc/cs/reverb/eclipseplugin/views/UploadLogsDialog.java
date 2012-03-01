@@ -62,7 +62,7 @@ public class UploadLogsDialog extends TrayDialog implements SelectionListener {
     @Override
     protected void configureShell(Shell shell) {
         super.configureShell(shell);
-        shell.setText("Upload Reverb Usage Logs");
+        shell.setText("Upload Reverb Study Data");
     }
     
     /**
@@ -76,7 +76,7 @@ public class UploadLogsDialog extends TrayDialog implements SelectionListener {
         gridLayout.numColumns = 2;
         
         lblReverbIsReady = new Label(container, SWT.WRAP);
-        String buttonText = "Reverb is ready to upload anonymized usage logs.  Browser page visits and Reverb recommendations are " +
+        String buttonText = "Reverb is ready to upload anonymized study data.  Browser page visits and Reverb recommendations are " +
                 "encoded as integers.  No code or web page details (e.g. page content, URL) can be recovered from these logs.";
         if (uploadIndex <= totalUploads) {
             buttonText += String.format("\n\nThis is upload %d of %d.", uploadIndex, totalUploads);
