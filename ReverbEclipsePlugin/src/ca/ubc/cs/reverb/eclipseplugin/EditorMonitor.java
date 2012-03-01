@@ -135,6 +135,7 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener,
     @Override
     public void mouseDoubleClick(MouseEvent e) {
         long now = System.currentTimeMillis();
+        handleNavigationEvent(now);
         notifyListenersInteractionEvent(now);
     }
 
@@ -145,13 +146,13 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener,
     @Override
     public void mouseUp(MouseEvent e) {
         long now = System.currentTimeMillis();
+        handleNavigationEvent(now);
         notifyListenersInteractionEvent(now);
     }
 
     @Override
     public void viewportChanged(int arg0) {
         long now = System.currentTimeMillis();
-        handleNavigationEvent(now);
         notifyListenersInteractionEvent(now);
     }
 
