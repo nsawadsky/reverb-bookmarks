@@ -1,6 +1,7 @@
 package ca.ubc.cs.reverb.indexer.installer;
 
 import java.awt.BorderLayout;
+import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 
@@ -15,6 +16,7 @@ import ca.ubc.cs.reverb.indexer.IndexerConfig;
 import ca.ubc.cs.reverb.indexer.IndexerException;
 
 import java.awt.Toolkit;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -74,7 +76,7 @@ public class IndexHistoryFrame extends JFrame {
         sl_contentPanel.putConstraint(SpringLayout.NORTH, txtrTheIndexerService, 5, SpringLayout.NORTH, contentPanel);
         sl_contentPanel.putConstraint(SpringLayout.WEST, txtrTheIndexerService, 5, SpringLayout.WEST, contentPanel);
         sl_contentPanel.putConstraint(SpringLayout.EAST, txtrTheIndexerService, -5, SpringLayout.EAST, contentPanel);
-        txtrTheIndexerService.setText("<html>The indexer service has been registered at " + installLocation + ".<br><br>Reverb can now index your Chrome and Firefox browsing history.  Indexing your browsing history is highly recommended.  It takes 5-10 minutes and will allow you to start receiving useful page suggestions right away.</html>");
+        txtrTheIndexerService.setText("<html>The indexer service has been registered at " + installLocation + ".<br><br>Reverb can now index your Chrome and Firefox browsing history.  Indexing your browsing history is highly recommended.  It takes 5 to 10 minutes and will allow you to start receiving useful page suggestions right away.</html>");
         contentPanel.add(txtrTheIndexerService);
 
         indexChromeHistory = new JCheckBox("Index Chrome history (you will need to shut down Chrome for a moment)");
@@ -126,8 +128,24 @@ public class IndexHistoryFrame extends JFrame {
                     }
                     
                 });
-            }
-            {
+                
+                JButton btnMoreInformation = new JButton("More Info");
+                btnMoreInformation.setFont(new Font("Dialog", Font.PLAIN, 12));
+                buttonPane.add(btnMoreInformation);
+                btnMoreInformation.addActionListener(new ActionListener() {
+
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        final String url = "http://code.google.com/p/reverb-bookmarks/wiki/IndexingBrowsingHistory";
+                        try {
+                            Desktop.getDesktop().browse(new URI(url));
+                        } catch (Exception except) {
+                            log.error("Error opening page '" + url + "'", except);
+                        }
+                    }
+                    
+                });
+
                 JButton btnSkip = new JButton("Skip");
                 btnSkip.setFont(new Font("Dialog", Font.PLAIN, 12));
                 buttonPane.add(btnSkip);
@@ -356,6 +374,4 @@ public class IndexHistoryFrame extends JFrame {
         textArea.setFont(new Font("Dialog", Font.PLAIN, 12));
         return JOptionPane.showConfirmDialog(this, textArea, title, optionType);
     }
-    
-   
 }

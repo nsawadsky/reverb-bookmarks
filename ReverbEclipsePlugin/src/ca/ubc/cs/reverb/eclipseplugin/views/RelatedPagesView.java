@@ -352,7 +352,7 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
         Action helpAction = new Action() {
             public void run() {
                 try {
-                    Desktop.getDesktop().browse(new URI("http://code.google.com/p/reverb-plugin/wiki/GettingStarted"));
+                    Desktop.getDesktop().browse(new URI("http://code.google.com/p/reverb-bookmarks/wiki/GettingStarted"));
                 } catch (Exception e) {
                     logger.logError("Error opening help page", e);
                 }

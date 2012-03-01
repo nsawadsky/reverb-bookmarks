@@ -31,7 +31,7 @@ import org.eclipse.swt.layout.GridLayout;
 
 public class UploadLogsDialog extends TrayDialog implements SelectionListener {
     private final static String LOG_FILE_EXTENSION = ".txt";
-    private final static String MORE_INFORMATION_URL = "http://code.google.com/p/reverb-plugin/";
+    private final static String MORE_INFORMATION_URL = "http://code.google.com/p/reverb-bookmarks/wiki/DataCollection/";
     
     private PluginConfig config;
     private PluginLogger logger;
@@ -76,8 +76,8 @@ public class UploadLogsDialog extends TrayDialog implements SelectionListener {
         gridLayout.numColumns = 2;
         
         lblReverbIsReady = new Label(container, SWT.WRAP);
-        String buttonText = "Reverb is ready to upload anonymized usage logs.  Browser page visits and recommendations are " +
-                "one-way encrypted.  No code or web page details (e.g. page content, URL) can be recovered from these logs.";
+        String buttonText = "Reverb is ready to upload anonymized usage logs.  Browser page visits and Reverb recommendations are " +
+                "encoded as integers.  No code or web page details (e.g. page content, URL) can be recovered from these logs.";
         if (uploadIndex <= totalUploads) {
             buttonText += String.format("\n\nThis is upload %d of %d.", uploadIndex, totalUploads);
         }
