@@ -78,7 +78,8 @@ public class RateRecommendationsDialog extends TrayDialog {
         lblDidYouFind = new Label(container, SWT.WRAP);
         lblDidYouFind.setText("You clicked on the links below.  Did you find them useful?  Please rate " +
                 "each one (5 very useful, 1 not useful), and let us know any comments you have.  You can " +
-                "double-click on the title to open a page in your browser.");
+                "double-click on the title to open a page in your browser.  No web page details (e.g. " +
+                "page content, URL) are included in the report that is submitted.");
         lblDidYouFind.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
         
         table = new Table(container, SWT.BORDER | SWT.FULL_SELECTION);
