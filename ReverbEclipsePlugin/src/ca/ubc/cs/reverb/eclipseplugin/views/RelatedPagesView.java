@@ -134,6 +134,11 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
     }
     
     class ViewLabelProvider extends ColumnLabelProvider {
+        @Override
+        public boolean useNativeToolTip(Object item) {
+            return false;
+        }
+        
         public String getToolTipText(Object obj) {
             if (obj instanceof Location) {
                 return ((Location)obj).url;
@@ -370,18 +375,13 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
             public void run() {
                 IStructuredSelection structured = (IStructuredSelection)viewer.getSelection();
                 if (structured.getFirstElement() instanceof Location) {
-                    final Location location = (Location)structured.getFirstElement();
-                    BusyIndicator.showWhile(PlatformUI.getWorkbench().getDisplay(), new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                Desktop.getDesktop().browse(new URI(location.url));
-                            } catch (Exception e) {
-                                logger.logError(
-                                        "Exception opening browser on '" + location.url + "'", e);
-                            }
-                        }
-                    });
+                    Location location = (Location)structured.getFirstElement();
+                    try {
+                        Desktop.getDesktop().browse(new URI(location.url));
+                    } catch (Exception e) {
+                        logger.logError(
+                                "Exception opening browser on '" + location.url + "'", e);
+                    }
                     if (!studyActivityMonitor.isStudyComplete()) {
                         long resultGenTimestamp = 0;
                         if (contentProvider.getQueryReply() != null) {
