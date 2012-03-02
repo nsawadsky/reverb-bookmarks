@@ -65,7 +65,7 @@ public class CodeElementExtractor extends ASTVisitor {
      * Types which are never included in the query.
      */
     private static List<String> SKIP_TYPES = Arrays.asList(
-            "java.lang.String", "String", "java.lang.Override", "java.lang.Deprecated", 
+            "java.lang.Object", "Object", "java.lang.String", "String", "java.lang.Override", "java.lang.Deprecated", 
             "byte", "short", "int", "long", "float", "double", "boolean", "char");
     
     public CodeElementExtractor(AST ast, int startPosition, int endPosition) {
@@ -222,11 +222,9 @@ public class CodeElementExtractor extends ASTVisitor {
     public boolean visit(SimpleType node) {
         if (nodeOverlaps(node)) {
             String name = node.getName().getFullyQualifiedName();
-            if (!SKIP_TYPES.contains(name)) {
-                CodeElement element = getCodeElement(CodeElementType.TYPE_REF, node.resolveBinding(), name);
-                if (element != null) {
-                    addToCodeElements(element);
-                }
+            CodeElement element = getCodeElement(CodeElementType.TYPE_REF, node.resolveBinding(), name);
+            if (element != null) {
+                addToCodeElements(element);
             }
         }
         // No need to visit child nodes for SimpleType.

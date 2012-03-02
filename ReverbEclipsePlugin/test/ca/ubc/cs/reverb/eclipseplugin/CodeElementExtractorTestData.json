@@ -184,6 +184,11 @@
       "className" : "Methoddecl",
       "memberName" : "baseclassdeclMethod"
     }, {
+      "elementType" : "METHOD_CALL",
+      "packageName" : "testpackage",
+      "className" : "Methoddecl",
+      "memberName" : "interfaceDeclMethod"
+    }, {
       "elementType" : "STATIC_METHOD_CALL",
       "packageName" : "testpackage",
       "className" : "Methoddecl",
@@ -198,6 +203,16 @@
       "packageName" : "testpackage",
       "className" : "MethoddeclNores",
       "memberName" : "methoddeclNoresMethod"
+    }, {
+      "elementType" : "TYPE_REF",
+      "packageName" : "testpackage",
+      "className" : "Interfacedecl",
+      "memberName" : null
+    }, {
+      "elementType" : "METHOD_CALL",
+      "packageName" : "testpackage",
+      "className" : "Baseinterfacedecl",
+      "memberName" : "baseinterfacedeclMethod"
     }, {
       "elementType" : "TYPE_REF",
       "packageName" : null,
