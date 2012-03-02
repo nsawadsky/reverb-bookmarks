@@ -136,7 +136,7 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
     class ViewLabelProvider extends ColumnLabelProvider {
         @Override
         public boolean useNativeToolTip(Object item) {
-            return false;
+            return true;
         }
         
         public String getToolTipText(Object obj) {
