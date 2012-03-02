@@ -251,8 +251,8 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
             @Override
             public void menuAboutToShow(IMenuManager manager) {
                 manager.add(openBrowserAction);
-                manager.add(updateViewAction);
                 manager.add(deleteLocationAction);
+                manager.add(updateViewAction);
                 manager.add(new Separator());
                 if (config.getPluginSettings().isDebugMode) {
                     manager.add(uploadLogsAction);
