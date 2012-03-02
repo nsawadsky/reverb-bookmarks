@@ -5,7 +5,7 @@ public class MethodInvoc {
         Methoddecl methoddecl = new Methoddecl();
         methoddecl.methoddeclMethod();
         
-        methoddecl.baseclassdeclMethod();
+        methoddecl.baseclassdeclMethod_2();
         
         methoddecl.interfaceDeclMethod();
         

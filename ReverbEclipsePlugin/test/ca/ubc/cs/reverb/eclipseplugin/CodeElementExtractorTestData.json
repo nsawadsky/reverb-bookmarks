@@ -181,8 +181,8 @@
     }, {
       "elementType" : "METHOD_CALL",
       "packageName" : "testpackage",
-      "className" : "Methoddecl",
-      "memberName" : "baseclassdeclMethod"
+      "className" : "Baseclassdecl",
+      "memberName" : "baseclassdeclMethod_2"
     }, {
       "elementType" : "METHOD_CALL",
       "packageName" : "testpackage",
