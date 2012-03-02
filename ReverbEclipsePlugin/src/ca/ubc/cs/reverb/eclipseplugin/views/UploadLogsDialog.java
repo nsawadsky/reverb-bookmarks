@@ -31,7 +31,7 @@ import org.eclipse.swt.layout.GridLayout;
 
 public class UploadLogsDialog extends TrayDialog implements SelectionListener {
     private final static String LOG_FILE_EXTENSION = ".txt";
-    private final static String MORE_INFORMATION_URL = "http://code.google.com/p/reverb-bookmarks/wiki/DataCollection/";
+    private final static String MORE_INFORMATION_URL = "http://code.google.com/p/reverb-bookmarks/wiki/DataCollection";
     
     private PluginConfig config;
     private PluginLogger logger;
