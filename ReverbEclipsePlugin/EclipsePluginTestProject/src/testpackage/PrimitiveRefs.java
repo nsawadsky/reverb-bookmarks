@@ -6,5 +6,7 @@ public class PrimitiveRefs {
         char c = 'c';
         
         String test = "test";
+        
+        Object obj = new Object();
     }
 }
