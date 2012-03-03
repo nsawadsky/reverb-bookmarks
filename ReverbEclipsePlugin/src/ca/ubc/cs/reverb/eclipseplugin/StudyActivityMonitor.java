@@ -49,8 +49,8 @@ public class StudyActivityMonitor implements EditorMonitorListener {
     // 30 seconds
     private final static int UPLOAD_PROMPT_DELAY_MSECS = 30000;
     //private final static int UPLOAD_PROMPT_DELAY_MSECS = 10000;
-    // 15 minutes
-    private final static int UPLOAD_RETRY_DELAY_MSECS = 15 * 60 * 1000;
+    // 1 hour
+    private final static int UPLOAD_RETRY_DELAY_MSECS = 60 * 60 * 1000;
     //private final static int UPLOAD_RETRY_DELAY_MSECS = 15 * 1000;
     
     public final static int UPLOADS_TO_COMPLETE_STUDY = 2;
