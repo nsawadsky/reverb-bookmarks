@@ -3,7 +3,7 @@ package ca.ubc.cs.reverb.indexer;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
-import java.net.URI;
+import java.net.URL;
 
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -166,10 +166,10 @@ public class WebPageIndexer {
         try {
             String normalizedUrl = normalizeUrl(info.url);
 
-            URI uri = new URI(normalizedUrl);
+            URL url = new URL(normalizedUrl);
             // Specifically avoiding indexing local Eclipse help pages, since the port that
             // the help server listens on changes from run to run.
-            if (uri.getHost().equals("127.0.0.1")) {
+            if (url.getHost().equals("127.0.0.1")) {
                 return false;
             }
             
