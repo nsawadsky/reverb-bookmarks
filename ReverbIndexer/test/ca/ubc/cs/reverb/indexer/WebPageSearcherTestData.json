@@ -4,25 +4,24 @@
       "batchQueryReply" : {
         "errorOccurred" : false,
         "errorMessage" : null,
+        "resultGenTimestamp" : 1000,
         "queryResults" : [ {
           "indexerQueries" : [ {
             "queryString" : "QueryB",
             "queryClientInfo" : "QueryB"
           } ],
           "locations" : [ {
-            "resultGenTimestamp" : 1000,
             "url" : "UrlB_B",
             "title" : "UrlB_B",
             "id" : 2,
-            "luceneScore" : 3.0,
+            "relevance" : 3.0,
             "frecencyBoost" : 1.0,
             "overallScore" : 3.0
           }, {
-            "resultGenTimestamp" : 1000,
             "url" : "UrlB_A",
             "title" : "UrlB_A",
             "id" : 3,
-            "luceneScore" : 1.0,
+            "relevance" : 1.0,
             "frecencyBoost" : 1.0,
             "overallScore" : 1.0
           } ]
@@ -32,11 +31,10 @@
             "queryClientInfo" : "QueryA"
           } ],
           "locations" : [ {
-            "resultGenTimestamp" : 1000,
             "url" : "UrlA_A",
             "title" : "UrlA_A",
             "id" : 1,
-            "luceneScore" : 2.0,
+            "relevance" : 2.0,
             "frecencyBoost" : 1.0,
             "overallScore" : 2.0
           } ]
@@ -49,17 +47,17 @@
       "batchQueryReply" : {
         "errorOccurred" : false,
         "errorMessage" : null,
+        "resultGenTimestamp" : 1000,
         "queryResults" : [ {
           "indexerQueries" : [ {
             "queryString" : "QueryB",
             "queryClientInfo" : "QueryB"
           } ],
           "locations" : [ {
-            "resultGenTimestamp" : 1000,
             "url" : "UrlB_A",
             "title" : "UrlB_A",
             "id" : 2,
-            "luceneScore" : 2.0,
+            "relevance" : 2.0,
             "frecencyBoost" : 2.0,
             "overallScore" : 4.0
           } ]
@@ -69,11 +67,10 @@
             "queryClientInfo" : "QueryA"
           } ],
           "locations" : [ {
-            "resultGenTimestamp" : 1000,
             "url" : "UrlA_A",
             "title" : "UrlA_A",
             "id" : 1,
-            "luceneScore" : 3.0,
+            "relevance" : 3.0,
             "frecencyBoost" : 1.0,
             "overallScore" : 3.0
           } ]
@@ -86,6 +83,7 @@
       "batchQueryReply" : {
         "errorOccurred" : false,
         "errorMessage" : null,
+        "resultGenTimestamp" : 1000,
         "queryResults" : [ {
           "indexerQueries" : [ {
             "queryString" : "QueryA",
@@ -95,27 +93,24 @@
             "queryClientInfo" : "QueryB"
           } ],
           "locations" : [ {
-            "resultGenTimestamp" : 1000,
             "url" : "UrlA_A",
             "title" : "UrlA_A",
             "id" : 1,
-            "luceneScore" : 4.0,
+            "relevance" : 4.0,
             "frecencyBoost" : 1.0,
             "overallScore" : 4.0
           }, {
-            "resultGenTimestamp" : 1000,
             "url" : "UrlB_A",
             "title" : "UrlB_A",
             "id" : 2,
-            "luceneScore" : 3.1,
+            "relevance" : 3.1,
             "frecencyBoost" : 1.0,
             "overallScore" : 3.1
           }, {
-            "resultGenTimestamp" : 1000,
             "url" : "UrlB_B",
             "title" : "UrlB_B",
             "id" : 3,
-            "luceneScore" : 3.0,
+            "relevance" : 3.0,
             "frecencyBoost" : 1.0,
             "overallScore" : 3.0
           } ]
@@ -125,19 +120,17 @@
             "queryClientInfo" : "QueryC"
           } ],
           "locations" : [ {
-            "resultGenTimestamp" : 1000,
             "url" : "UrlC_A",
             "title" : "UrlC_A",
             "id" : 4,
-            "luceneScore" : 1.1,
+            "relevance" : 1.1,
             "frecencyBoost" : 1.0,
             "overallScore" : 1.1
           }, {
-            "resultGenTimestamp" : 1000,
             "url" : "UrlC_B",
             "title" : "UrlC_B",
             "id" : 5,
-            "luceneScore" : 1.0,
+            "relevance" : 1.0,
             "frecencyBoost" : 1.0,
             "overallScore" : 1.0
           } ]
@@ -150,81 +143,73 @@
       "batchQueryReply" : {
         "errorOccurred" : false,
         "errorMessage" : null,
+        "resultGenTimestamp" : 1000,
         "queryResults" : [ {
           "indexerQueries" : [ {
             "queryString" : "QueryA",
             "queryClientInfo" : "QueryA"
           } ],
           "locations" : [ {
-            "resultGenTimestamp" : 1000,
             "url" : "http://www.test.com/docs/1.2.5/TestFirstDifferent/1.2/rest",
             "title" : "TestFirstDifferent",
             "id" : 3,
-            "luceneScore" : 1.0,
+            "relevance" : 1.0,
             "frecencyBoost" : 5.0,
             "overallScore" : 5.0
           }, {
-            "resultGenTimestamp" : 1000,
             "url" : "http://www.test.com/docs/1.2.4/TestFirstDifferentReverse/1.2/rest",
             "title" : "TestFirstDifferentReverse",
             "id" : 4,
-            "luceneScore" : 1.0,
+            "relevance" : 1.0,
             "frecencyBoost" : 4.5,
             "overallScore" : 4.5
           }, {
-            "resultGenTimestamp" : 1000,
             "url" : "http://www.test.com/docs/1.2.3/TestSecondDifferent/2.2/rest",
             "title" : "TestSecondDifferent",
             "id" : 7,
-            "luceneScore" : 1.0,
+            "relevance" : 1.0,
             "frecencyBoost" : 4.0,
             "overallScore" : 4.0
           }, {
-            "resultGenTimestamp" : 1000,
             "url" : "http://www.test.com/docs/1.2.3/TestEndsWithVersion/2.2",
             "title" : "TestEndsWithVersion",
             "id" : 9,
-            "luceneScore" : 1.0,
+            "relevance" : 1.0,
             "frecencyBoost" : 3.5,
             "overallScore" : 3.5
           }, {
-            "resultGenTimestamp" : 1000,
             "url" : "http://www.test.com/docs/2/TestDiffLengthVersion/1.2/rest",
             "title" : "TestDiffLengthVersion",
             "id" : 11,
-            "luceneScore" : 1.0,
+            "relevance" : 1.0,
             "frecencyBoost" : 3.0,
             "overallScore" : 3.0
           }, {
-            "resultGenTimestamp" : 1000,
             "url" : "http://www.test.com/docs/1.2.3/TestBothDifferent/1.2/rest",
             "title" : "TestBothDifferent",
             "id" : 12,
-            "luceneScore" : 1.0,
+            "relevance" : 1.0,
             "frecencyBoost" : 2.5,
             "overallScore" : 2.5
           }, {
-            "resultGenTimestamp" : 1000,
             "url" : "http://www.test.com/docs/1.2.4/TestBothDifferent/1.3/rest",
             "title" : "TestBothDifferent",
             "id" : 13,
-            "luceneScore" : 1.0,
+            "relevance" : 1.0,
             "frecencyBoost" : 2.0,
             "overallScore" : 2.0
           }, {
-            "resultGenTimestamp" : 1000,
             "url" : "http://www.domainone.com/docs/1.2.3/TestDiffDomain/1.2/rest",
             "title" : "TestDiffDomain",
             "id" : 14,
-            "luceneScore" : 1.0,
+            "relevance" : 1.0,
             "frecencyBoost" : 1.5,
             "overallScore" : 1.5
           }, {
-            "resultGenTimestamp" : 1000,
             "url" : "http://www.domaintwo.com/docs/1.2.3/TestDiffDomain/1.2/rest",
             "title" : "TestDiffDomain",
             "id" : 15,
-            "luceneScore" : 1.0,
+            "relevance" : 1.0,
             "frecencyBoost" : 1.0,
             "overallScore" : 1.0
           } ]

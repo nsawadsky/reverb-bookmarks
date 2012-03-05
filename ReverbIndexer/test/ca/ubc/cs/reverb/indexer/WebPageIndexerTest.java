@@ -40,9 +40,14 @@ public class WebPageIndexerTest {
             
             WebPageSearcher searcher = new WebPageSearcher(config, reader, locationsDatabase, collector);
             
+            String localHostUrl = "http://127.0.0.1:55009/help/nftopic/Action.html";
+            String actionClassPageText = "This is about the Action class.";
+            UpdatePageInfoRequest request = new UpdatePageInfoRequest(localHostUrl, actionClassPageText);
+            assertFalse(indexer.indexPage(request));
+            
             final String testUrl1 = "http://www.test.com/testurl1";
             final String pageText = "This page is about an elephant.";
-            UpdatePageInfoRequest request = new UpdatePageInfoRequest(testUrl1, pageText);
+            request = new UpdatePageInfoRequest(testUrl1, pageText);
             
             assertTrue(indexer.indexPage(request));
             
