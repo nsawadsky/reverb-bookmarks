@@ -49,9 +49,6 @@ public class PluginActivator extends AbstractUIPlugin {
 
         plugin = this;
 
-        config = new PluginConfig();
-		logger = new PluginLogger(getLog());
-		
 		IWorkbench workbench = PlatformUI.getWorkbench();
 		if (workbench == null) {
 		    throw new PluginException("Failed to get workbench during startup");
@@ -66,10 +63,10 @@ public class PluginActivator extends AbstractUIPlugin {
 	}
 
 	/** 
-	 * We defer creation of indexerConnection and studyActivityMonitor, because they reference Jackson JSON 
+	 * We defer creation of config, indexerConnection and studyActivityMonitor, because they reference Jackson JSON 
 	 * classes, whose use of class loading conflicts with OSGi class loading during
-	 * Eclipse startup, resulting in timeout errors in the Eclipse log (most 
-	 * likely caused by classloader deadlocks).
+	 * Eclipse startup, was observed to cause timeout errors in the Eclipse log (most 
+	 * likely caused by classloader deadlocks).  *** In recent tests, these conflicts are no longer reproducible.
 	 * 
 	 * In addition, the workbench window and active page may not yet be available when the start() method is
 	 * called.
@@ -94,6 +91,9 @@ public class PluginActivator extends AbstractUIPlugin {
                     }
                 }
 
+                config = new PluginConfig();
+                logger = new PluginLogger(getLog());
+                
                 indexerConnection = new IndexerConnection(config, logger);
     
     	        editorMonitor = new EditorMonitor(logger, indexerConnection);
