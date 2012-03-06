@@ -23,7 +23,6 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import org.apache.log4j.RollingFileAppender;
 import org.apache.log4j.spi.RootLogger;
-import org.apache.lucene.index.FieldInvertState;
 import org.apache.lucene.search.DefaultSimilarity;
 import org.apache.lucene.search.Similarity;
 import org.codehaus.jackson.JsonGenerator;
@@ -33,7 +32,6 @@ import org.codehaus.jackson.util.DefaultPrettyPrinter;
 import xpnp.XpNamedPipe;
 
 import ca.ubc.cs.reverb.indexer.installer.IndexHistoryFrame;
-import ca.ubc.cs.reverb.indexer.installer.InstallCompleteFrame;
 import ca.ubc.cs.reverb.indexer.messages.BatchQueryRequest;
 import ca.ubc.cs.reverb.indexer.messages.IndexerMessageEnvelope;
 import ca.ubc.cs.reverb.indexer.messages.IndexerQuery;
@@ -321,19 +319,8 @@ public class IndexerService {
     
     private void configLucene() {
         Similarity.setDefault(new DefaultSimilarity() {
-            // Implementation based on Lucene 3.3.0 source code.
-            @Override
-            public float computeNorm(String field, FieldInvertState state) {
-                final int numTerms;
-                if (discountOverlaps)
-                    numTerms = state.getLength() - state.getNumOverlap();
-                else
-                    numTerms = state.getLength();
-                // Disable the length norm.
-                return state.getBoost();
-                //return state.getBoost() * ((float) (1.0 / Math.sqrt(numTerms)));
-              }
-            
+            private static final long serialVersionUID = -2848991457467283016L;
+
             // Disable coord weighting.
             @Override 
             public float coord(int overlap, int maxOverlap) {
