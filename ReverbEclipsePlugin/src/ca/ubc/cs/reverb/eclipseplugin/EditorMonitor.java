@@ -173,6 +173,8 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener,
 
             @Override
             public void run() {
+                // Ensure that an update will be sent.
+                lastTextViewer = null;
                 handleNavigationEvent(System.currentTimeMillis());
                 if (!isStudyComplete) {
                     indexerConnection.sendRequestAsync(new LogPluginViewStateRequest(isRelatedPagesViewOpen), null, null);
