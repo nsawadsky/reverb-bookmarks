@@ -5,6 +5,10 @@
 #include "util.hpp"
 using namespace util;
 
+// Function typedefs
+typedef BOOL (WINAPI *PWow64DisableWow64FsRedirection)(PVOID*);
+typedef BOOL (WINAPI *PWow64RevertWow64FsRedirection)(PVOID);
+
 // Local class declarations
 
 enum MessageType {
@@ -47,6 +51,17 @@ class BackgroundThread {
 public:
     BackgroundThread() : status("Thread not started") {
         threadStarted = false;
+
+        this->pWow64DisableWow64FsRedirection = NULL;
+        this->pWow64RevertWow64FsRedirection = NULL;
+
+        HMODULE kernel32 = LoadLibrary(L"kernel32.dll");
+        if (kernel32 != NULL) {
+            this->pWow64DisableWow64FsRedirection = (PWow64DisableWow64FsRedirection)GetProcAddress(kernel32, "Wow64DisableWow64FsRedirection");
+            this->pWow64RevertWow64FsRedirection = (PWow64RevertWow64FsRedirection)GetProcAddress(kernel32, "Wow64RevertWow64FsRedirection");
+
+            FreeLibrary(kernel32);
+        }
     }
         
     void start() {
@@ -188,13 +203,16 @@ private:
         // On x64, prefer the x64 javaw.exe, if present.  Avoid making additional function calls while
         // redirection disabled, due to potential for unintended results.
         PVOID oldWowState = NULL;
-        BOOL disableWowResult = Wow64DisableWow64FsRedirection(&oldWowState);
+        BOOL disableWowResult = FALSE;
+        if (pWow64DisableWow64FsRedirection != NULL) {
+            disableWowResult = pWow64DisableWow64FsRedirection(&oldWowState);
+        }
 
         BOOL createResult = CreateProcess(NULL, commandLine, NULL, NULL, FALSE, 0, NULL, 
                 indexerInstallPathUtf16.c_str(), &startupInfo, &processInfo);
 
         if (disableWowResult) {
-            Wow64RevertWow64FsRedirection(&oldWowState);
+            pWow64RevertWow64FsRedirection(&oldWowState);
         }
 
         if (!createResult) {
@@ -269,6 +287,9 @@ private:
     std::string status;
 
     std::string settingsPath;
+
+    PWow64DisableWow64FsRedirection pWow64DisableWow64FsRedirection);
+    PWow64RevertWow64FsRedirection pWow64RevertWow64FsRedirection);
 };
 
 // Static instances

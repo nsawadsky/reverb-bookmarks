@@ -15,6 +15,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import ca.ubc.cs.reverb.indexer.IndexerException;
+import ca.ubc.cs.reverb.indexer.OSType;
 
 public class ChromeHistoryExtractor extends HistoryExtractor {
     private static Logger log = Logger.getLogger(ChromeHistoryExtractor.class);   
@@ -202,7 +203,7 @@ ORDER BY visits.id DESC;
     
     private String getChromeHistoryDbPath(boolean archived) throws IndexerException {
         String settingsPath = null;
-        OSType osType = getOSType();
+        OSType osType = OSType.getOSType();
         switch (osType) {
         case LINUX: {
             String homePath = System.getenv(HOME_ENV_VAR);
