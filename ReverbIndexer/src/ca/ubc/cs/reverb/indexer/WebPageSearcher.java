@@ -353,22 +353,57 @@ public class WebPageSearcher {
 
     // TODO: Consider unescaping URL's before checking for version numbers.
     protected static class LatestVersionHitInfo {
-        public String[] splitUrl;
+        public String[] splitUrlOnVersion;
+        public String lastUrlSegment;
         public HitInfo hitInfo;
         
         public LatestVersionHitInfo(HitInfo info) {
             hitInfo = info;
-            splitUrl = splitUrlWithVersionNumber(info.hit.url);
+            splitUrlOnVersion = splitUrlWithVersionNumber(info.hit.url);
+            lastUrlSegment = getLastUrlSegment(info.hit.url);
         }
         
         public boolean tryCombine(HitInfo testInfo) {
-            if (splitUrl != null) {
+            if (checkSameUrlDifferentVersions(testInfo)) {
+                return true;
+            }
+            if (testInfo.hit.luceneScore == hitInfo.hit.luceneScore &&
+                    testInfo.hit.title.equals(hitInfo.hit.title) &&
+                    getLastUrlSegment(testInfo.hit.url).equals(lastUrlSegment)) {
+                if (testInfo.hit.frecencyBoost > hitInfo.hit.frecencyBoost) {
+                    testInfo.frecencyBoost = Math.min(
+                            hitInfo.frecencyBoost + testInfo.frecencyBoost, LocationInfo.MAX_FRECENCY_BOOST);
+                    hitInfo = testInfo;
+                    splitUrlOnVersion = splitUrlWithVersionNumber(testInfo.hit.url);
+                } else {
+                    hitInfo.frecencyBoost = Math.min(
+                            hitInfo.frecencyBoost + testInfo.frecencyBoost, LocationInfo.MAX_FRECENCY_BOOST);
+                    
+                }
+            }
+                    
+            return false;
+        }
+        
+        private String getLastUrlSegment(String url) {
+            if (url.endsWith("/")) {
+                url = url.substring(0, url.length()-1);
+            }
+            int lastIndex = url.lastIndexOf("/");
+            if (lastIndex == -1) {
+                return url;
+            }
+            return url.substring(lastIndex+1);
+        }
+        
+        private boolean checkSameUrlDifferentVersions(HitInfo testInfo) {
+            if (splitUrlOnVersion != null) {
                 String[] testSplitUrl = splitUrlWithVersionNumber(testInfo.hit.url);
-                if (testSplitUrl != null && testSplitUrl.length == splitUrl.length) {
+                if (testSplitUrl != null && testSplitUrl.length == splitUrlOnVersion.length) {
                     int misses = 0;
                     int missIndex = 0;
-                    for (int i = 0; i < splitUrl.length; i++) {
-                        if (!splitUrl[i].equals(testSplitUrl[i])) {
+                    for (int i = 0; i < splitUrlOnVersion.length; i++) {
+                        if (!splitUrlOnVersion[i].equals(testSplitUrl[i])) {
                             misses++;
                             if (misses > 1) {
                                 break;
@@ -383,15 +418,15 @@ public class WebPageSearcher {
                         return true;
                     }
                     if (misses == 1) {
-                        Matcher m1 = VERSION_NUMBER_PATTERN.matcher(splitUrl[missIndex]);
+                        Matcher m1 = VERSION_NUMBER_PATTERN.matcher(splitUrlOnVersion[missIndex]);
                         Matcher m2 = VERSION_NUMBER_PATTERN.matcher(testSplitUrl[missIndex]);
                         if (m1.matches() && m2.matches()) {
                             try {
-                                if (compareVersionNumbers(splitUrl[missIndex], testSplitUrl[missIndex]) < 0) {
+                                if (compareVersionNumbers(splitUrlOnVersion[missIndex], testSplitUrl[missIndex]) < 0) {
                                     testInfo.frecencyBoost = Math.min(
                                             hitInfo.frecencyBoost + testInfo.frecencyBoost, LocationInfo.MAX_FRECENCY_BOOST);
                                     hitInfo = testInfo;
-                                    splitUrl = testSplitUrl;
+                                    splitUrlOnVersion = testSplitUrl;
                                 } else {
                                     hitInfo.frecencyBoost = Math.min(
                                             hitInfo.frecencyBoost + testInfo.frecencyBoost, LocationInfo.MAX_FRECENCY_BOOST);
