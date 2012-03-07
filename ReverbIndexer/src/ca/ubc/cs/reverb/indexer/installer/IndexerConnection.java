@@ -68,7 +68,7 @@ public class IndexerConnection {
 
                 int tries = 0;
                 IOException lastException = null;
-                while (tries++ < 10) {
+                while (tries++ < 15) {
                     try { 
                         Thread.sleep(500);
                         return XpNamedPipe.openNamedPipe("reverb-index", true);
