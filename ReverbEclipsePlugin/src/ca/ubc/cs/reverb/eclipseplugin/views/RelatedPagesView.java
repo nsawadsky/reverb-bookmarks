@@ -152,8 +152,12 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
             } else if (obj instanceof Location) {
                 Location loc = (Location)obj;
                 String result = loc.title;
-                result = result.replace("\r", "");
-                result = result.replace("\n", "");
+                if (result == null || result.isEmpty()) {
+                    result = loc.url;
+                } else {
+                    result = result.replace("\r", "");
+                    result = result.replace("\n", "");
+                }
                 if (config.getPluginSettings().isDebugMode) {
                     result += String.format(" (%.1f,%.1f,%.1f)",  
                             loc.relevance, loc.frecencyBoost, loc.overallScore); 
