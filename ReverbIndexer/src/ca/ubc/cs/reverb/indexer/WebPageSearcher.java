@@ -380,6 +380,7 @@ public class WebPageSearcher {
                             hitInfo.frecencyBoost + testInfo.frecencyBoost, LocationInfo.MAX_FRECENCY_BOOST);
                     
                 }
+                return true;
             }
                     
             return false;
