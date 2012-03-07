@@ -16,6 +16,7 @@ import org.ini4j.Ini;
 import org.ini4j.Profile;
 
 import ca.ubc.cs.reverb.indexer.IndexerException;
+import ca.ubc.cs.reverb.indexer.OSType;
 
 public class FirefoxHistoryExtractor extends HistoryExtractor {
     private static Logger log = Logger.getLogger(FirefoxHistoryExtractor.class);   
@@ -200,7 +201,7 @@ ORDER BY visits.visit_date DESC
     }
     
     private String getFirefoxSettingsPath() throws IndexerException {
-        switch (getOSType()) {
+        switch (OSType.getOSType()) {
         case LINUX: {
             String homePath = System.getenv(HOME_ENV_VAR);
             if (homePath == null) {
