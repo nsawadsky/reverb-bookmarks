@@ -288,8 +288,8 @@ private:
 
     std::string settingsPath;
 
-    PWow64DisableWow64FsRedirection pWow64DisableWow64FsRedirection);
-    PWow64RevertWow64FsRedirection pWow64RevertWow64FsRedirection);
+    PWow64DisableWow64FsRedirection pWow64DisableWow64FsRedirection;
+    PWow64RevertWow64FsRedirection pWow64RevertWow64FsRedirection;
 };
 
 // Static instances
