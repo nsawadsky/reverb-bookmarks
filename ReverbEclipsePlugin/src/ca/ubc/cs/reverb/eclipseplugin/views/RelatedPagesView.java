@@ -152,7 +152,7 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
             } else if (obj instanceof Location) {
                 Location loc = (Location)obj;
                 String result = loc.title;
-                if (result == null || result.isEmpty()) {
+                if (result == null || result.trim().isEmpty()) {
                     result = loc.url;
                 } else {
                     result = result.replace("\r", "");
