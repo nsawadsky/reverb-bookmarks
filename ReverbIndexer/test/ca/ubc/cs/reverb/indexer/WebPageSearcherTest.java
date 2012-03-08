@@ -174,22 +174,22 @@ public class WebPageSearcherTest {
             protected List<Hit> performSearch(IndexSearcher searcher, String queryString, int maxResults, long now) throws IndexerException {
                 List<Hit> result = new ArrayList<Hit>();
                 if (queryString.equals("QueryA")) {
-                    result.add(getHit(1L, "http://www.test.com/docs/1.2.3/TestFirstDifferent/1.2/rest", "TestFirstDifferent", 1.0F, 2.0F));
-                    result.add(getHit(2L, "http://www.test.com/docs/1.2.4/TestFirstDifferent/1.2/rest", "TestFirstDifferent", 1.0F, 2.0F));
-                    result.add(getHit(3L, "http://www.test.com/docs/1.2.5/TestFirstDifferent/1.2/rest", "TestFirstDifferent", 1.0F, 2.0F));
-                    result.add(getHit(4L, "http://www.test.com/docs/1.2.4/TestFirstDifferentReverse/1.2/rest", "TestFirstDifferentReverse", 1.0F, 2.5F));
-                    result.add(getHit(5L, "http://www.test.com/docs/1.2.3/TestFirstDifferentReverse/1.2/rest", "TestFirstDifferentReverse", 1.0F, 2.0F));
-                    result.add(getHit(6L, "http://www.test.com/docs/1.2.3/TestSecondDifferent/1.2/rest", "TestSecondDifferent", 1.0F, 2.0F));
-                    result.add(getHit(7L, "http://www.test.com/docs/1.2.3/TestSecondDifferent/2.2/rest", "TestSecondDifferent", 1.0F, 2.0F));
-                    result.add(getHit(8L, "http://www.test.com/docs/1.2.3/TestEndsWithVersion/1.2", "TestEndsWithVersion", 1.0F, 2.0F));
-                    result.add(getHit(9L, "http://www.test.com/docs/1.2.3/TestEndsWithVersion/2.2", "TestEndsWithVersion", 1.0F, 1.5F));
-                    result.add(getHit(10L, "http://www.test.com/docs/1.2.3/TestDiffLengthVersion/1.2/rest", "TestDiffLengthVersion", 1.0F, 2.0F));
-                    result.add(getHit(11L, "http://www.test.com/docs/2/TestDiffLengthVersion/1.2/rest", "TestDiffLengthVersion", 1.0F, 1.0F));
-                    result.add(getHit(12L, "http://www.test.com/docs/1.2.3/TestBothDifferent/1.2/rest", "TestBothDifferent", 1.0F, 2.5F));
-                    result.add(getHit(13L, "http://www.test.com/docs/1.2.4/TestBothDifferent/1.3/rest", "TestBothDifferent", 1.0F, 2.0F));
-                    result.add(getHit(14L, "http://www.domainone.com/docs/1.2.3/TestDiffDomain/1.2/rest", "TestDiffDomain", 1.0F, 1.5F));
-                    result.add(getHit(15L, "http://www.domaintwo.com/docs/1.2.3/TestDiffDomain/1.2/rest", "TestDiffDomain", 1.0F, 1.0F));
-                } 
+                    result.add(getHit(1L, "http://www.test.com/docs/1.2.3/TestFirstDifferent/1.2/rest", "TestFirstDifferent123", 1.0F, 2.0F));
+                    result.add(getHit(2L, "http://www.test.com/docs/1.2.4/TestFirstDifferent/1.2/rest", "TestFirstDifferent124", 1.0F, 2.0F));
+                    result.add(getHit(3L, "http://www.test.com/docs/1.2.5/TestFirstDifferent/1.2/rest", "TestFirstDifferent125", 1.0F, 2.0F));
+                    result.add(getHit(4L, "http://www.test.com/docs/1.2.4/TestFirstDifferentReverse/1.2/rest", "TestFirstDifferentReverse124", 1.0F, 2.5F));
+                    result.add(getHit(5L, "http://www.test.com/docs/1.2.3/TestFirstDifferentReverse/1.2/rest", "TestFirstDifferentReverse123", 1.0F, 2.0F));
+                    result.add(getHit(6L, "http://www.test.com/docs/1.2.3/TestSecondDifferent/1.2/rest", "TestSecondDifferent12", 1.0F, 2.0F));
+                    result.add(getHit(7L, "http://www.test.com/docs/1.2.3/TestSecondDifferent/2.2/rest", "TestSecondDifferent22", 1.0F, 2.0F));
+                    result.add(getHit(8L, "http://www.test.com/docs/1.2.3/TestEndsWithVersion/1.2", "TestEndsWithVersion12", 1.0F, 2.0F));
+                    result.add(getHit(9L, "http://www.test.com/docs/1.2.3/TestEndsWithVersion/2.2", "TestEndsWithVersion22", 1.0F, 1.5F));
+                    result.add(getHit(10L, "http://www.test.com/docs/1.2.3/TestDiffLengthVersion/1.2/rest", "TestDiffLengthVersion123", 1.0F, 2.0F));
+                    result.add(getHit(11L, "http://www.test.com/docs/2/TestDiffLengthVersion/1.2/rest", "TestDiffLengthVersion2", 1.0F, 1.0F));
+                    result.add(getHit(12L, "http://www.test.com/docs/1.2.3/TestBothDifferent/1.2/rest", "TestBothDifferent123", 1.0F, 2.5F));
+                    result.add(getHit(13L, "http://www.test.com/docs/1.2.4/TestBothDifferent/1.3/rest", "TestBothDifferent124", 1.0F, 2.0F));
+                    result.add(getHit(14L, "http://www.domainone.com/docs/1.2.3/TestDiffDomain/1.2/rest", "TestDiffDomainOne", 1.0F, 1.5F));
+                    result.add(getHit(15L, "http://www.domaintwo.com/docs/1.2.3/TestDiffDomain/1.2/rest", "TestDiffDomainTwo", 1.0F, 1.0F));
+                }
                 return result;
             }
 
@@ -197,6 +197,78 @@ public class WebPageSearcherTest {
         
         BatchQueryReply result = searcher.performSearch(inputQueries);
         JsonNode expected = getExpectedResult("testCompactHitInfos");
+        assertEquals("formatted actual: " + getJsonString(result), expected, getJsonNode(result));
+    }
+
+    @Test
+    public void testCompactHitInfosSimilar() throws IndexerException, IOException {
+        List<IndexerQuery> inputQueries = new ArrayList<IndexerQuery>();
+        inputQueries.add(new IndexerQuery("QueryA", "QueryA"));
+        
+        WebPageSearcher searcher = new WebPageSearcher(config, null, null, collector) {
+            protected IndexSearcher getNewIndexSearcher() { return null; }
+            
+            @Override 
+            protected long getCurrentTime() {
+                return 1000L;
+            }
+            
+            @Override
+            protected List<Hit> performSearch(IndexSearcher searcher, String queryString, int maxResults, long now) throws IndexerException {
+                List<Hit> result = new ArrayList<Hit>();
+                if (queryString.equals("QueryA")) {
+                    result.add(getHit(15L, "http://www.diffdomainone.com/docs/TestSimilar1/rest", "TestSimilar", 1.0F, 1.0F));
+                    result.add(getHit(15L, "http://www.diffdomaintwo.com/docs/TestSimilar2/rest", "TestSimilar", 1.0F, 2.0F));
+                    result.add(getHit(15L, "http://www.diffdomainone.com/docs1/TestSimilarShort/", "TestSimilarShort", 1.0F, 1.0F));
+                    result.add(getHit(15L, "http://www.diffdomaintwo.com/docs2/TestSimilarShort/", "TestSimilarShort", 1.0F, 2.0F));
+                } 
+                return result;
+            }
+
+        };
+        
+        BatchQueryReply result = searcher.performSearch(inputQueries);
+        JsonNode expected = getExpectedResult("testCompactHitInfosSimilar");
+        assertEquals("formatted actual: " + getJsonString(result), expected, getJsonNode(result));
+    }
+
+    @Test
+    public void testCompactHitInfosDifferent() throws IndexerException, IOException {
+        List<IndexerQuery> inputQueries = new ArrayList<IndexerQuery>();
+        inputQueries.add(new IndexerQuery("QueryA", "QueryA"));
+        inputQueries.add(new IndexerQuery("QueryB", "QueryB"));
+        
+        WebPageSearcher searcher = new WebPageSearcher(config, null, null, collector) {
+            protected IndexSearcher getNewIndexSearcher() { return null; }
+            
+            @Override 
+            protected long getCurrentTime() {
+                return 1000L;
+            }
+            
+            @Override
+            protected List<Hit> performSearch(IndexSearcher searcher, String queryString, int maxResults, long now) throws IndexerException {
+                List<Hit> result = new ArrayList<Hit>();
+                if (queryString.equals("QueryA")) {
+                    result.add(getHit(15L, "http://www.diffdomainone.com/docs/TestDiffQuery/rest", "TestDiffQuery", 10.0F, 1.0F));
+                } else if (queryString.equals("QueryB")) {
+                    result.add(getHit(15L, "http://www.diffdomaintwo.com/docs/TestDiffQuery/rest", "TestDiffQuery", 10.0F, 1.0F));
+                    result.add(getHit(15L, "http://www.diffdomainone.com/docs/TestDiffTitle/rest", "TestDiffTitleOne", 9.0F, 1.0F));
+                    result.add(getHit(15L, "http://www.diffdomaintwo.com/docs/TestDiffTitle/rest", "TestDiffTitleTwo", 9.0F, 1.0F));
+                    result.add(getHit(15L, "http://www.diffdomainone.com/docs/TestDiffRelevance/rest", "TestDiffRelevance", 8.0F, 1.0F));
+                    result.add(getHit(15L, "http://www.diffdomaintwo.com/docs/TestDiffRelevance/rest", "TestDiffRelevance", 7.0F, 1.0F));
+                    result.add(getHit(15L, "http://www.diffdomainone.com/docs/TestDiffLastSegment/restone", "TestDiffLastSegment", 6.0F, 1.0F));
+                    result.add(getHit(15L, "http://www.diffdomaintwo.com/docs/TestDiffLastSegment/resttwo", "TestDiffLastSegment", 6.0F, 1.0F));
+                    result.add(getHit(15L, "http://www.diffdomainone.com/docs/TestDiffLastSegmentShortOne/", "TestDiffLastSegmentShort", 5.0F, 1.0F));
+                    result.add(getHit(15L, "http://www.diffdomaintwo.com/docs/TestDiffLastSegmentShortTwo/", "TestDiffLastSegmentShort", 5.0F, 1.0F));
+                } 
+                return result;
+            }
+
+        };
+        
+        BatchQueryReply result = searcher.performSearch(inputQueries);
+        JsonNode expected = getExpectedResult("testCompactHitInfosDifferent");
         assertEquals("formatted actual: " + getJsonString(result), expected, getJsonNode(result));
     }
 

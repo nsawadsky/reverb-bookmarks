@@ -151,67 +151,189 @@
           } ],
           "locations" : [ {
             "url" : "http://www.test.com/docs/1.2.5/TestFirstDifferent/1.2/rest",
-            "title" : "TestFirstDifferent",
+            "title" : "TestFirstDifferent125",
             "id" : 3,
             "relevance" : 1.0,
             "frecencyBoost" : 5.0,
             "overallScore" : 5.0
           }, {
             "url" : "http://www.test.com/docs/1.2.4/TestFirstDifferentReverse/1.2/rest",
-            "title" : "TestFirstDifferentReverse",
+            "title" : "TestFirstDifferentReverse124",
             "id" : 4,
             "relevance" : 1.0,
             "frecencyBoost" : 4.5,
             "overallScore" : 4.5
           }, {
             "url" : "http://www.test.com/docs/1.2.3/TestSecondDifferent/2.2/rest",
-            "title" : "TestSecondDifferent",
+            "title" : "TestSecondDifferent22",
             "id" : 7,
             "relevance" : 1.0,
             "frecencyBoost" : 4.0,
             "overallScore" : 4.0
           }, {
             "url" : "http://www.test.com/docs/1.2.3/TestEndsWithVersion/2.2",
-            "title" : "TestEndsWithVersion",
+            "title" : "TestEndsWithVersion22",
             "id" : 9,
             "relevance" : 1.0,
             "frecencyBoost" : 3.5,
             "overallScore" : 3.5
           }, {
             "url" : "http://www.test.com/docs/2/TestDiffLengthVersion/1.2/rest",
-            "title" : "TestDiffLengthVersion",
+            "title" : "TestDiffLengthVersion2",
             "id" : 11,
             "relevance" : 1.0,
             "frecencyBoost" : 3.0,
             "overallScore" : 3.0
           }, {
             "url" : "http://www.test.com/docs/1.2.3/TestBothDifferent/1.2/rest",
-            "title" : "TestBothDifferent",
+            "title" : "TestBothDifferent123",
             "id" : 12,
             "relevance" : 1.0,
             "frecencyBoost" : 2.5,
             "overallScore" : 2.5
           }, {
             "url" : "http://www.test.com/docs/1.2.4/TestBothDifferent/1.3/rest",
-            "title" : "TestBothDifferent",
+            "title" : "TestBothDifferent124",
             "id" : 13,
             "relevance" : 1.0,
             "frecencyBoost" : 2.0,
             "overallScore" : 2.0
           }, {
             "url" : "http://www.domainone.com/docs/1.2.3/TestDiffDomain/1.2/rest",
-            "title" : "TestDiffDomain",
+            "title" : "TestDiffDomainOne",
             "id" : 14,
             "relevance" : 1.0,
             "frecencyBoost" : 1.5,
             "overallScore" : 1.5
           }, {
             "url" : "http://www.domaintwo.com/docs/1.2.3/TestDiffDomain/1.2/rest",
-            "title" : "TestDiffDomain",
+            "title" : "TestDiffDomainTwo",
             "id" : 15,
             "relevance" : 1.0,
             "frecencyBoost" : 1.0,
             "overallScore" : 1.0
+          } ]
+        } ]
+      }
+    },
+    
+    "testCompactHitInfosSimilar": 
+    {
+      "batchQueryReply" : {
+        "errorOccurred" : false,
+        "errorMessage" : null,
+        "resultGenTimestamp" : 1000,
+        "queryResults" : [ {
+          "indexerQueries" : [ {
+            "queryString" : "QueryA",
+            "queryClientInfo" : "QueryA"
+          } ],
+          "locations" : [ {
+            "url" : "http://www.diffdomaintwo.com/docs/TestSimilar2/rest",
+            "title" : "TestSimilar",
+            "id" : 15,
+            "relevance" : 1.0,
+            "frecencyBoost" : 3.0,
+            "overallScore" : 3.0
+          }, {
+            "url" : "http://www.diffdomaintwo.com/docs2/TestSimilarShort/",
+            "title" : "TestSimilarShort",
+            "id" : 15,
+            "relevance" : 1.0,
+            "frecencyBoost" : 3.0,
+            "overallScore" : 3.0
+          } ]
+        } ]
+      }
+    },
+    
+    "testCompactHitInfosDifferent":
+    {
+      "batchQueryReply" : {
+        "errorOccurred" : false,
+        "errorMessage" : null,
+        "resultGenTimestamp" : 1000,
+        "queryResults" : [ {
+          "indexerQueries" : [ {
+            "queryString" : "QueryA",
+            "queryClientInfo" : "QueryA"
+          } ],
+          "locations" : [ {
+            "url" : "http://www.diffdomainone.com/docs/TestDiffQuery/rest",
+            "title" : "TestDiffQuery",
+            "id" : 15,
+            "relevance" : 10.0,
+            "frecencyBoost" : 1.0,
+            "overallScore" : 10.0
+          } ]
+        }, {
+          "indexerQueries" : [ {
+            "queryString" : "QueryB",
+            "queryClientInfo" : "QueryB"
+          } ],
+          "locations" : [ {
+            "url" : "http://www.diffdomaintwo.com/docs/TestDiffQuery/rest",
+            "title" : "TestDiffQuery",
+            "id" : 15,
+            "relevance" : 10.0,
+            "frecencyBoost" : 1.0,
+            "overallScore" : 10.0
+          }, {
+            "url" : "http://www.diffdomainone.com/docs/TestDiffTitle/rest",
+            "title" : "TestDiffTitleOne",
+            "id" : 15,
+            "relevance" : 9.0,
+            "frecencyBoost" : 1.0,
+            "overallScore" : 9.0
+          }, {
+            "url" : "http://www.diffdomaintwo.com/docs/TestDiffTitle/rest",
+            "title" : "TestDiffTitleTwo",
+            "id" : 15,
+            "relevance" : 9.0,
+            "frecencyBoost" : 1.0,
+            "overallScore" : 9.0
+          }, {
+            "url" : "http://www.diffdomainone.com/docs/TestDiffRelevance/rest",
+            "title" : "TestDiffRelevance",
+            "id" : 15,
+            "relevance" : 8.0,
+            "frecencyBoost" : 1.0,
+            "overallScore" : 8.0
+          }, {
+            "url" : "http://www.diffdomaintwo.com/docs/TestDiffRelevance/rest",
+            "title" : "TestDiffRelevance",
+            "id" : 15,
+            "relevance" : 7.0,
+            "frecencyBoost" : 1.0,
+            "overallScore" : 7.0
+          }, {
+            "url" : "http://www.diffdomainone.com/docs/TestDiffLastSegment/restone",
+            "title" : "TestDiffLastSegment",
+            "id" : 15,
+            "relevance" : 6.0,
+            "frecencyBoost" : 1.0,
+            "overallScore" : 6.0
+          }, {
+            "url" : "http://www.diffdomaintwo.com/docs/TestDiffLastSegment/resttwo",
+            "title" : "TestDiffLastSegment",
+            "id" : 15,
+            "relevance" : 6.0,
+            "frecencyBoost" : 1.0,
+            "overallScore" : 6.0
+          }, {
+            "url" : "http://www.diffdomainone.com/docs/TestDiffLastSegmentShortOne/",
+            "title" : "TestDiffLastSegmentShort",
+            "id" : 15,
+            "relevance" : 5.0,
+            "frecencyBoost" : 1.0,
+            "overallScore" : 5.0
+          }, {
+            "url" : "http://www.diffdomaintwo.com/docs/TestDiffLastSegmentShortTwo/",
+            "title" : "TestDiffLastSegmentShort",
+            "id" : 15,
+            "relevance" : 5.0,
+            "frecencyBoost" : 1.0,
+            "overallScore" : 5.0
           } ]
         } ]
       }
