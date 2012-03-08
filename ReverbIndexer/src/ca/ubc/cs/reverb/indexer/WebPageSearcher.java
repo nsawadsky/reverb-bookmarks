@@ -4,11 +4,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -77,7 +77,8 @@ public class WebPageSearcher {
         }
         
         // Gather hits, store by URL.
-        Map<String, HitInfo> infosByUrl = new HashMap<String, HitInfo>();
+        // Use TreeMap for test predictability.
+        Map<String, HitInfo> infosByUrl = new TreeMap<String, HitInfo>();
         for (IndexerQuery query: queries) {
             List<Hit> hits = performSearch(indexSearcher, query.queryString, MAX_RESULTS_PER_QUERY, now);
             for (Hit hit: hits) {
@@ -99,7 +100,8 @@ public class WebPageSearcher {
             }
         }
 
-        // Compact hit infos whose URL's are identical except for a version number.
+        // Compact hit infos whose URL's are identical except for a version number, or
+        // if they are "similar" (see method docs for definition of similar).
         List<HitInfo> hitInfos = compactHitInfos(new ArrayList<HitInfo>(infosByUrl.values()));
         
         // Sort results by overall score.
@@ -178,7 +180,9 @@ public class WebPageSearcher {
     }
     
     /**
-     * Combines hit infos whose URL's differ only in a version number.
+     * Combines hit infos if:
+     *   - URL's differ only in a version number
+     *   - Hits are "similar", based on title, URL, bestQuery, and relevance.
      * 
      * @param hitInfos The list of hit infos to be compacted.
      * @return The input list, with entries whose URL's differ only in a (single) version number replaced by 
@@ -367,7 +371,13 @@ public class WebPageSearcher {
             if (checkSameUrlDifferentVersions(testInfo)) {
                 return true;
             }
-            if (testInfo.hit.luceneScore == hitInfo.hit.luceneScore &&
+            return checkSimilarHit(testInfo);
+        }
+        
+        private boolean checkSimilarHit(HitInfo testInfo) {
+            if (testInfo.bestQuery == hitInfo.bestQuery &&
+                    testInfo.hit.luceneScore == hitInfo.hit.luceneScore &&
+                    testInfo.hit.title != null &&
                     testInfo.hit.title.equals(hitInfo.hit.title) &&
                     getLastUrlSegment(testInfo.hit.url).equals(lastUrlSegment)) {
                 if (testInfo.hit.frecencyBoost > hitInfo.hit.frecencyBoost) {
@@ -382,7 +392,6 @@ public class WebPageSearcher {
                 }
                 return true;
             }
-                    
             return false;
         }
         
