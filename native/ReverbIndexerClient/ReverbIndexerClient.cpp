@@ -59,8 +59,6 @@ public:
         if (kernel32 != NULL) {
             this->pWow64DisableWow64FsRedirection = (PWow64DisableWow64FsRedirection)GetProcAddress(kernel32, "Wow64DisableWow64FsRedirection");
             this->pWow64RevertWow64FsRedirection = (PWow64RevertWow64FsRedirection)GetProcAddress(kernel32, "Wow64RevertWow64FsRedirection");
-
-            FreeLibrary(kernel32);
         }
     }
         
