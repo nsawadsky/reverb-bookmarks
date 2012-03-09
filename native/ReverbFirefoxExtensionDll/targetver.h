@@ -7,6 +7,6 @@
 
 #include <winsdkver.h>
 
-#define _WIN32_WINNT _WIN32_WINNT_WS03
+#define _WIN32_WINNT _WIN32_WINNT_WINXP
  
 #include <SDKDDKVer.h>
