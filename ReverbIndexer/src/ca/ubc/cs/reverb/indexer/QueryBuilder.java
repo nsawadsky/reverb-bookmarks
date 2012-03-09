@@ -191,9 +191,8 @@ public class QueryBuilder {
             // Require that results also contain either the fully-qualified type name, or the package name and the class name.
             // Note that our tokenizer will remove the trailing ".*" from package imports, so 
             // pkgName alone will match such imports.
-            String requiredQuery = "(" + fullyQualifiedName + " OR (" + codeElement.packageName + " AND " + codeElement.className + "))";
+            String requiredQuery = "((+" + fullyQualifiedName + " " + codeElement.className + ") OR (" + codeElement.packageName + " AND " + codeElement.className + "))";
             QueryElement result = new QueryElement(fullyQualifiedName, requiredQuery, codeElement.className);
-            result.addOptionalQuery(codeElement.className, null);
             return result;
         } else if (codeElement.className != null) {
             if (!nameNeedsResolution(codeElement.className)) {
