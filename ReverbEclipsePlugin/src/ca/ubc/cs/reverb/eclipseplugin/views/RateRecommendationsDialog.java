@@ -115,7 +115,11 @@ public class RateRecommendationsDialog extends TrayDialog {
         TableViewerColumn titleViewerColumn = new TableViewerColumn(viewer, SWT.NONE);
         titleViewerColumn.setLabelProvider(new ColumnLabelProvider() {
             public String getText(Object item) {
-                return ((LocationRating)item).title;
+                String result = ((LocationRating)item).title;
+                if (result == null || result.trim().isEmpty()) {
+                    result = ((LocationRating)item).url;
+                }
+                return result;
             }
             
             public String getToolTipText(Object item) {
