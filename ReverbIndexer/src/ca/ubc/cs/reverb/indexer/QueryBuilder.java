@@ -2,7 +2,9 @@ package ca.ubc.cs.reverb.indexer;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -22,6 +24,8 @@ public class QueryBuilder {
     private List<IndexerQuery> queries = null;
     private List<CodeElement> codeElements = null;
     
+    private Map<String, CodeQueryInfo> codeQueryInfos = new LinkedHashMap<String, CodeQueryInfo>();
+    
     /**
      * Define a pattern which matches identifiers which are "selective" -- i.e. unlikely to match
      * ordinary English words.
@@ -40,6 +44,16 @@ public class QueryBuilder {
     
     private final static Pattern SELECTIVE_IDENTIFIER = Pattern.compile(IDENTIFIER_PATTERN);
     
+    public class CodeQueryInfo {
+        public CodeQueryInfo(String displayText, List<CodeElement> codeElements) {
+            this.displayText = displayText;
+            this.codeElements = codeElements;
+        }
+        
+        public String displayText;
+        public List<CodeElement> codeElements;
+    }
+    
     public QueryBuilder(List<CodeElement> codeElements) {
         this.codeElements = codeElements;
     }
@@ -52,11 +66,16 @@ public class QueryBuilder {
             addQueryElementsForCodeElement(codeElement);
         }
         
+        Integer codeQueryInfoIndex = 0;
         queries = new ArrayList<IndexerQuery>();
         for (QueryElementsForKey queryElementsForKey: queryElementsByKey) {
+            List<CodeElement> codeElements = new ArrayList<CodeElement>();
             List<QueryElement> elementList = queryElementsForKey.queryElements;
             List<QueryElement> mergedList = new ArrayList<QueryElement>();
             for (QueryElement element: elementList) {
+                if (element.codeElement != null) {
+                    codeElements.add(element.codeElement);
+                }
                 boolean merged = false;
                 for (QueryElement mergedElement: mergedList) {
                     // Merge queries which have the same *required* query.
@@ -90,7 +109,11 @@ public class QueryBuilder {
                     }
                 }
             }
-            queries.add(new IndexerQuery(query.toString(), display.toString()));
+            
+            String codeQueryInfoId = (codeQueryInfoIndex++).toString();
+            codeQueryInfos.put(codeQueryInfoId, new CodeQueryInfo(display.toString(), codeElements));
+            
+            queries.add(new IndexerQuery(query.toString(), codeQueryInfoId));
         }
     }
     
@@ -100,6 +123,14 @@ public class QueryBuilder {
     
     public List<CodeElementError> getErrorElements() {
         return this.errorElements;
+    }
+    
+    public CodeQueryInfo getCodeQueryInfo(String codeQueryInfoId) {
+        return codeQueryInfos.get(codeQueryInfoId);
+    }
+    
+    public Map<String, CodeQueryInfo> getCodeQueryInfos() {
+        return codeQueryInfos;
     }
     
     private void addQueryElementsForCodeElement(CodeElement codeElement) {
@@ -122,7 +153,7 @@ public class QueryBuilder {
                         // If type information is not available, but the method name itself is selective enough,
                         // then include just the method name in the query.
                         addToQueryElements(new QueryElement(codeElement.memberName, 
-                                codeElement.memberName, codeElement.memberName));
+                                codeElement.memberName, codeElement.memberName, codeElement));
                     } else {
                         throw new IndexerException("Code element member name not selective enough to be used on its own");
                     }
@@ -161,7 +192,7 @@ public class QueryBuilder {
                 }
                 QueryElement qualifiedRef = new QueryElement(
                         key, codeElement.className + "." + codeElement.memberName,
-                        codeElement.className);
+                        codeElement.className, codeElement);
                 // We do not add static field names to the displayed query.
                 if (codeElement.elementType == CodeElementType.STATIC_METHOD_CALL) {
                     qualifiedRef.addDisplayText(codeElement.memberName);
@@ -186,17 +217,17 @@ public class QueryBuilder {
             if (!nameNeedsResolution(codeElement.className)) {
                 // If the type name is selective enough, allow it to match on its own.
                 return new QueryElement(fullyQualifiedName, "(" + codeElement.className + " OR " + fullyQualifiedName + ")", 
-                        codeElement.className);
+                        codeElement.className, codeElement);
             } 
             // Require that results also contain either the fully-qualified type name, or the package name and the class name.
             // Note that our tokenizer will remove the trailing ".*" from package imports, so 
             // pkgName alone will match such imports.
             String requiredQuery = "((+" + fullyQualifiedName + " " + codeElement.className + ") OR (" + codeElement.packageName + " AND " + codeElement.className + "))";
-            QueryElement result = new QueryElement(fullyQualifiedName, requiredQuery, codeElement.className);
+            QueryElement result = new QueryElement(fullyQualifiedName, requiredQuery, codeElement.className, codeElement);
             return result;
         } else if (codeElement.className != null) {
             if (!nameNeedsResolution(codeElement.className)) {
-                return new QueryElement(codeElement.className, codeElement.className, codeElement.className);
+                return new QueryElement(codeElement.className, codeElement.className, codeElement.className, codeElement);
             }
             throw new IndexerException("Code element class name not selective enough to be used without package name");
         } 
@@ -260,13 +291,15 @@ public class QueryBuilder {
         private String requiredQuery;
         private List<String> optionalQueries = new ArrayList<String>();
         private List<String> queryDisplayTexts = new ArrayList<String>();
+        private CodeElement codeElement;
         
-        public QueryElement(String key, String requiredQuery, String requiredQueryDisplayText) {
+        public QueryElement(String key, String requiredQuery, String requiredQueryDisplayText, CodeElement codeElement) {
             this.key = key;
             this.requiredQuery = requiredQuery;
             if (requiredQueryDisplayText != null) {
                 queryDisplayTexts.add(requiredQueryDisplayText);
             }
+            this.codeElement = codeElement;
         }
         
         public String getKey() {

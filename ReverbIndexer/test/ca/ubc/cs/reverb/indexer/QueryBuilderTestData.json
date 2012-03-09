@@ -1,16 +1,16 @@
 {
     "testTypeDeclRef": [ {
       "queryString" : "(+((+mypackage.Myclassref Myclassref) OR (mypackage AND Myclassref)))",
-      "queryClientInfo" : "Myclassref"
+      "queryClientInfo" : "0"
     }, {
       "queryString" : "(+((+mypackage.Myclassdecl Myclassdecl) OR (mypackage AND Myclassdecl)))",
-      "queryClientInfo" : "Myclassdecl"
+      "queryClientInfo" : "1"
     }, {
       "queryString" : "(+(MyclassdeclNores OR mypackage.MyclassdeclNores))",
-      "queryClientInfo" : "MyclassdeclNores"
+      "queryClientInfo" : "2"
     }, {
       "queryString" : "(+MyclassdeclnopackageNores)",
-      "queryClientInfo" : "MyclassdeclnopackageNores"
+      "queryClientInfo" : "3"
     } ],
     
     "testTypeDeclRefErrorElements": [ {
@@ -22,17 +22,91 @@
       },
       "errorMessage" : "ca.ubc.cs.reverb.indexer.IndexerException: Code element class name not selective enough to be used without package name"
     } ],
+    
+    "testTypeDeclRefCodeQueryInfos": {
+      "0" : {
+        "displayText" : "Myclassref",
+        "codeElements" : [ {
+          "elementType" : "TYPE_REF",
+          "packageName" : "mypackage",
+          "className" : "Myclassref",
+          "memberName" : null
+        } ]
+      },
+      "1" : {
+        "displayText" : "Myclassdecl",
+        "codeElements" : [ {
+          "elementType" : "TYPE_DECL",
+          "packageName" : "mypackage",
+          "className" : "Myclassdecl",
+          "memberName" : null
+        } ]
+      },
+      "2" : {
+        "displayText" : "MyclassdeclNores",
+        "codeElements" : [ {
+          "elementType" : "TYPE_DECL",
+          "packageName" : "mypackage",
+          "className" : "MyclassdeclNores",
+          "memberName" : null
+        } ]
+      },
+      "3" : {
+        "displayText" : "MyclassdeclnopackageNores",
+        "codeElements" : [ {
+          "elementType" : "TYPE_DECL",
+          "packageName" : null,
+          "className" : "MyclassdeclnopackageNores",
+          "memberName" : null
+        } ]
+      }
+    },
    
     "testMethodDeclCall": [ {
       "queryString" : "(+((+mypackage.Myclass Myclass) OR (mypackage AND Myclass)) mymethoddecl mymethodcall)",
-      "queryClientInfo" : "Myclass mymethoddecl mymethodcall"
+      "queryClientInfo" : "0"
     }, {
       "queryString" : "(+MyclassNores mymethodcall)",
-      "queryClientInfo" : "MyclassNores mymethodcall"
+      "queryClientInfo" : "1"
     }, {
       "queryString" : "(+mymethodcallNores)",
-      "queryClientInfo" : "mymethodcallNores"
+      "queryClientInfo" : "2"
     } ],
+    
+    "testMethodDeclCallCodeQueryInfos": {
+      "0" : {
+        "displayText" : "Myclass mymethoddecl mymethodcall",
+        "codeElements" : [ {
+          "elementType" : "METHOD_DECL",
+          "packageName" : "mypackage",
+          "className" : "Myclass",
+          "memberName" : "mymethoddecl"
+        }, {
+          "elementType" : "METHOD_CALL",
+          "packageName" : "mypackage",
+          "className" : "Myclass",
+          "memberName" : "mymethodcall"
+        } ]
+      },
+      "1" : {
+        "displayText" : "MyclassNores mymethodcall",
+        "codeElements" : [ {
+          "elementType" : "METHOD_CALL",
+          "packageName" : null,
+          "className" : "MyclassNores",
+          "memberName" : "mymethodcall"
+        } ]
+      },
+      "2" : {
+        "displayText" : "mymethodcallNores",
+        "codeElements" : [ {
+          "elementType" : "METHOD_CALL",
+          "packageName" : null,
+          "className" : null,
+          "memberName" : "mymethodcallNores"
+        } ]
+      }
+    },
     
     "testMethodDeclCallErrorElements": [ {
       "codeElement" : {
@@ -46,11 +120,47 @@
     
     "testStaticFieldRef": [ {
       "queryString" : "(+((+mypackage.Myclass Myclass) OR (mypackage AND Myclass)) mymethodcall MY_FIELD_REF) OR (+Myclass.mymethodcall) OR (+Myclass.MY_FIELD_REF)",
-      "queryClientInfo" : "Myclass mymethodcall"
+      "queryClientInfo" : "0"
     }, {
       "queryString" : "(+Myclass.MY_FIELD_REF)",
-      "queryClientInfo" : "Myclass"
+      "queryClientInfo" : "1"
     } ],
+    
+    "testStaticFieldRefCodeQueryInfos": {
+      "0" : {
+        "displayText" : "Myclass mymethodcall",
+        "codeElements" : [ {
+          "elementType" : "STATIC_METHOD_CALL",
+          "packageName" : "mypackage",
+          "className" : "Myclass",
+          "memberName" : "mymethodcall"
+        }, {
+          "elementType" : "STATIC_METHOD_CALL",
+          "packageName" : "mypackage",
+          "className" : "Myclass",
+          "memberName" : "mymethodcall"
+        }, {
+          "elementType" : "STATIC_FIELD_REF",
+          "packageName" : "mypackage",
+          "className" : "Myclass",
+          "memberName" : "MY_FIELD_REF"
+        }, {
+          "elementType" : "STATIC_FIELD_REF",
+          "packageName" : "mypackage",
+          "className" : "Myclass",
+          "memberName" : "MY_FIELD_REF"
+        } ]
+      },
+      "1" : {
+        "displayText" : "Myclass",
+        "codeElements" : [ {
+          "elementType" : "STATIC_FIELD_REF",
+          "packageName" : null,
+          "className" : "Myclass",
+          "memberName" : "MY_FIELD_REF"
+        } ]
+      }
+    }, 
   
     "testErrorElements": [ {
       "codeElement" : {

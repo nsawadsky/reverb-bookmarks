@@ -10,8 +10,10 @@ import xpnp.XpNamedPipe;
 
 import org.apache.log4j.Logger;
 
+import ca.ubc.cs.reverb.indexer.QueryBuilder.CodeQueryInfo;
 import ca.ubc.cs.reverb.indexer.messages.BatchQueryReply;
 import ca.ubc.cs.reverb.indexer.messages.BatchQueryRequest;
+import ca.ubc.cs.reverb.indexer.messages.CodeElement;
 import ca.ubc.cs.reverb.indexer.messages.CodeQueryReply;
 import ca.ubc.cs.reverb.indexer.messages.CodeQueryRequest;
 import ca.ubc.cs.reverb.indexer.messages.CodeQueryResult;
@@ -179,9 +181,12 @@ public class QueryPipeListener implements Runnable {
                 codeQueryReply = new CodeQueryReply(batchQueryReply.resultGenTimestamp);
                 codeQueryReply.errorElements = builder.getErrorElements();
                 for (QueryResult result: batchQueryReply.queryResults) {
+                    List<CodeElement> allCodeElements = new ArrayList<CodeElement>();
                     List<String> allKeywords = new ArrayList<String>();
                     for (IndexerQuery indexerQuery: result.indexerQueries) {
-                        String[] queryKeywords = indexerQuery.queryClientInfo.split(" ");
+                        CodeQueryInfo codeQueryInfo = builder.getCodeQueryInfo(indexerQuery.queryClientInfo);
+                        allCodeElements.addAll(codeQueryInfo.codeElements);
+                        String[] queryKeywords = codeQueryInfo.displayText.split(" ");
                         for (String keyword: queryKeywords) {
                             if (!allKeywords.contains(keyword)) {
                                 allKeywords.add(keyword);
@@ -196,7 +201,7 @@ public class QueryPipeListener implements Runnable {
                         displayText.append(keyword);
                     }
                     codeQueryReply.queryResults.add(
-                            new CodeQueryResult(result.locations, displayText.toString()));
+                            new CodeQueryResult(result.locations, displayText.toString(), allCodeElements));
                 }
             } catch (IndexerException e) {
                 codeQueryReply = new CodeQueryReply(true, e.toString());

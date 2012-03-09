@@ -5,10 +5,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -77,8 +77,8 @@ public class WebPageSearcher {
         }
         
         // Gather hits, store by URL.
-        // Use TreeMap for test predictability.
-        Map<String, HitInfo> infosByUrl = new TreeMap<String, HitInfo>();
+        // Use LinkedHashMap for test predictability.
+        Map<String, HitInfo> infosByUrl = new LinkedHashMap<String, HitInfo>();
         for (IndexerQuery query: queries) {
             List<Hit> hits = performSearch(indexSearcher, query.queryString, MAX_RESULTS_PER_QUERY, now);
             for (Hit hit: hits) {

@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
@@ -18,6 +19,7 @@ import org.codehaus.jackson.util.DefaultPrettyPrinter;
 import org.junit.Before;
 import org.junit.Test;
 
+import ca.ubc.cs.reverb.indexer.QueryBuilder.CodeQueryInfo;
 import ca.ubc.cs.reverb.indexer.messages.CodeElement;
 import ca.ubc.cs.reverb.indexer.messages.CodeElementError;
 import ca.ubc.cs.reverb.indexer.messages.CodeElementType;
@@ -59,6 +61,10 @@ public class QueryBuilderTest {
         List<CodeElementError> errorElements = builder.getErrorElements();
         JsonNode expectedErrorElements = getExpectedResult("testTypeDeclRefErrorElements");
         assertEquals("formatted actual: " + getJsonString(errorElements), expectedErrorElements, getJsonNode(errorElements));
+
+        Map<String, CodeQueryInfo> codeQueryInfos = builder.getCodeQueryInfos();
+        JsonNode expectedCodeQueryInfos = getExpectedResult("testTypeDeclRefCodeQueryInfos");
+        assertEquals("formatted actual: " + getJsonString(codeQueryInfos), expectedCodeQueryInfos, getJsonNode(codeQueryInfos));
     }
 
     @Test
@@ -78,6 +84,10 @@ public class QueryBuilderTest {
         List<CodeElementError> errorElements = builder.getErrorElements();
         JsonNode expectedErrorElements = getExpectedResult("testMethodDeclCallErrorElements");
         assertEquals("formatted actual: " + getJsonString(errorElements), expectedErrorElements, getJsonNode(errorElements));
+
+        Map<String, CodeQueryInfo> codeQueryInfos = builder.getCodeQueryInfos();
+        JsonNode expectedCodeQueryInfos = getExpectedResult("testMethodDeclCallCodeQueryInfos");
+        assertEquals("formatted actual: " + getJsonString(codeQueryInfos), expectedCodeQueryInfos, getJsonNode(codeQueryInfos));
     }
 
     @Test
@@ -92,6 +102,10 @@ public class QueryBuilderTest {
         JsonNode expected = getExpectedResult("testStaticFieldRef");
         assertEquals("formatted actual: " + getJsonString(result), expected, getJsonNode(result));
         assertTrue(builder.getErrorElements().isEmpty());
+        
+        Map<String, CodeQueryInfo> codeQueryInfos = builder.getCodeQueryInfos();
+        JsonNode expectedCodeQueryInfos = getExpectedResult("testStaticFieldRefCodeQueryInfos");
+        assertEquals("formatted actual: " + getJsonString(codeQueryInfos), expectedCodeQueryInfos, getJsonNode(codeQueryInfos));
     }
 
     @Test
