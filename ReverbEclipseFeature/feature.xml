@@ -10,7 +10,7 @@
    </description>
 
    <url>
-      <update label="Reverb Update Site" url="http://www.cs.ubc.ca/~nicks/reverb/update"/>
+      <update label="Reverb Update Site" url="http://www.cs.ubc.ca/labs/spl/projects/reverb/update/"/>
    </url>
 
    <plugin

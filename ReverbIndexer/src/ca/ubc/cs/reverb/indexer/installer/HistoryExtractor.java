@@ -28,19 +28,4 @@ public abstract class HistoryExtractor {
     
     public abstract List<HistoryVisit> extractHistory(Date startDate, Date endDate) throws IndexerException;    
     
-    public static OSType getOSType() {
-        String os = System.getProperty("os.name");
-        OSType osType = OSType.WINDOWS_VISTA_OR_LATER;
-        if (os != null) {
-            if (os.contains("Windows XP")) {
-                osType = OSType.WINDOWS_XP;
-            } else if (os.contains("Mac")) {
-                osType = OSType.MAC;
-            } else if (os.contains("Linux")) {
-                osType = OSType.LINUX;
-            }
-        }
-        return osType;
-    }
-    
 }

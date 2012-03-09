@@ -15,7 +15,7 @@ import org.apache.commons.codec.binary.Base64;
  * Class must be thread-safe.
  */
 public class IndexerConfig {
-    private static String LOCAL_APPDATA_ENV_VAR = "LOCALAPPDATA";
+    private static String USER_PROFILE_ENV_VAR = "USERPROFILE";
     
     private String indexPath;
     
@@ -125,11 +125,19 @@ public class IndexerConfig {
     }
     
     protected String getBasePath() throws IndexerException {
-        String localAppDataPath = System.getenv(LOCAL_APPDATA_ENV_VAR);
-        if (localAppDataPath == null) {
-            throw new IndexerException("APPDATA environment variable not found");
+        return getLocalAppDataPath() + File.separator + "cs.ubc.ca" + File.separator + "Reverb";
+    }
+    
+    private String getLocalAppDataPath() throws IndexerException {
+        String userProfilePath = System.getenv(USER_PROFILE_ENV_VAR);
+        if (userProfilePath == null) {
+            throw new IndexerException("USERPROFILE environment variable not found");
         }
-        return localAppDataPath + File.separator + "cs.ubc.ca" + File.separator + "Reverb";
+        if (OSType.getOSType() == OSType.WINDOWS_XP) {
+            return userProfilePath + "\\Local Settings\\Application Data"; 
+        } else {
+            return userProfilePath + "\\AppData\\Local";
+        }
     }
     
     private void initializeUserId() throws IndexerException {

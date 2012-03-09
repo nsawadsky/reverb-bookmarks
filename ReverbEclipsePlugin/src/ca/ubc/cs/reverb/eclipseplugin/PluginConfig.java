@@ -20,7 +20,7 @@ import org.codehaus.jackson.util.DefaultPrettyPrinter;
  * Class must be thread-safe.
  */
 public class PluginConfig {
-    private static String LOCAL_APPDATA_ENV_VAR = "LOCALAPPDATA";
+    private static String USER_PROFILE_ENV_VAR = "USERPROFILE";
     
     private String settingsPath;
     
@@ -35,10 +35,7 @@ public class PluginConfig {
     private PluginSettings pluginSettings;
     
     public PluginConfig() throws PluginException {
-        String localAppDataPath = System.getenv(LOCAL_APPDATA_ENV_VAR);
-        if (localAppDataPath == null) {
-            throw new PluginException("APPDATA environment variable not found");
-        }
+        String localAppDataPath = getLocalAppDataPath();
         String dataPath = localAppDataPath + File.separator + "cs.ubc.ca" + File.separator + "Reverb" + 
                 File.separator + "data";
         settingsPath = dataPath + File.separator + "settings";
@@ -97,6 +94,18 @@ public class PluginConfig {
             if (scanner != null) { 
                 scanner.close();
             }
+        }
+    }
+    
+    private String getLocalAppDataPath() throws PluginException {
+        String userProfilePath = System.getenv(USER_PROFILE_ENV_VAR);
+        if (userProfilePath == null) {
+            throw new PluginException("USERPROFILE environment variable not found");
+        }
+        if (OSType.getOSType() == OSType.WINDOWS_XP) {
+            return userProfilePath + "\\Local Settings\\Application Data"; 
+        } else {
+            return userProfilePath + "\\AppData\\Local";
         }
     }
     
