@@ -1,0 +1,2 @@
+content reverb chrome/content/
+overlay chrome://browser/content/browser.xul chrome://reverb/content/overlay.xul

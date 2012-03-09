@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<RDF xmlns="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+     xmlns:em="http://www.mozilla.org/2004/em-rdf#">
+
+  <Description about="urn:mozilla:install-manifest">
+   
+    <em:id>reverb@cs.ubc.ca</em:id>
+    <em:name>Reverb</em:name>
+    <em:version>1.0</em:version>
+    <em:description>Indexes web pages for quick retrieval inside the IDE.</em:description>
+    <em:creator>UBC Software Practices Lab</em:creator>
+    
+    <!-- optional items -->
+    <em:contributor></em:contributor>
+    <em:homepageURL></em:homepageURL>
+    <em:aboutURL></em:aboutURL>
+    <em:updateURL></em:updateURL>
+    
+    <!-- Firefox -->
+    <em:targetApplication>
+      <Description>
+        <em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
+        <em:minVersion>7.0</em:minVersion>
+        <em:maxVersion>*</em:maxVersion>
+      </Description>
+    </em:targetApplication>
+    
+    <em:unpack>true</em:unpack>
+  </Description>
+
+</RDF>

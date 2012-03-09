@@ -1,0 +1,19 @@
+{
+    "name": "Reverb",
+    "version": "1.0",
+    "description": "Indexes web pages for quick retrieval in the IDE.",
+    "background_page": "reverbBackground.html",
+    "plugins": [
+    	{ "path": "components/windows/npReverb.dll" }
+  	],
+    "content_scripts": [ 
+    	{
+    		"matches": ["<all_urls>"],
+    		"js": ["reverbContent.js"],
+    		"all_frames": true
+    	}
+   	],
+   	"options_page": "fancy-settings/source/index.html",
+   	"icons": {"16": "icons/reverb-16.png", "48": "icons/reverb-48.png", "128": "icons/reverb-128.png"}
+   	    
+}
