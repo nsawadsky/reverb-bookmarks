@@ -20,12 +20,12 @@ import ca.ubc.cs.reverb.indexer.messages.IndexerMessageEnvelope;
 import ca.ubc.cs.reverb.indexer.messages.IndexerQuery;
 import ca.ubc.cs.reverb.indexer.messages.IndexerReply;
 import ca.ubc.cs.reverb.indexer.messages.LogClickRequest;
-import ca.ubc.cs.reverb.indexer.messages.LogPluginViewStateRequest;
+import ca.ubc.cs.reverb.indexer.messages.LogClientEventRequest;
 import ca.ubc.cs.reverb.indexer.messages.QueryResult;
 import ca.ubc.cs.reverb.indexer.messages.UploadLogsRequest;
+import ca.ubc.cs.reverb.indexer.study.GenericClientEvent;
 import ca.ubc.cs.reverb.indexer.study.RecommendationClickEvent;
 import ca.ubc.cs.reverb.indexer.study.StudyDataCollector;
-import ca.ubc.cs.reverb.indexer.study.PluginViewStateChangedEvent;
 
 
 public class QueryPipeListener implements Runnable {
@@ -114,8 +114,8 @@ public class QueryPipeListener implements Runnable {
                             handleUploadLogsRequest(envelope.clientRequestId, (UploadLogsRequest)envelope.message);
                         } else if (envelope.message instanceof LogClickRequest) {
                             handleLogClickRequest(envelope.clientRequestId, (LogClickRequest)envelope.message);
-                        } else if (envelope.message instanceof LogPluginViewStateRequest) {
-                            handleLogViewStateRequest(envelope.clientRequestId, (LogPluginViewStateRequest)envelope.message);
+                        } else if (envelope.message instanceof LogClientEventRequest) {
+                            handleLogClientEventRequest(envelope.clientRequestId, (LogClientEventRequest)envelope.message);
                         } else {
                             throw new IndexerException("Unexpected message content: " + envelope.message.getClass());
                         }
@@ -131,8 +131,8 @@ public class QueryPipeListener implements Runnable {
             }
         }
         
-        private void handleLogViewStateRequest(String clientRequestId, LogPluginViewStateRequest request) throws IndexerException {
-            collector.logEvent(new PluginViewStateChangedEvent(System.currentTimeMillis(), request.isViewOpen));
+        private void handleLogClientEventRequest(String clientRequestId, LogClientEventRequest request) throws IndexerException {
+            collector.logEvent(new GenericClientEvent(System.currentTimeMillis(), request.eventType, request.attributes));
             sendReply(clientRequestId, new IndexerReply());
         }
         

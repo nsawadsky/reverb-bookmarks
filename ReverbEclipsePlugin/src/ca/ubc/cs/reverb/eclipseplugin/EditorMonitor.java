@@ -2,6 +2,7 @@ package ca.ubc.cs.reverb.eclipseplugin;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.HashSet;
@@ -31,7 +32,7 @@ import org.eclipse.ui.PlatformUI;
 import ca.ubc.cs.reverb.indexer.messages.CodeQueryReply;
 import ca.ubc.cs.reverb.indexer.messages.CodeQueryRequest;
 import ca.ubc.cs.reverb.indexer.messages.IndexerQuery;
-import ca.ubc.cs.reverb.indexer.messages.LogPluginViewStateRequest;
+import ca.ubc.cs.reverb.indexer.messages.LogClientEventRequest;
 
 /**
  * This class is not thread-safe -- we expect it to be called only from the UI thread.  If a method
@@ -177,7 +178,8 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener,
                 lastTextViewer = null;
                 handleNavigationEvent(System.currentTimeMillis());
                 if (!isStudyComplete) {
-                    indexerConnection.sendRequestAsync(new LogPluginViewStateRequest(isRelatedPagesViewOpen), null, null);
+                    indexerConnection.sendRequestAsync(
+                            new LogClientEventRequest("VIEW_STATE_CHANGE", Arrays.asList(isRelatedPagesViewOpen ? "1" : "0")), null, null);
                 }
             }
             
@@ -187,7 +189,8 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener,
     public void setRelatedPagesViewOpen(boolean isViewOpen) {
         isRelatedPagesViewOpen = isViewOpen;
         if (!isStudyComplete) {
-            indexerConnection.sendRequestAsync(new LogPluginViewStateRequest(isViewOpen), null, null);
+            indexerConnection.sendRequestAsync(
+                    new LogClientEventRequest("VIEW_STATE_CHANGE", Arrays.asList(isRelatedPagesViewOpen ? "1" : "0")), null, null);
         }
     }
     

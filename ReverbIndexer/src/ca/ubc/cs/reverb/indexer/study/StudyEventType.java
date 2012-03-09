@@ -27,9 +27,9 @@ public enum StudyEventType {
     LOCATIONS_INDEXED_MILESTONE("LOC_INDEXED"),
     
     /**
-     * Eclipse plugin view was opened/closed.
+     * Generic client event.
      */
-    PLUGIN_VIEW_STATE_CHANGED("VIEW_STATE_CHANGE");
+    GENERIC_CLIENT_EVENT("CLIENT_EVENT");
     
     private String shortName;
     
