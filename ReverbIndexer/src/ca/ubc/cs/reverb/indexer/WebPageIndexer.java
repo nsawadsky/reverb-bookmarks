@@ -201,6 +201,7 @@ public class WebPageIndexer {
                 doc.add(urlField);
                 
                 Field titleField = new Field(TITLE_FIELD_NAME, jsoupDoc.title(), Field.Store.YES, Field.Index.ANALYZED);
+                titleField.setBoost(3.0F);
                 doc.add(titleField);
                 
                 Elements scripts = jsoupDoc.select("script");
