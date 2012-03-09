@@ -15,6 +15,7 @@ import org.codehaus.jackson.JsonEncoding;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.util.DefaultPrettyPrinter;
+import org.codehaus.jackson.map.DeserializationConfig;
 
 /**
  * Class must be thread-safe.
@@ -180,6 +181,7 @@ public class PluginConfig {
                 return;
             }
             ObjectMapper mapper = new ObjectMapper();
+            mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
             pluginSettings = mapper.readValue(pluginSettingsFile, PluginSettings.class);
         } catch (Exception e) {
             throw new PluginException("Error loading plugin settings: " + e, e);

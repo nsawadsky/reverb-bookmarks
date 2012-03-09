@@ -29,6 +29,7 @@ import org.apache.http.util.EntityUtils;
 import org.apache.log4j.Logger;
 import org.codehaus.jackson.JsonEncoding;
 import org.codehaus.jackson.JsonGenerator;
+import org.codehaus.jackson.map.DeserializationConfig;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.util.DefaultPrettyPrinter;
 
@@ -293,6 +294,7 @@ public class StudyDataCollector implements Runnable {
                 return;
             }
             ObjectMapper mapper = new ObjectMapper();
+            mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
             studyState = mapper.readValue(indexerStudyStateFile, IndexerStudyState.class);
         } catch (Exception e) {
             throw new IndexerException("Error loading indexer study state: " + e, e);
