@@ -1,9 +1,9 @@
 {
     "testTypeDeclRef": [ {
-      "queryString" : "(+(mypackage.Myclassref OR (mypackage AND Myclassref)) Myclassref)",
+      "queryString" : "(+((+mypackage.Myclassref Myclassref) OR (mypackage AND Myclassref)))",
       "queryClientInfo" : "Myclassref"
     }, {
-      "queryString" : "(+(mypackage.Myclassdecl OR (mypackage AND Myclassdecl)) Myclassdecl)",
+      "queryString" : "(+((+mypackage.Myclassdecl Myclassdecl) OR (mypackage AND Myclassdecl)))",
       "queryClientInfo" : "Myclassdecl"
     }, {
       "queryString" : "(+(MyclassdeclNores OR mypackage.MyclassdeclNores))",
@@ -24,7 +24,7 @@
     } ],
    
     "testMethodDeclCall": [ {
-      "queryString" : "(+(mypackage.Myclass OR (mypackage AND Myclass)) Myclass mymethoddecl mymethodcall)",
+      "queryString" : "(+((+mypackage.Myclass Myclass) OR (mypackage AND Myclass)) mymethoddecl mymethodcall)",
       "queryClientInfo" : "Myclass mymethoddecl mymethodcall"
     }, {
       "queryString" : "(+MyclassNores mymethodcall)",
@@ -45,7 +45,7 @@
     } ],
     
     "testStaticFieldRef": [ {
-      "queryString" : "(+(mypackage.Myclass OR (mypackage AND Myclass)) Myclass mymethodcall MY_FIELD_REF) OR (+Myclass.mymethodcall) OR (+Myclass.MY_FIELD_REF)",
+      "queryString" : "(+((+mypackage.Myclass Myclass) OR (mypackage AND Myclass)) mymethodcall MY_FIELD_REF) OR (+Myclass.mymethodcall) OR (+Myclass.MY_FIELD_REF)",
       "queryClientInfo" : "Myclass mymethodcall"
     }, {
       "queryString" : "(+Myclass.MY_FIELD_REF)",
