@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.codehaus.jackson.map.DeserializationConfig;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import ca.ubc.cs.reverb.indexer.messages.CodeQueryReply;
@@ -81,6 +82,7 @@ public class IndexerConnection implements Runnable {
         // This thread runs at normal priority, since time-sensitive UI actions (such as
         // deleting a location) depend on it.
         ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         while (true) {
             while (pipe == null) {
                 pipe = connectToIndexer();

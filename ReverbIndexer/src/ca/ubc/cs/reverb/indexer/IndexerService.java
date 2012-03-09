@@ -27,6 +27,7 @@ import org.apache.lucene.index.FieldInvertState;
 import org.apache.lucene.search.DefaultSimilarity;
 import org.apache.lucene.search.Similarity;
 import org.codehaus.jackson.JsonGenerator;
+import org.codehaus.jackson.map.DeserializationConfig;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.util.DefaultPrettyPrinter;
 
@@ -203,6 +204,7 @@ public class IndexerService {
             IndexerMessageEnvelope requestEnvelope = new IndexerMessageEnvelope(null, request);
     
             ObjectMapper mapper = new ObjectMapper();
+            mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
             byte [] requestBytes = mapper.writeValueAsBytes(requestEnvelope);
             
             indexerConnection.writeMessage(requestBytes);

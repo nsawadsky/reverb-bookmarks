@@ -19,6 +19,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.codehaus.jackson.JsonEncoding;
 import org.codehaus.jackson.JsonGenerator;
+import org.codehaus.jackson.map.DeserializationConfig;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.util.DefaultPrettyPrinter;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -315,6 +316,7 @@ public class StudyActivityMonitor implements EditorMonitorListener {
                 return;
             }
             ObjectMapper mapper = new ObjectMapper();
+            mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
             studyState = mapper.readValue(pluginStudyStateFile, StudyState.class);
         } catch (PluginException e) {
             throw e;
