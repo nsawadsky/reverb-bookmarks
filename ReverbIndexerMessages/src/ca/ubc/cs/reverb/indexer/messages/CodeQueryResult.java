@@ -14,4 +14,5 @@ public class CodeQueryResult {
     
     public List<Location> locations = new ArrayList<Location>();
     public String displayText;
+    public List<CodeElement> queryCodeElements = new ArrayList<CodeElement>();
 }
