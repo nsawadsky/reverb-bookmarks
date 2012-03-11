@@ -84,15 +84,15 @@ public class WebPageSearcher {
             for (Hit hit: hits) {
                 HitInfo info = infosByUrl.get(hit.url);
                 if (info == null) {
-                    infosByUrl.put(hit.url, new HitInfo(hit, query, hit.luceneScore));
+                    infosByUrl.put(hit.url, new HitInfo(hit, query, hit.relevance));
                 } else {
-                    if (hit.luceneScore > info.bestIndividualScore) {
+                    if (hit.relevance > info.bestIndividualScore) {
                         // Keep track of which query gave the highest score for a given URL.
-                        info.bestIndividualScore = hit.luceneScore;
+                        info.bestIndividualScore = hit.relevance;
                         info.bestQuery = query;
                     } 
                     // If two different queries return the same URL, add the scores together.
-                    info.combinedScore += hit.luceneScore;
+                    info.combinedScore += hit.relevance;
                     
                     // Keep track of all queries which matched a given URL.
                     info.queries.add(query);
@@ -312,22 +312,22 @@ public class WebPageSearcher {
     }
     
     protected static class Hit {
-        public Hit(String url, String title, float luceneScore) {
+        public Hit(String url, String title, float relevance) {
             this.url = url;
             this.title = title;
-            this.luceneScore = luceneScore;
+            this.relevance = relevance;
         }
         
-        public Hit(String url, String title, float luceneScore, float frecencyBoost) {
+        public Hit(String url, String title, float relevance, float frecencyBoost) {
             this.url = url;
             this.title = title;
-            this.luceneScore = luceneScore;
+            this.relevance = relevance;
             this.frecencyBoost = frecencyBoost;
         }
         
         public String url;
         public String title;
-        public float luceneScore;
+        public float relevance;
         public float frecencyBoost;
         
         public LocationInfo locationInfo;
@@ -376,7 +376,7 @@ public class WebPageSearcher {
         
         private boolean checkSimilarHit(HitInfo testInfo) {
             if (testInfo.bestQuery == hitInfo.bestQuery &&
-                    testInfo.hit.luceneScore == hitInfo.hit.luceneScore &&
+                    testInfo.hit.relevance == hitInfo.hit.relevance &&
                     testInfo.hit.title != null &&
                     testInfo.hit.title.equals(hitInfo.hit.title) &&
                     getLastUrlSegment(testInfo.hit.url).equals(lastUrlSegment)) {

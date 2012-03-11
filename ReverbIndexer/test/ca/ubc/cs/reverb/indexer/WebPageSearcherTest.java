@@ -272,8 +272,8 @@ public class WebPageSearcherTest {
         assertEquals("formatted actual: " + getJsonString(result), expected, getJsonNode(result));
     }
 
-    private Hit getHit(long id, String url, String title, float luceneScore, float frecencyBoost) {
-        Hit result = new Hit(url, title, luceneScore, frecencyBoost);
+    private Hit getHit(long id, String url, String title, float relevance, float frecencyBoost) {
+        Hit result = new Hit(url, title, relevance, frecencyBoost);
         result.locationInfo = getLocationInfo(id, url);
         return result;
     }
