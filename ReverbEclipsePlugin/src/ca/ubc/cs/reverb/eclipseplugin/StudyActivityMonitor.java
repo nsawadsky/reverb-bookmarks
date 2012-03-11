@@ -58,6 +58,7 @@ public class StudyActivityMonitor implements EditorMonitorListener {
     
     private IndexerConnection indexerConnection;
     private StudyState studyState;
+    private long studyStateLastModified;
     private PluginConfig config;
     private PluginLogger logger;
     private long createdThreadId;
@@ -90,16 +91,20 @@ public class StudyActivityMonitor implements EditorMonitorListener {
         if (!isStudyComplete()) {
             long currentInterval = timeMsecs / StudyState.ACTIVITY_INTERVAL_MSECS;
             if (currentInterval != studyState.lastActiveInterval) {
-                studyState.lastActiveInterval = currentInterval;
-                studyState.activeIntervals++;
-                if (!studyState.uploadPending && studyState.activeIntervals % StudyState.LOG_UPLOAD_INTERVALS == 0) {
-                    studyState.uploadPending = true;
-                    schedulePromptForUploadLogs(UPLOAD_PROMPT_DELAY_MSECS);
-                }
                 try {
-                    saveStudyState();
+                    // In case another instance of the plugin is running:
+                    refreshStudyState();
+                    if (!isStudyComplete() && currentInterval != studyState.lastActiveInterval) {
+                        studyState.lastActiveInterval = currentInterval;
+                        studyState.activeIntervals++;
+                        if (!studyState.uploadPending && studyState.activeIntervals % StudyState.LOG_UPLOAD_INTERVALS == 0) {
+                            studyState.uploadPending = true;
+                            schedulePromptForUploadLogs(UPLOAD_PROMPT_DELAY_MSECS);
+                        }
+                        saveStudyState();
+                    }
                 } catch (PluginException e) {
-                    logger.logError("Error saving study state", e);
+                    logger.logError("Error handling interaction event", e);
                 }
             }
         }
@@ -110,16 +115,22 @@ public class StudyActivityMonitor implements EditorMonitorListener {
         if (Thread.currentThread().getId() != createdThreadId) {
             logger.logWarn("StudyActivityMonitor.addRecommendationClicked invoked from different thread than called constructor");
         }
-        for (LocationRating existing: studyState.locationRatings) {
-            if (existing.url.equals(clicked.url)) {
-                return;
+        if (!isStudyComplete()) {
+            try {
+                // In case another instance of the plugin is running:
+                refreshStudyState();
+                if (!isStudyComplete()) {
+                    for (LocationRating existing: studyState.locationRatings) {
+                        if (existing.url.equals(clicked.url)) {
+                            return;
+                        }
+                    }
+                    studyState.locationRatings.add(new LocationRating(clicked, resultGenTimestamp));
+                        saveStudyState();
+                }
+            } catch (PluginException e) {
+                logger.logError("Error adding recommendation clicked", e);
             }
-        }
-        studyState.locationRatings.add(new LocationRating(clicked, resultGenTimestamp));
-        try {
-            saveStudyState();
-        } catch (PluginException e) {
-            logger.logError("Error saving study state", e);
         }
     }
     
@@ -131,7 +142,7 @@ public class StudyActivityMonitor implements EditorMonitorListener {
      */
     public void promptForUploadLogs(final boolean rescheduleOnError) {
         UploadLogsDialog uploadDialog = new UploadLogsDialog(shell, config, logger, 
-                getSuccessfulLogUploads() + 1, UPLOADS_TO_COMPLETE_STUDY);
+                studyState.successfulLogUploads + 1, UPLOADS_TO_COMPLETE_STUDY);
         if (uploadDialog.open() != Dialog.OK) {
             if (rescheduleOnError) {
                 schedulePromptForUploadLogs(UPLOAD_RETRY_DELAY_MSECS);
@@ -218,10 +229,11 @@ public class StudyActivityMonitor implements EditorMonitorListener {
         }
     }
     
-    public int getSuccessfulLogUploads() {
-        return studyState.successfulLogUploads;
-    }
-    
+    /**
+     * For performance reasons, this method does not check the timestamp of the study state file on disk.
+     * Consequently, if multiple instances of the plugin are running, this method may not return the most 
+     * up-to-date information.
+     */
     public boolean isStudyComplete() {
         return (studyState.successfulLogUploads >= UPLOADS_TO_COMPLETE_STUDY);
     }
@@ -307,6 +319,18 @@ public class StudyActivityMonitor implements EditorMonitorListener {
         }
     }
     
+    /**
+     * If multiple instances of the plugin are running, the study state file could be modified
+     * by a different process.  This method checks the timestamp of the file, and reloads it
+     * if necessary.
+     */
+    private void refreshStudyState() throws PluginException {
+        File pluginStudyStateFile = new File(config.getStudyStatePath());
+        if (pluginStudyStateFile.exists() && pluginStudyStateFile.lastModified() != studyStateLastModified) {
+            loadStudyState();
+        }
+    }
+    
     private void loadStudyState() throws PluginException {
         try {
             File pluginStudyStateFile = new File(config.getStudyStatePath());
@@ -318,6 +342,7 @@ public class StudyActivityMonitor implements EditorMonitorListener {
             ObjectMapper mapper = new ObjectMapper();
             mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
             studyState = mapper.readValue(pluginStudyStateFile, StudyState.class);
+            studyStateLastModified = pluginStudyStateFile.lastModified();
         } catch (PluginException e) {
             throw e;
         } catch (Exception e) {
