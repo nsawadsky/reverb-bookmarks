@@ -13,7 +13,7 @@ public class LocationRating {
         this.url = location.url;
         this.title = location.title;
         
-        this.luceneScore = location.relevance;
+        this.relevance = location.relevance;
         this.frecencyBoost = location.frecencyBoost;
         this.overallScore = location.overallScore;
         
@@ -32,7 +32,7 @@ public class LocationRating {
     public String title;
 
     public long locationId;
-    public float luceneScore;
+    public float relevance;
     public float frecencyBoost;
     public float overallScore;
     
