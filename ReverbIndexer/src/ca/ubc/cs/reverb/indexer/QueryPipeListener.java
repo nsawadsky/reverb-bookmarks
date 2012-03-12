@@ -26,6 +26,7 @@ import ca.ubc.cs.reverb.indexer.messages.LogClickRequest;
 import ca.ubc.cs.reverb.indexer.messages.LogClientEventRequest;
 import ca.ubc.cs.reverb.indexer.messages.QueryResult;
 import ca.ubc.cs.reverb.indexer.messages.UploadLogsRequest;
+import ca.ubc.cs.reverb.indexer.study.BlockTypeEvent;
 import ca.ubc.cs.reverb.indexer.study.GenericClientEvent;
 import ca.ubc.cs.reverb.indexer.study.RecommendationClickEvent;
 import ca.ubc.cs.reverb.indexer.study.StudyDataCollector;
@@ -167,6 +168,8 @@ public class QueryPipeListener implements Runnable {
             IndexerReply reply = new IndexerReply();
             try {
                 config.getBlockedTypes().addBlockedElement(request.codeElement);
+                BlockTypeEvent blockTypeEvent = new BlockTypeEvent(System.currentTimeMillis());
+                collector.logEvent(blockTypeEvent);
             } catch (IndexerException e) {
                 reply.errorOccurred = true;
                 reply.errorMessage = e.toString();
