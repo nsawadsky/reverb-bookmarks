@@ -75,6 +75,16 @@ public class BlockedTypes {
         return false;
     }
     
+    public synchronized List<CodeElement> trimBlockedElements(List<CodeElement> codeElements) {
+        List<CodeElement> result = new ArrayList<CodeElement>();
+        for (CodeElement codeElement: codeElements) {
+            if (!checkIsBlocked(codeElement)) {
+                result.add(codeElement);
+            }
+        }
+        return result;
+    }
+    
     private void save() throws IndexerException {
         JsonGenerator jsonGenerator = null;
         try {
