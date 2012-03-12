@@ -3,6 +3,7 @@ package ca.ubc.cs.reverb.indexer.study;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.TimeZone;
 
 public class StudyDataEvent {
     private final static String DATE_FORMAT_STRING = "yyyy-MM-dd'T'HH:mm:ss.SSS";
@@ -17,7 +18,9 @@ public class StudyDataEvent {
 
     public static DateFormat getDateFormat() {
         // Not cached, since DateFormat and its subclasses are not thread-safe.
-        return new SimpleDateFormat(DATE_FORMAT_STRING);
+        SimpleDateFormat result = new SimpleDateFormat(DATE_FORMAT_STRING);
+        result.setTimeZone(TimeZone.getTimeZone("GMT"));
+        return result;
     }
     
     public String getLogLine() {

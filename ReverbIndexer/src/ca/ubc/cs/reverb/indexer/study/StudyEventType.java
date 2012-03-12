@@ -27,6 +27,11 @@ public enum StudyEventType {
     LOCATIONS_INDEXED_MILESTONE("LOC_INDEXED"),
     
     /**
+     * Block type event.
+     */
+    BLOCK_TYPE("BLOCK_TYPE"),
+    
+    /**
      * Generic client event.
      */
     GENERIC_CLIENT_EVENT("CLIENT_EVENT");
