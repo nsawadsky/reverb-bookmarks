@@ -62,7 +62,6 @@ public class WebPageClassifier {
             String match = docText.substring(matcher.start(), matcher.end());
             matches.add(match);
         }
-        
         if (matches.size() < CODE_RELATED_MATCH_THRESHOLD) {
             matcher = NO_ARGS_METHOD_PATTERN.matcher(docText);
             while (matches.size() < CODE_RELATED_MATCH_THRESHOLD && matcher.find()) {

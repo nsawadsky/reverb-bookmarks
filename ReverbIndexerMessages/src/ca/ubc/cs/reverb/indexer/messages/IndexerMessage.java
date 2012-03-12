@@ -16,6 +16,7 @@ import org.codehaus.jackson.annotate.JsonSubTypes;
                 @JsonSubTypes.Type(value=LogClickRequest.class, name="logClickRequest"),
                 @JsonSubTypes.Type(value=ShutdownRequest.class, name="shutdownRequest"),
                 @JsonSubTypes.Type(value=LogClientEventRequest.class, name="logClientEventRequest"),
+                @JsonSubTypes.Type(value=BlockCodeElementRequest.class, name="blockCodeElementRequest"),
               })
 public interface IndexerMessage {
 }

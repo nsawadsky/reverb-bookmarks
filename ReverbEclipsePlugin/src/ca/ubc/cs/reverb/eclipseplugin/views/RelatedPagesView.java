@@ -15,11 +15,9 @@ import org.eclipse.jface.viewers.ColumnLabelProvider;
 import org.eclipse.jface.viewers.ColumnViewerToolTipSupport;
 import org.eclipse.jface.viewers.DoubleClickEvent;
 import org.eclipse.jface.viewers.IDoubleClickListener;
-import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.ITreeContentProvider;
-import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.swt.SWT;
@@ -41,6 +39,8 @@ import ca.ubc.cs.reverb.eclipseplugin.PluginConfig;
 import ca.ubc.cs.reverb.eclipseplugin.PluginException;
 import ca.ubc.cs.reverb.eclipseplugin.PluginLogger;
 import ca.ubc.cs.reverb.eclipseplugin.StudyActivityMonitor;
+import ca.ubc.cs.reverb.indexer.messages.BlockCodeElementRequest;
+import ca.ubc.cs.reverb.indexer.messages.CodeElement;
 import ca.ubc.cs.reverb.indexer.messages.CodeQueryReply;
 import ca.ubc.cs.reverb.indexer.messages.CodeQueryResult;
 import ca.ubc.cs.reverb.indexer.messages.DeleteLocationRequest;
@@ -62,7 +62,14 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
     private EditorMonitor editorMonitor;
     private IndexerConnection indexerConnection;
     private StudyActivityMonitor studyActivityMonitor;
-
+    private Action openBrowserAction;
+    private Action deleteLocationAction;
+    private Action updateViewAction;
+    private Action uploadLogsAction;
+    private Action rateRecommendationsAction;
+    private Action helpAction;
+    private BlockTypeAction blockTypeAction;
+    
     class ViewContentProvider implements IStructuredContentProvider, 
             ITreeContentProvider {
         private CodeQueryReply codeQueryReply;
@@ -220,28 +227,13 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
         viewer.setLabelProvider(new ViewLabelProvider());
         viewer.setInput(getViewSite());
         
-        final Action openBrowserAction = createOpenBrowserAction();
-        final Action deleteLocationAction = createDeleteLocationAction();
-        final Action updateViewAction = createUpdateViewAction();
-        final Action uploadLogsAction = createUploadLogsAction();
-        final Action rateRecommendationsAction = createRateRecommendationsAction();
-        final Action helpAction = createHelpAction();
-        
-        viewer.addSelectionChangedListener(new ISelectionChangedListener() {
-
-            @Override
-            public void selectionChanged(SelectionChangedEvent event) {
-                IStructuredSelection structured = (IStructuredSelection)viewer.getSelection();
-                if (structured.getFirstElement() instanceof Location) {
-                    openBrowserAction.setEnabled(true);
-                    deleteLocationAction.setEnabled(true);
-                } else {
-                    openBrowserAction.setEnabled(false);
-                    deleteLocationAction.setEnabled(false);
-                }
-            }
-            
-        });
+        openBrowserAction = createOpenBrowserAction();
+        deleteLocationAction = createDeleteLocationAction();
+        updateViewAction = createUpdateViewAction();
+        uploadLogsAction = createUploadLogsAction();
+        rateRecommendationsAction = createRateRecommendationsAction();
+        helpAction = createHelpAction();
+        blockTypeAction = createBlockTypeAction();
         
         viewer.addDoubleClickListener(new IDoubleClickListener() {
 
@@ -258,15 +250,7 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
 
             @Override
             public void menuAboutToShow(IMenuManager manager) {
-                manager.add(openBrowserAction);
-                manager.add(deleteLocationAction);
-                manager.add(updateViewAction);
-                manager.add(new Separator());
-                if (config.getPluginSettings().isDebugMode) {
-                    manager.add(uploadLogsAction);
-                    manager.add(rateRecommendationsAction);
-                }
-                manager.add(new Separator());
+                addMenuItems(manager);
             }
             
         });
@@ -318,6 +302,44 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
     public void onInteractionEvent(long timeMsecs) {
     }
 
+    private void addMenuItems(IMenuManager manager) {
+        IStructuredSelection structured = (IStructuredSelection)viewer.getSelection();
+        if (structured.getFirstElement() instanceof Location) {
+            manager.add(openBrowserAction);
+            manager.add(deleteLocationAction);
+        }
+        
+        if (structured.getFirstElement() instanceof CodeQueryResult) {
+            boolean added = false;
+            CodeQueryResult result = (CodeQueryResult)structured.getFirstElement();
+            if (result.queryCodeElements != null && !result.queryCodeElements.isEmpty()) {
+                CodeElement codeElement = result.queryCodeElements.get(0);
+                if (codeElement.packageName != null && codeElement.className != null) {
+                    blockTypeAction.setCodeElement(codeElement);
+                    manager.add(blockTypeAction);
+                    added = true;
+                }
+            }
+            if (!added) {
+                blockTypeAction.setCodeElement(null);
+                manager.add(blockTypeAction);
+            }
+        }
+        
+        manager.add(updateViewAction);
+        manager.add(new Separator());
+        if (config.getPluginSettings().isDebugMode) {
+            manager.add(uploadLogsAction);
+            manager.add(rateRecommendationsAction);
+        }
+        manager.add(new Separator());
+
+    }
+    
+    private BlockTypeAction createBlockTypeAction() {
+        return new BlockTypeAction();
+    }
+    
     private Action createUploadLogsAction() {
         Action uploadLogsAction = new Action() {
             public void run() {
@@ -403,7 +425,6 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
         openBrowserAction.setToolTipText("Open Page");
         openBrowserAction.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages().getImageDescriptor(
                 ISharedImages.IMG_OBJ_FILE));
-        openBrowserAction.setEnabled(false);
         
         return openBrowserAction;
     }
@@ -432,9 +453,15 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
                                 @Override
                                 public void onIndexerError(String message,
                                         Throwable t) {
-                                    MessageDialog.openError(getSite().getShell(), 
-                                            "Error Deleting Page", 
-                                            "Failed to delete location, the indexer service may not be running.");
+                                    PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
+
+                                        @Override
+                                        public void run() {
+                                            MessageDialog.openError(getSite().getShell(), 
+                                                    "Error Deleting Page", 
+                                                    "Failed to delete location, the indexer service may not be running.");
+                                        }
+                                    });
                                 }
                                 
                             }, null);
@@ -445,9 +472,61 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
         deleteLocationAction.setToolTipText("Delete Page");
         deleteLocationAction.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages().getImageDescriptor(
                 ISharedImages.IMG_ETOOL_DELETE));
-        deleteLocationAction.setEnabled(false);
         
         return deleteLocationAction;
+    }
+    
+    private class BlockTypeAction extends Action {
+        private CodeElement codeElement;
+        
+        public void setCodeElement(CodeElement codeElement) {
+            this.codeElement = codeElement;
+            if (codeElement == null) {
+                setText("Block type");
+                setEnabled(false);
+            } else {
+                setText("Block " + codeElement.packageName + "." + codeElement.className);
+                setEnabled(true);
+            }
+        }
+        
+        public CodeElement getCodeElement() {
+            return codeElement;
+        }
+        
+        public void run() {
+            indexerConnection.sendRequestAsync(
+                    new BlockCodeElementRequest(codeElement), new IndexerConnectionCallback() {
+
+                        @Override
+                        public void onIndexerMessage(IndexerMessage message, Object clientInfo) {
+                            PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
+
+                                @Override
+                                public void run() {
+                                    editorMonitor.requestRefresh(true);
+                                }
+                            });
+                        }
+
+                        @Override
+                        public void onIndexerError(String message,
+                                Throwable t) {
+                            PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
+
+                                @Override
+                                public void run() {
+                                    MessageDialog.openError(getSite().getShell(), 
+                                            "Error Blocking Type", 
+                                            "Failed to block type, the indexer service may not be running.");
+                                }
+                            });
+                        }
+                        
+                    }, null);
+
+        }
+        
     }
     
 }

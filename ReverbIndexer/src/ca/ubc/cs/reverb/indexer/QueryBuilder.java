@@ -22,7 +22,7 @@ public class QueryBuilder {
     private List<QueryElementsForKey> queryElementsByKey = null;
     private List<CodeElementError> errorElements = null;
     private List<IndexerQuery> queries = null;
-    private List<CodeElement> codeElements = null;
+    private List<CodeElement> codeElements = new ArrayList<CodeElement>();
     
     private Map<String, CodeQueryInfo> codeQueryInfos = new LinkedHashMap<String, CodeQueryInfo>();
     
@@ -54,8 +54,12 @@ public class QueryBuilder {
         public List<CodeElement> codeElements;
     }
     
-    public QueryBuilder(List<CodeElement> codeElements) {
-        this.codeElements = codeElements;
+    public QueryBuilder(BlockedTypes blockedTypes, List<CodeElement> codeElements) {
+        for (CodeElement element: codeElements) {
+            if (! blockedTypes.checkIsBlocked(element)) {
+                this.codeElements.add(element);
+            }
+        }
     }
     
     public void buildQueries() {

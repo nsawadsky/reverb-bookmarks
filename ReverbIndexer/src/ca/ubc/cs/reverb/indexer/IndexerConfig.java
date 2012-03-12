@@ -33,6 +33,8 @@ public class IndexerConfig {
     
     private String dataPath;
     
+    private BlockedTypes blockedTypes;
+    
     public IndexerConfig() throws IndexerException {
         dataPath = getBasePath() + File.separator + "data";
         settingsPath = dataPath + File.separator + "settings";
@@ -63,6 +65,8 @@ public class IndexerConfig {
         }
         
         initializeUserId();
+        
+        blockedTypes = BlockedTypes.load(getBlockedTypesPath());
     }
     
     public String getDataPath() {
@@ -122,6 +126,10 @@ public class IndexerConfig {
     
     public String getIndexerInstallPointerPath() {
         return settingsPath + File.separator + "indexer-install-path.txt";
+    }
+    
+    public BlockedTypes getBlockedTypes() {
+        return blockedTypes;
     }
     
     protected String getBasePath() throws IndexerException {
@@ -198,4 +206,9 @@ public class IndexerConfig {
     private String getUserIdPath() {
         return settingsPath + File.separator + "uid.txt";
     }
+
+    private String getBlockedTypesPath() {
+        return settingsPath + File.separator + "blocked-types.txt";
+    }
+    
 }

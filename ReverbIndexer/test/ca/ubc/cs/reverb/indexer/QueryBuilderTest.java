@@ -46,7 +46,7 @@ public class QueryBuilderTest {
     
     @Test
     public void testTypeDeclRef() throws JsonParseException, IOException {
-        QueryBuilder builder = new QueryBuilder(Arrays.asList( new CodeElement[] { 
+        QueryBuilder builder = new QueryBuilder(new BlockedTypes(), Arrays.asList( new CodeElement[] { 
                 new CodeElement(CodeElementType.TYPE_REF, "mypackage", "Myclassref", null),
                 new CodeElement(CodeElementType.TYPE_DECL, "mypackage", "Myclassdecl", null),
                 new CodeElement(CodeElementType.TYPE_DECL, "mypackage", "MyclassdeclNores", null),
@@ -69,7 +69,7 @@ public class QueryBuilderTest {
 
     @Test
     public void testMethodDeclCall() throws JsonParseException, IOException {
-        QueryBuilder builder = new QueryBuilder(Arrays.asList( new CodeElement[] { 
+        QueryBuilder builder = new QueryBuilder(new BlockedTypes(), Arrays.asList( new CodeElement[] { 
                 new CodeElement(CodeElementType.METHOD_DECL, "mypackage", "Myclass", "mymethoddecl"),
                 new CodeElement(CodeElementType.METHOD_CALL, "mypackage", "Myclass", "mymethodcall"),
                 new CodeElement(CodeElementType.METHOD_CALL, null, "MyclassNores", "mymethodcall"),
@@ -92,7 +92,7 @@ public class QueryBuilderTest {
 
     @Test
     public void testStaticFieldRef() throws JsonParseException, IOException {
-        QueryBuilder builder = new QueryBuilder(Arrays.asList( new CodeElement[] { 
+        QueryBuilder builder = new QueryBuilder(new BlockedTypes(), Arrays.asList( new CodeElement[] { 
                 new CodeElement(CodeElementType.STATIC_METHOD_CALL, "mypackage", "Myclass", "mymethodcall"),
                 new CodeElement(CodeElementType.STATIC_FIELD_REF, "mypackage", "Myclass", "MY_FIELD_REF"),
                 new CodeElement(CodeElementType.STATIC_FIELD_REF, null, "Myclass", "MY_FIELD_REF"),
@@ -110,7 +110,7 @@ public class QueryBuilderTest {
 
     @Test
     public void testErrorElements() throws JsonParseException, IOException { 
-        QueryBuilder builder = new QueryBuilder(Arrays.asList( new CodeElement[] { 
+        QueryBuilder builder = new QueryBuilder(new BlockedTypes(), Arrays.asList( new CodeElement[] { 
                 new CodeElement(CodeElementType.TYPE_DECL, null, "Myclass", null),
                 }));
         builder.buildQueries();

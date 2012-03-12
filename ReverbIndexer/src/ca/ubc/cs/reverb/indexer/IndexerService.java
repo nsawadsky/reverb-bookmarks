@@ -34,7 +34,6 @@ import org.codehaus.jackson.util.DefaultPrettyPrinter;
 import xpnp.XpNamedPipe;
 
 import ca.ubc.cs.reverb.indexer.installer.IndexHistoryFrame;
-import ca.ubc.cs.reverb.indexer.installer.InstallCompleteFrame;
 import ca.ubc.cs.reverb.indexer.messages.BatchQueryRequest;
 import ca.ubc.cs.reverb.indexer.messages.IndexerMessageEnvelope;
 import ca.ubc.cs.reverb.indexer.messages.IndexerQuery;

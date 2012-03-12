@@ -13,6 +13,7 @@ import org.apache.log4j.Logger;
 import ca.ubc.cs.reverb.indexer.QueryBuilder.CodeQueryInfo;
 import ca.ubc.cs.reverb.indexer.messages.BatchQueryReply;
 import ca.ubc.cs.reverb.indexer.messages.BatchQueryRequest;
+import ca.ubc.cs.reverb.indexer.messages.BlockCodeElementRequest;
 import ca.ubc.cs.reverb.indexer.messages.CodeElement;
 import ca.ubc.cs.reverb.indexer.messages.CodeQueryReply;
 import ca.ubc.cs.reverb.indexer.messages.CodeQueryRequest;
@@ -118,6 +119,8 @@ public class QueryPipeListener implements Runnable {
                             handleLogClickRequest(envelope.clientRequestId, (LogClickRequest)envelope.message);
                         } else if (envelope.message instanceof LogClientEventRequest) {
                             handleLogClientEventRequest(envelope.clientRequestId, (LogClientEventRequest)envelope.message);
+                        } else if (envelope.message instanceof BlockCodeElementRequest) {
+                            handleBlockCodeElementRequest(envelope.clientRequestId, (BlockCodeElementRequest)envelope.message);
                         } else {
                             throw new IndexerException("Unexpected message content: " + envelope.message.getClass());
                         }
@@ -160,6 +163,18 @@ public class QueryPipeListener implements Runnable {
             sendReply(clientRequestId, reply);
         }
         
+        private void handleBlockCodeElementRequest(String clientRequestId, BlockCodeElementRequest request) throws IndexerException {
+            IndexerReply reply = new IndexerReply();
+            try {
+                config.getBlockedTypes().addBlockedElement(request.codeElement);
+            } catch (IndexerException e) {
+                reply.errorOccurred = true;
+                reply.errorMessage = e.toString();
+            }
+            sendReply(clientRequestId, reply);
+   
+        }
+        
         private void handleDeleteLocationRequest(String clientRequestId, DeleteLocationRequest request) throws IndexerException {
             IndexerReply reply = new IndexerReply();
             try {
@@ -174,7 +189,7 @@ public class QueryPipeListener implements Runnable {
         private void handleCodeQueryRequest(String clientRequestId, CodeQueryRequest codeQuery) throws IndexerException {
             CodeQueryReply codeQueryReply = null;
             try {
-                QueryBuilder builder = new QueryBuilder(codeQuery.codeElements);
+                QueryBuilder builder = new QueryBuilder(config.getBlockedTypes(), codeQuery.codeElements);
                 builder.buildQueries();
                 BatchQueryReply batchQueryReply = searcher.performSearch(
                         builder.getQueries());
