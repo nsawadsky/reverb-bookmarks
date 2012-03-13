@@ -61,7 +61,7 @@ public class InstallCompleteFrame extends JFrame {
                     @Override
                     public void actionPerformed(ActionEvent event) {
                         try {
-                            Desktop.getDesktop().browse(new URI("http://cs.ubc.ca/~nicks/reverb/installreverb.html"));
+                            Desktop.getDesktop().browse(new URI("http://www.cs.ubc.ca/labs/spl/projects/reverb/installreverb.html"));
                         } catch (Exception e) { }
                         dispose();
                     }
