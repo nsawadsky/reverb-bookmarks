@@ -6,7 +6,7 @@
    
     <em:id>reverb@cs.ubc.ca</em:id>
     <em:name>Reverb</em:name>
-    <em:version>1.0</em:version>
+    <em:version>1.0.1</em:version>
     <em:description>Indexes web pages for quick retrieval inside the IDE.</em:description>
     <em:creator>UBC Software Practices Lab</em:creator>
     
