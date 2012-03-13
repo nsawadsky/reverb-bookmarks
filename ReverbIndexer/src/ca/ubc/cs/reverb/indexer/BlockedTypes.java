@@ -51,7 +51,7 @@ public class BlockedTypes {
     }
 
     public synchronized void addBlockedElement(CodeElement codeElement) throws IndexerException {
-        if (codeElement.packageName == null && codeElement.className == null) {
+        if (codeElement.packageName == null || codeElement.className == null) {
             throw new IndexerException("Type must be fully resolved to be blocked");
         }
         for (CodeElement element: blockedCodeElements) {
