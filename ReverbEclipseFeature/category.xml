@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <site>
-   <feature url="features/ca.ubc.cs.reverb.eclipseplugin.feature_1.0.0.qualifier.jar" id="ca.ubc.cs.reverb.eclipseplugin.feature" version="1.0.0.qualifier" os="win32">
+   <feature url="features/ca.ubc.cs.reverb.eclipseplugin.feature_1.0.1.qualifier.jar" id="ca.ubc.cs.reverb.eclipseplugin.feature" version="1.0.1.qualifier">
       <category name="ca.ubc.cs.reverb.eclipseplugin.featurecategory"/>
    </feature>
    <category-def name="ca.ubc.cs.reverb.eclipseplugin.featurecategory" label="Reverb">
