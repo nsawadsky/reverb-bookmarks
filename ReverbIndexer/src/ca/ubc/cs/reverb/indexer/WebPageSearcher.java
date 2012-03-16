@@ -1,6 +1,8 @@
 package ca.ubc.cs.reverb.indexer;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -374,11 +376,13 @@ public class WebPageSearcher {
         }
         
         private boolean checkSimilarHit(HitInfo testInfo) {
+            String testLastUrlSegment = getLastUrlSegment(testInfo.hit.url);
             if (testInfo.bestQuery == hitInfo.bestQuery &&
-                    testInfo.hit.relevance == hitInfo.hit.relevance &&
+                    Math.abs(testInfo.hit.relevance - hitInfo.hit.relevance) < (0.01 * hitInfo.hit.relevance) &&
                     testInfo.hit.title != null &&
                     testInfo.hit.title.equals(hitInfo.hit.title) &&
-                    getLastUrlSegment(testInfo.hit.url).equals(lastUrlSegment)) {
+                    testLastUrlSegment != null && 
+                    testLastUrlSegment.equals(lastUrlSegment)) {
                 if (testInfo.hit.frecencyBoost > hitInfo.hit.frecencyBoost) {
                     testInfo.frecencyBoost = Math.min(
                             hitInfo.frecencyBoost + testInfo.frecencyBoost, LocationInfo.MAX_FRECENCY_BOOST);

@@ -218,9 +218,9 @@ public class WebPageSearcherTest {
                 List<Hit> result = new ArrayList<Hit>();
                 if (queryString.equals("QueryA")) {
                     result.add(getHit(15L, "http://www.diffdomainone.com/docs/TestSimilar1/rest", "TestSimilar", 1.0F, 1.0F));
-                    result.add(getHit(15L, "http://www.diffdomaintwo.com/docs/TestSimilar2/rest", "TestSimilar", 1.0F, 2.0F));
+                    result.add(getHit(15L, "http://www.diffdomaintwo.com/docs/TestSimilar2/rest", "TestSimilar", 1.005F, 2.0F));
                     result.add(getHit(15L, "http://www.diffdomainone.com/docs1/TestSimilarShort/", "TestSimilarShort", 1.0F, 1.0F));
-                    result.add(getHit(15L, "http://www.diffdomaintwo.com/docs2/TestSimilarShort/", "TestSimilarShort", 1.0F, 2.0F));
+                    result.add(getHit(15L, "http://www.diffdomaintwo.com/docs2/TestSimilarShort/", "TestSimilarShort", 1.005F, 2.0F));
                 } 
                 return result;
             }
