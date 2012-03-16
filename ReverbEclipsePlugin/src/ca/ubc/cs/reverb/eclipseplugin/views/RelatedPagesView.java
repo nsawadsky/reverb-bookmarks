@@ -291,11 +291,13 @@ public class RelatedPagesView extends ViewPart implements EditorMonitorListener 
     
     @Override 
     public void onCodeQueryReply(CodeQueryReply reply) {
-        contentProvider.setQueryReply(reply);
-        viewer.getTree().setRedraw(false);
-        viewer.refresh();
-        viewer.expandAll();
-        viewer.getTree().setRedraw(true);
+        if (reply.queryResults != null && reply.queryResults.size() > 0) {
+            contentProvider.setQueryReply(reply);
+            viewer.getTree().setRedraw(false);
+            viewer.refresh();
+            viewer.expandAll();
+            viewer.getTree().setRedraw(true);
+        }
     }
 
     @Override
