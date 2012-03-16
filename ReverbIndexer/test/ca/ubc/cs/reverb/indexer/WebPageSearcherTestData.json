@@ -232,16 +232,16 @@
             "url" : "http://www.diffdomaintwo.com/docs/TestSimilar2/rest",
             "title" : "TestSimilar",
             "id" : 15,
-            "relevance" : 1.0,
+            "relevance" : 1.005,
             "frecencyBoost" : 3.0,
-            "overallScore" : 3.0
+            "overallScore" : 3.0149999
           }, {
             "url" : "http://www.diffdomaintwo.com/docs2/TestSimilarShort/",
             "title" : "TestSimilarShort",
             "id" : 15,
-            "relevance" : 1.0,
+            "relevance" : 1.005,
             "frecencyBoost" : 3.0,
-            "overallScore" : 3.0
+            "overallScore" : 3.0149999
           } ]
         } ]
       }
