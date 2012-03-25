@@ -35,6 +35,7 @@ import ca.ubc.cs.reverb.indexer.study.StudyDataCollector;
  */
 public class WebPageSearcher {
     private final static int MAX_RESULTS = 10;
+    private final static int MAX_RESULTS_PER_QUERY = 20;
     
     private IndexerConfig config;
     private SharedIndexReader reader;
@@ -79,7 +80,7 @@ public class WebPageSearcher {
         // Use LinkedHashMap for test predictability.
         Map<String, HitInfo> infosByUrl = new LinkedHashMap<String, HitInfo>();
         for (IndexerQuery query: queries) {
-            List<Hit> hits = performSearch(indexSearcher, query.queryString, MAX_RESULTS, now);
+            List<Hit> hits = performSearch(indexSearcher, query.queryString, MAX_RESULTS_PER_QUERY, now);
             for (Hit hit: hits) {
                 HitInfo info = infosByUrl.get(hit.url);
                 if (info == null) {
