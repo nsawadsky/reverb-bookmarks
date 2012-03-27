@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.queryParser.MultiFieldQueryParser;
 import org.apache.lucene.queryParser.QueryParser;
@@ -53,9 +54,11 @@ public class WebPageSearcher {
         this.locationsDatabase = locationsDatabase;
         this.collector = collector;
         
+        // We deliberately use StandardAnalyzer, rather than the WebPageAnalyzer used for indexing.
+        // We do not want dot-separated tokens in the query to be broken up in to independent tokens.
         parser = new MultiFieldQueryParser(Version.LUCENE_33, 
                 new String[] {WebPageIndexer.TITLE_FIELD_NAME, WebPageIndexer.CONTENT_FIELD_NAME}, 
-                new WebPageAnalyzer(Version.LUCENE_33));
+                new StandardAnalyzer(Version.LUCENE_33));
 
         this.reader = reader;
     }
