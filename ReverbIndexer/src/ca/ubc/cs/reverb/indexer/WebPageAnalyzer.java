@@ -1,6 +1,8 @@
 package ca.ubc.cs.reverb.indexer;
 
 /**
+ * Based on StandardAnalyzer from Lucene 3.3 source code.
+ * 
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -22,18 +24,15 @@ import org.apache.lucene.analysis.standard.StandardFilter;
 import org.apache.lucene.analysis.standard.StandardTokenizer;
 import org.apache.lucene.util.Version;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Filters {@link StandardTokenizer} with {@link StandardFilter} and {@link StopFilter}, using a list of
- * English stop words.
- * 
- * Based on StandardAnalyzer in the Lucene source code, but customized to omit the lower-case filter
- * (i.e. this analyzer results in case-sensitive searches).
+ * Filters {@link StandardTokenizer} with {@link StandardFilter}, {@link
+ * LowerCaseFilter}, {@link StopFilter} (using a list of
+ * English stop words), and MethodCallFilter.
  *
  * <a name="version"/>
  * <p>You must specify the required {@link Version}
@@ -51,61 +50,89 @@ import java.util.Set;
  */
 public final class WebPageAnalyzer extends StopwordAnalyzerBase {
 
-    /** Default maximum allowed token length */
-    private static final int DEFAULT_MAX_TOKEN_LENGTH = 255;
+  /** Default maximum allowed token length */
+  public static final int DEFAULT_MAX_TOKEN_LENGTH = 255;
 
-    private int maxTokenLength = DEFAULT_MAX_TOKEN_LENGTH;
+  private int maxTokenLength = DEFAULT_MAX_TOKEN_LENGTH;
 
-    /** An unmodifiable set containing some common English words that are usually not
-        useful for searching. */
-    private static final Set<char[]> stopWordsSet;
+  /**
+   * Specifies whether deprecated acronyms should be replaced with HOST type.
+   * See {@linkplain "https://issues.apache.org/jira/browse/LUCENE-1068"}
+   */
+  private final boolean replaceInvalidAcronym;
 
-    static {
-        stopWordsSet = new HashSet<char []>();
-        for (Object word: StopAnalyzer.ENGLISH_STOP_WORDS_SET) {
-            char[] wordArray = (char[])word;
-            stopWordsSet.add(wordArray);
-            
-            char[] capWord = Arrays.copyOf(wordArray, wordArray.length);
-            capWord[0] = Character.toUpperCase(capWord[0]);
-            stopWordsSet.add(capWord);
-        }
-    }
+  /** An unmodifiable set containing some common English words that are usually not
+  useful for searching. */
+  public static final Set<?> STOP_WORDS_SET = StopAnalyzer.ENGLISH_STOP_WORDS_SET; 
+
+  /** Builds an analyzer with the given stop words.
+   * @param matchVersion Lucene version to match See {@link
+   * <a href="#version">above</a>}
+   * @param stopWords stop words */
+  public WebPageAnalyzer(Version matchVersion, Set<?> stopWords) {
+    super(matchVersion, stopWords);
+    replaceInvalidAcronym = matchVersion.onOrAfter(Version.LUCENE_24);
+  }
+
+  /** Builds an analyzer with the default stop words ({@link
+   * #STOP_WORDS_SET}).
+   * @param matchVersion Lucene version to match See {@link
+   * <a href="#version">above</a>}
+   */
+  public WebPageAnalyzer(Version matchVersion) {
+    this(matchVersion, STOP_WORDS_SET);
+  }
+
+  /** Builds an analyzer with the stop words from the given file.
+   * @see WordlistLoader#getWordSet(File)
+   * @param matchVersion Lucene version to match See {@link
+   * <a href="#version">above</a>}
+   * @param stopwords File to read stop words from */
+  public WebPageAnalyzer(Version matchVersion, File stopwords) throws IOException {
+    this(matchVersion, WordlistLoader.getWordSet(stopwords));
+  }
+
+  /** Builds an analyzer with the stop words from the given reader.
+   * @see WordlistLoader#getWordSet(Reader)
+   * @param matchVersion Lucene version to match See {@link
+   * <a href="#version">above</a>}
+   * @param stopwords Reader to read stop words from */
+  public WebPageAnalyzer(Version matchVersion, Reader stopwords) throws IOException {
+    this(matchVersion, WordlistLoader.getWordSet(stopwords));
+  }
+
+  /**
+   * Set maximum allowed token length.  If a token is seen
+   * that exceeds this length then it is discarded.  This
+   * setting only takes effect the next time tokenStream or
+   * reusableTokenStream is called.
+   */
+  public void setMaxTokenLength(int length) {
+    maxTokenLength = length;
+  }
     
-    public WebPageAnalyzer() {
-        super(Version.LUCENE_33, stopWordsSet);
-    }
+  /**
+   * @see #setMaxTokenLength
+   */
+  public int getMaxTokenLength() {
+    return maxTokenLength;
+  }
 
-    /**
-     * Set maximum allowed token length.  If a token is seen
-     * that exceeds this length then it is discarded.  This
-     * setting only takes effect the next time tokenStream or
-     * reusableTokenStream is called.
-     */
-    public void setMaxTokenLength(int length) {
-        maxTokenLength = length;
-    }
-
-    /**
-     * @see #setMaxTokenLength
-     */
-    public int getMaxTokenLength() {
-        return maxTokenLength;
-    }
-
-    @Override
-    protected TokenStreamComponents createComponents(final String fieldName, final Reader reader) {
-        final StandardTokenizer src = new StandardTokenizer(matchVersion, reader);
-        src.setMaxTokenLength(maxTokenLength);
-        TokenStream tok = new StandardFilter(matchVersion, src);
-        //tok = new LowerCaseFilter(matchVersion, tok);
-        tok = new StopFilter(matchVersion, tok, stopwords);
-        return new TokenStreamComponents(src, tok) {
-            @Override
-            protected boolean reset(final Reader reader) throws IOException {
-                src.setMaxTokenLength(WebPageAnalyzer.this.maxTokenLength);
-                return super.reset(reader);
-            }
-        };
-    }
+  @Override
+  protected TokenStreamComponents createComponents(final String fieldName, final Reader reader) {
+    final StandardTokenizer src = new StandardTokenizer(matchVersion, reader);
+    src.setMaxTokenLength(maxTokenLength);
+    src.setReplaceInvalidAcronym(replaceInvalidAcronym);
+    TokenStream tok = new StandardFilter(matchVersion, src);
+    tok = new LowerCaseFilter(matchVersion, tok);
+    tok = new StopFilter(matchVersion, tok, stopwords);
+    tok = new MethodCallFilter(matchVersion, tok);
+    return new TokenStreamComponents(src, tok) {
+      @Override
+      protected boolean reset(final Reader reader) throws IOException {
+        src.setMaxTokenLength(WebPageAnalyzer.this.maxTokenLength);
+        return super.reset(reader);
+      }
+    };
+  }
 }

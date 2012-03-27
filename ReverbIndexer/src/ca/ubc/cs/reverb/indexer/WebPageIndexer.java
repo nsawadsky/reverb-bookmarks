@@ -6,7 +6,6 @@ import java.io.StringReader;
 import java.net.URL;
 
 import org.apache.log4j.Logger;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.index.IndexReader;
@@ -59,7 +58,7 @@ public class WebPageIndexer {
 
         try {
             Directory index = FSDirectory.open(new File(config.getIndexPath()));
-            IndexWriterConfig indexWriterConfig = new IndexWriterConfig(Version.LUCENE_33, new StandardAnalyzer(Version.LUCENE_33));
+            IndexWriterConfig indexWriterConfig = new IndexWriterConfig(Version.LUCENE_33, new WebPageAnalyzer(Version.LUCENE_33));
             
             // Add new documents to the existing index:
             indexWriterConfig.setOpenMode(OpenMode.CREATE_OR_APPEND);
