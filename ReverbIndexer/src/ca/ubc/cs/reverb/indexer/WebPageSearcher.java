@@ -12,7 +12,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.queryParser.MultiFieldQueryParser;
 import org.apache.lucene.queryParser.QueryParser;
@@ -56,7 +55,7 @@ public class WebPageSearcher {
         
         parser = new MultiFieldQueryParser(Version.LUCENE_33, 
                 new String[] {WebPageIndexer.TITLE_FIELD_NAME, WebPageIndexer.CONTENT_FIELD_NAME}, 
-                new StandardAnalyzer(Version.LUCENE_33));
+                new WebPageAnalyzer(Version.LUCENE_33));
 
         this.reader = reader;
     }

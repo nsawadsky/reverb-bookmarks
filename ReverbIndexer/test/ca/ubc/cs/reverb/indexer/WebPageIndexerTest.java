@@ -4,6 +4,7 @@ import static org.junit.Assert.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.List;
 
@@ -69,6 +70,76 @@ public class WebPageIndexerTest {
             request = new UpdatePageInfoRequest(testUrl2, null);
             
             assertFalse(indexer.indexPage(request));
+            
+        } finally {
+            if (reader != null) {
+                reader.close();
+            }
+            if (indexer != null) {
+                indexer.shutdown();
+            }
+            if (locationsDatabase != null) {
+                locationsDatabase.close();
+            }
+            
+            recursiveDeleteFileOrFolder(dataFolder);
+        }
+            
+    }
+    
+    @Test
+    public void testTokenization() throws IOException, IndexerException {
+        LocationsDatabase locationsDatabase = null;
+        WebPageIndexer indexer = null;
+        SharedIndexReader reader = null;
+        
+        final File dataFolder = createTempFolder();
+        try {
+            IndexerConfig config = new IndexerConfig() {
+                @Override
+                public String getBasePath() {
+                    return dataFolder.getAbsolutePath();
+                }
+            };
+            
+            locationsDatabase = new LocationsDatabase(config);
+            StudyDataCollector collector = new StudyDataCollector(config);
+            indexer = new WebPageIndexer(config, locationsDatabase, collector);
+            reader = indexer.getNewIndexReader();
+            
+            WebPageSearcher searcher = new WebPageSearcher(config, reader, locationsDatabase, collector);
+            
+            final String testUrl = "http://www.test.com/testurl1";
+            InputStreamReader testFileReader = new InputStreamReader(WebPageSearcherTest.class.getResourceAsStream("IndexerTestFile.txt"));
+            StringBuilder builder = new StringBuilder();
+            char[] buffer = new char[1024];
+            int bytesRead = 0;
+            while ((bytesRead = testFileReader.read(buffer)) > 0) {
+                builder.append(buffer, 0, bytesRead);
+            }
+            testFileReader.close();
+            
+            UpdatePageInfoRequest request = new UpdatePageInfoRequest(testUrl, builder.toString());
+
+            assertTrue(indexer.indexPage(request));
+            
+            assertNull(getSingleQueryResult(searcher, "giraffe"));
+            
+            Location firstHit = getSingleQueryResult(searcher, "Declared_Class");
+            assertNotNull(firstHit);
+            assertEquals(testUrl, firstHit.url);
+
+            assertNotNull(getSingleQueryResult(searcher, "testpackage.subpackage"));
+            assertNotNull(getSingleQueryResult(searcher, "testpackage"));
+            assertNotNull(getSingleQueryResult(searcher, "subpackage"));
+            assertNotNull(getSingleQueryResult(searcher, "importedpackage.importedsubpackage"));
+            assertNotNull(getSingleQueryResult(searcher, "importedpackage"));
+            assertNotNull(getSingleQueryResult(searcher, "importedsubpackage"));
+            assertNotNull(getSingleQueryResult(searcher, "usedClass.invokedMethod"));
+            assertNotNull(getSingleQueryResult(searcher, "usedClass"));
+            assertNotNull(getSingleQueryResult(searcher, "invokedMethod"));
+            assertNotNull(getSingleQueryResult(searcher, "AnnotationReference"));
+            assertNotNull(getSingleQueryResult(searcher, "annotationreference"));
             
         } finally {
             if (reader != null) {
