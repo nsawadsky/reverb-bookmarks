@@ -8,6 +8,7 @@ import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.Version;
 
 /**
  * The activator class controls the plug-in life cycle
@@ -34,6 +35,8 @@ public class PluginActivator extends AbstractUIPlugin {
 	
 	private boolean initComplete = false;
 	
+	private Version bundleVersion = null;
+	
 	/**
 	 * The constructor
 	 */
@@ -48,6 +51,8 @@ public class PluginActivator extends AbstractUIPlugin {
 		super.start(context);
 
         plugin = this;
+        
+        bundleVersion = context.getBundle().getVersion();
 
 		IWorkbench workbench = PlatformUI.getWorkbench();
 		if (workbench == null) {
@@ -175,5 +180,20 @@ public class PluginActivator extends AbstractUIPlugin {
         }
         return searchImage;
     }
+    
+    public Version getBundleVersion() {
+        return bundleVersion;
+    }
 
+    public String getBundleVersionString(boolean includeQualifier) {
+        if (bundleVersion == null) {
+            return "";
+        }
+        String result = Integer.toString(bundleVersion.getMajor()) +
+                "." + bundleVersion.getMinor() + "." + bundleVersion.getMicro();
+        if (includeQualifier) {
+            result += "." + bundleVersion.getQualifier();
+        }
+        return result;
+    }
 }
