@@ -154,6 +154,7 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener,
     @Override
     public void viewportChanged(int arg0) {
         long now = System.currentTimeMillis();
+        handleNavigationEvent(now);
         notifyListenersInteractionEvent(now);
     }
 
@@ -179,7 +180,9 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener,
                 handleNavigationEvent(System.currentTimeMillis());
                 if (!isStudyComplete) {
                     indexerConnection.sendRequestAsync(
-                            new LogClientEventRequest("VIEW_STATE_CHANGE", Arrays.asList(isRelatedPagesViewOpen ? "1" : "0")), null, null);
+                            new LogClientEventRequest("VIEW_STATE_CHANGE", 
+                                    Arrays.asList(isRelatedPagesViewOpen ? "1" : "0", 
+                                            PluginActivator.getDefault().getBundleVersionString(false))), null, null);
                 }
             }
             
@@ -190,7 +193,9 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener,
         isRelatedPagesViewOpen = isViewOpen;
         if (!isStudyComplete) {
             indexerConnection.sendRequestAsync(
-                    new LogClientEventRequest("VIEW_STATE_CHANGE", Arrays.asList(isRelatedPagesViewOpen ? "1" : "0")), null, null);
+                    new LogClientEventRequest("VIEW_STATE_CHANGE", 
+                            Arrays.asList(isRelatedPagesViewOpen ? "1" : "0",
+                                    PluginActivator.getDefault().getBundleVersionString(false))), null, null);
         }
     }
     
