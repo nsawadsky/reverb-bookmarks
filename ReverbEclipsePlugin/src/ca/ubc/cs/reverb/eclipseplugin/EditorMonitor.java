@@ -154,7 +154,6 @@ public class EditorMonitor implements IPartListener, MouseListener, KeyListener,
     @Override
     public void viewportChanged(int arg0) {
         long now = System.currentTimeMillis();
-        handleNavigationEvent(now);
         notifyListenersInteractionEvent(now);
     }
 
