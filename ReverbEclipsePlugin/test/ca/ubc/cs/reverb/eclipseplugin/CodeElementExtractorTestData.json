@@ -1,0 +1,258 @@
+{
+    "src/testpackage/FieldRefs.java": 
+    [ {
+      "elementType" : "TYPE_DECL",
+      "packageName" : "testpackage",
+      "className" : "FieldRefs",
+      "memberName" : null
+    }, {
+      "elementType" : "STATIC_FIELD_REF",
+      "packageName" : "testpackage",
+      "className" : "Fielddecls",
+      "memberName" : "FIELDDECLS_CONSTANT_1"
+    }, {
+      "elementType" : "STATIC_FIELD_REF",
+      "packageName" : "testpackage",
+      "className" : "Fielddecls",
+      "memberName" : "FIELDDECLS_CONSTANT_2"
+    }, {
+      "elementType" : "TYPE_REF",
+      "packageName" : "testpackage",
+      "className" : "Enumvaluedecls",
+      "memberName" : null
+    }, {
+      "elementType" : "STATIC_FIELD_REF",
+      "packageName" : "testpackage",
+      "className" : "Enumvaluedecls",
+      "memberName" : "ENUM_VALUE_1"
+    }, {
+      "elementType" : "STATIC_FIELD_REF",
+      "packageName" : "testpackage",
+      "className" : "Enumvaluedecls",
+      "memberName" : "ENUM_VALUE_2"
+    }, {
+      "elementType" : "STATIC_FIELD_REF",
+      "packageName" : "testpackage",
+      "className" : "Fielddecls.Innerclassdecl",
+      "memberName" : "FIELDDECLS_CONSTANT_1"
+    } ],
+    
+    "src/testpackage/TypeRefs.java":
+    [ {
+      "elementType" : "TYPE_DECL",
+      "packageName" : "testpackage",
+      "className" : "TypeRefs",
+      "memberName" : null
+    }, {
+      "elementType" : "TYPE_REF",
+      "packageName" : "java.io",
+      "className" : "File",
+      "memberName" : null
+    }, {
+      "elementType" : "TYPE_REF",
+      "packageName" : "java.net",
+      "className" : "ServerSocket",
+      "memberName" : null
+    }, {
+      "elementType" : "TYPE_REF",
+      "packageName" : "testpackage",
+      "className" : "Classdecl",
+      "memberName" : null
+    }, {
+      "elementType" : "TYPE_REF",
+      "packageName" : "testpackage",
+      "className" : "Classdecl.Innerclassdecl",
+      "memberName" : null
+    }, {
+      "elementType" : "TYPE_REF",
+      "packageName" : "testpackage",
+      "className" : "ClassdeclNores",
+      "memberName" : null
+    } ],
+    
+    "src/testpackage/ComplexTypeRefs.java":
+    [ {
+      "elementType" : "TYPE_DECL",
+      "packageName" : "testpackage",
+      "className" : "ComplexTypeRefs",
+      "memberName" : null
+    }, {
+      "elementType" : "TYPE_REF",
+      "packageName" : "java.util",
+      "className" : "List",
+      "memberName" : null
+    }, {
+      "elementType" : "TYPE_REF",
+      "packageName" : "java.io",
+      "className" : "File",
+      "memberName" : null
+    }, {
+      "elementType" : "TYPE_REF",
+      "packageName" : "java.util",
+      "className" : "UUID",
+      "memberName" : null
+    } ],
+        
+    "src/testpackage/Enumdecl.java":
+    [ {
+      "elementType" : "TYPE_DECL",
+      "packageName" : "testpackage",
+      "className" : "Enumdecl",
+      "memberName" : null
+    } ],
+
+    "src/testpackage/Classdecl.java":
+    [ {
+      "elementType" : "TYPE_DECL",
+      "packageName" : "testpackage",
+      "className" : "Classdecl",
+      "memberName" : null
+    }, {
+      "elementType" : "TYPE_DECL",
+      "packageName" : "testpackage",
+      "className" : "Classdecl.Innerclassdecl",
+      "memberName" : null
+    } ],
+   
+    "src/testpackage/Methoddecl.java":
+    [ {
+      "elementType" : "TYPE_DECL",
+      "packageName" : "testpackage",
+      "className" : "Methoddecl",
+      "memberName" : null
+    }, {
+      "elementType" : "TYPE_REF",
+      "packageName" : "testpackage",
+      "className" : "Derivedclassdecl",
+      "memberName" : null
+    }, {
+      "elementType" : "TYPE_REF",
+      "packageName" : "testpackage",
+      "className" : "Interfacedecl",
+      "memberName" : null
+    }, {
+      "elementType" : "TYPE_REF",
+      "packageName" : "testpackage",
+      "className" : "InterfacedeclNores",
+      "memberName" : null
+    }, {
+      "elementType" : "METHOD_DECL",
+      "packageName" : "testpackage",
+      "className" : "InterfacedeclNores",
+      "memberName" : "interfacedeclNoresMethod"
+    }, {
+      "elementType" : "METHOD_DECL",
+      "packageName" : "testpackage",
+      "className" : "Interfacedecl",
+      "memberName" : "interfaceDeclMethod"
+    }, {
+      "elementType" : "METHOD_DECL",
+      "packageName" : "testpackage",
+      "className" : "Derivedclassdecl",
+      "memberName" : "derivedclassdeclMethod"
+    }, {
+      "elementType" : "METHOD_DECL",
+      "packageName" : "testpackage",
+      "className" : "Baseclassdecl",
+      "memberName" : "baseclassdeclMethod"
+    }, {
+      "elementType" : "METHOD_DECL",
+      "packageName" : "testpackage",
+      "className" : "Baseinterfacedecl",
+      "memberName" : "baseinterfacedeclMethod"
+    } ],
+    
+    "src/testpackage/MethodInvoc.java":
+    [ {
+      "elementType" : "TYPE_DECL",
+      "packageName" : "testpackage",
+      "className" : "MethodInvoc",
+      "memberName" : null
+    }, {
+      "elementType" : "TYPE_REF",
+      "packageName" : "testpackage",
+      "className" : "Methoddecl",
+      "memberName" : null
+    }, {
+      "elementType" : "METHOD_CALL",
+      "packageName" : "testpackage",
+      "className" : "Methoddecl",
+      "memberName" : "methoddeclMethod"
+    }, {
+      "elementType" : "METHOD_CALL",
+      "packageName" : "testpackage",
+      "className" : "Baseclassdecl",
+      "memberName" : "baseclassdeclMethod_2"
+    }, {
+      "elementType" : "METHOD_CALL",
+      "packageName" : "testpackage",
+      "className" : "Methoddecl",
+      "memberName" : "interfaceDeclMethod"
+    }, {
+      "elementType" : "STATIC_METHOD_CALL",
+      "packageName" : "testpackage",
+      "className" : "Methoddecl",
+      "memberName" : "staticMethod"
+    }, {
+      "elementType" : "TYPE_REF",
+      "packageName" : "testpackage",
+      "className" : "MethoddeclNores",
+      "memberName" : null
+    }, {
+      "elementType" : "METHOD_CALL",
+      "packageName" : "testpackage",
+      "className" : "MethoddeclNores",
+      "memberName" : "methoddeclNoresMethod"
+    }, {
+      "elementType" : "TYPE_REF",
+      "packageName" : "testpackage",
+      "className" : "Interfacedecl",
+      "memberName" : null
+    }, {
+      "elementType" : "METHOD_CALL",
+      "packageName" : "testpackage",
+      "className" : "Baseinterfacedecl",
+      "memberName" : "baseinterfacedeclMethod"
+    }, {
+      "elementType" : "TYPE_REF",
+      "packageName" : null,
+      "className" : "UnknownType",
+      "memberName" : null
+    }, {
+      "elementType" : "METHOD_CALL",
+      "packageName" : null,
+      "className" : null,
+      "memberName" : "methoddeclNores"
+    } ],
+    
+    "src/testpackage/PrimitiveRefs.java":
+    [ {
+      "elementType" : "TYPE_DECL",
+      "packageName" : "testpackage",
+      "className" : "PrimitiveRefs",
+      "memberName" : null
+    } ],
+    
+    "src/testpackage/AnnotationRefs.java":
+    [ {
+      "elementType" : "TYPE_DECL",
+      "packageName" : "testpackage",
+      "className" : "AnnotationRefs",
+      "memberName" : null
+    }, {
+      "elementType" : "TYPE_REF",
+      "packageName" : "testpackage",
+      "className" : "Baseclassdecl",
+      "memberName" : null
+    }, {
+      "elementType" : "TYPE_REF",
+      "packageName" : "testpackage",
+      "className" : "Annotationdecl",
+      "memberName" : null
+    }, {
+      "elementType" : "METHOD_DECL",
+      "packageName" : "testpackage",
+      "className" : "Baseclassdecl",
+      "memberName" : "baseclassdeclMethod"
+    } ]      
+}

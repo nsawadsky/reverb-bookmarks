@@ -1,0 +1,11 @@
+package testpackage.subpackage;
+
+import importedpackage.importedsubpackage.*;
+
+@AnnotationReference()
+public class Declared_Class {
+    public void declaredMethod() {
+        UsedClass usedClass = new UsedClass();
+        usedClass.invokedMethod(a, b);
+    }
+}

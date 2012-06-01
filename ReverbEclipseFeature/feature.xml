@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature
+      id="ca.ubc.cs.reverb.eclipseplugin.feature"
+      label="Reverb"
+      version="1.0.3.qualifier"
+      provider-name="UBC Software Practices Lab">
+
+   <description>
+      The Reverb plugin for Eclipse.
+   </description>
+
+   <url>
+      <update label="Reverb Update Site" url="http://www.cs.ubc.ca/labs/spl/projects/reverb/update/"/>
+   </url>
+
+   <plugin
+         id="ca.ubc.cs.reverb.eclipseplugin"
+         os="win32"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+</feature>
