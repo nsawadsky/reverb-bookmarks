@@ -1,5 +1,6 @@
 package ca.ubc.cs.reverb.indexer;
 
+import java.io.FileWriter;
 import java.io.IOException;
 
 import org.apache.http.HttpEntity;
@@ -22,6 +23,16 @@ public class WebPageDownloader {
         return null;
     }
     
+    public void savePageToFile(String url, String filePath)                throws IOException {
+        HttpClient httpClient = new DefaultHttpClient(); 
+        HttpGet httpGet = new HttpGet(url);
+        HttpResponse response = httpClient.execute(httpGet);
+        HttpEntity entity = response.getEntity();
+        String pageContent = EntityUtils.toString(entity);
+         
+        FileWriter writer = new FileWriter(filePath);  
+        
+    }
     
     
     
